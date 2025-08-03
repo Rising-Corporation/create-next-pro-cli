@@ -1,0 +1,14 @@
+{
+  "title": "Dashboard",
+  "description": "Overview of your account",
+  "widgets": {
+    "welcome": "Welcome to your dashboard!",
+    "description": "Here you can see an overview of the number of people who have signed up.",
+    "stats": {
+      "title": "Your Stats",
+      "views": "Views",
+      "likes": "Likes",
+      "comments": "Comments"
+    }
+  }
+}

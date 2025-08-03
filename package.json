@@ -1,0 +1,32 @@
+{
+  "name": "create-next-pro-cli",
+  "version": "0.1.0",
+  "description": "Advanced Next.js project scaffolder with i18n, Tailwind, App Router and more.",
+  "bin": {
+    "create-next-pro": "./bin.ts"
+  },
+  "author": "MrRise",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run bin.ts",
+    "scaffold-dev": "bun run src/scaffold-dev.ts",
+    "postinstall": "bash install.sh"
+  },
+  "keywords": [
+    "nextjs",
+    "scaffold",
+    "bun",
+    "cli",
+    "tailwind",
+    "i18n",
+    "typescript",
+    "next-intl"
+  ],
+  "dependencies": {
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/prompts": "^2.4.9"
+  }
+}

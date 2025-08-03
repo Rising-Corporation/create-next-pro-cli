@@ -1,0 +1,1 @@
+// app/[locale]/_main/loading.tsx

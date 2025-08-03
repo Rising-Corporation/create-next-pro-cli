@@ -1,0 +1,25 @@
+# Features of the create-next-pro binary
+
+- Advanced Next.js project creation with options (TypeScript, ESLint, Tailwind, src/, Turbopack, i18n, import alias)
+- `addpage` command:
+  - Add a page with templates (layout, page, loading, etc.)
+  - Automatically create folders/files in `src/app/[locale]` and `src/ui`
+  - Add translation files in `messages/<locale>`
+  - Supports nested pages (e.g. `PageParent.PageChild`)
+    - Creates in the parent folder
+    - Appends JSON to the parent object
+- `addcomponent` command:
+  - Add a component to a page or globally
+  - Create the TSX file in `src/ui/<Page>/` or `src/ui/_global/`
+  - Add the component to the page or global translation JSON
+- `rmpage` command:
+  - Remove a page and all its associated files
+    - Folders/files in `src/ui`, `src/app/[locale]`, and `messages/<locale>`
+- Bash autocompletion:
+  - Suggests commands and existing pages
+  - Supports nested pages for completion
+  - Installation script proposed at first launch
+- Fast CLI mode (non-interactive) and interactive mode (prompts)
+- File generation from customizable templates
+- Name handling (respects user input casing)
+- Optional addition of the autocompletion script to `.bashrc` via prompt

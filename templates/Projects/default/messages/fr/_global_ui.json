@@ -1,0 +1,30 @@
+{
+  "public_nav": {
+    "links": {
+      "home": "Accueil",
+      "login": "Connexion",
+      "register": "S'inscrire",
+      "about": "À propos de nous",
+      "contact": "Nous contacter",
+      "privacy_policy": "Politique de confidentialité",
+      "terms_of_service": "Conditions d'utilisation",
+      "help": "Aide",
+      "faq": "FAQ",
+      "blog": "Blog",
+      "careers": "Carrières",
+      "support": "Support",
+      "language": "Langue",
+      "dark_mode": "Mode sombre",
+      "light_mode": "Mode clair",
+      "search": "Recherche"
+    }
+  },
+  "user_nav": {
+    "links": {
+      "home": "Accueil",
+      "dashboard": "Tableau de bord",
+      "settings": "Paramètres",
+      "user_info": "Informations sur l'utilisateur"
+    }
+  }
+}

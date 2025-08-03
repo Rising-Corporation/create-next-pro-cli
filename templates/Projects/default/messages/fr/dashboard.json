@@ -1,0 +1,14 @@
+{
+  "title": "Tableau de bord",
+  "description": "Aperçu de votre compte",
+  "widgets": {
+    "welcome": "Bienvenue sur votre tableau de bord !",
+    "description": "Ici, vous pouvez voir un aperçu du nombre de personnes qui se sont inscrites.",
+    "stats": {
+      "title": "Vos statistiques",
+      "views": "Vues",
+      "likes": "J'aime",
+      "comments": "Commentaires"
+    }
+  }
+}
