@@ -10,6 +10,16 @@ Initially, changes will be accepted or rejected by the creator, but in a few wee
 
 ---
 
+> 🤩 Can't wait and too excited to read more? Just want to try it now?
+>
+> ℹ️ To enable autocompletion automatically, add the `--trust` option when installing globally with Bun:
+>
+> ```bash
+> bun install -g create-next-pro-cli --trust
+> ```
+
+---
+
 ## 🎯 Purpose
 
 Create an enhanced alternative to `bun create next-app` with an interactive interface to generate Next.js projects tailored to real-world professional needs.
@@ -235,9 +245,9 @@ create-next-pro/
 
 ---
 
-## 🚀 Usage
+## 🚀 Install & Usage
 
-### Local (dev)
+### Local from git (dev)
 
 ```bash
 bun install
@@ -247,17 +257,41 @@ bun dev
 ### Global (on your machine)
 
 ```bash
-bun link
-create-next-pro-cli
+bun link create-next-pro-cli
+create-next-pro my-next-project
 ```
 
 ### From another PC (via bunx or global install)
 
 ```bash
-bunx create-next-pro-cli
+bunx create-next-pro-cli # to try without install
 # or
 bun install -g create-next-pro-cli
 ```
+
+> ℹ️ To enable autocompletion automatically, add the `--trust` option when installing globally with Bun:
+>
+> ```bash
+> bun install -g create-next-pro-cli --trust
+> ```
+
+> Otherwise, run the autocompletion install script from binary manually:
+>
+> ```bash
+> bash install.sh
+> ```
+
+> or add the autocompletion line to your `.bashrc`/`.zshrc` :
+>
+> ```bash
+> source ~/.bun/install/global/node_modules/create-next-pro-cli/create-next-pro-completion.sh
+> ```
+>
+> Then restart your terminal or run
+>
+> ```bash
+> source ~/.bashrc
+> ```
 
 ---
 
@@ -266,10 +300,11 @@ bun install -g create-next-pro-cli
 - [x] Bun config + `tsconfig.json`
 - [x] `bin.ts` CLI entry point
 - [x] CLI project structure `src/index.ts`
-- [x] Implementation of interactive prompts
+- [ ] Implementation of interactive prompts
 - [x] Basic Next.js project scaffolding
 - [x] CLI file/page generation
 - [x] Custom alias support
+- [x] Next-auth with custom cookies
 - [x] Full `next-intl` support with `lib/i18n/` and `messages/`
 - [ ] Generation of `.env.*`
 - [ ] Multi-platform testing (`bunx`, `link`, `npm`, etc.)
@@ -279,8 +314,9 @@ bun install -g create-next-pro-cli
 
 ## ✨ Coming Soon
 
-- Option `--force` to create without prompts
-- Additional templates (admin panel, landing page, etc.)
+- Additional Components templates (admin panel, landing page, etc.)
+- Library templates
+- API templates
 - Prettier / Husky / Commitlint integration
 - Auto deployment to Vercel
 
