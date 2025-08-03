@@ -1,4 +1,4 @@
-![create-next-pro logo](./public/cnp-logo.png)
+![create-next-pro logo](./public/logo.svg)
 
 > ⚠️ This project is under active development and currently in beta testing. Not all features are implemented yet, and contributions are welcome!
 
@@ -72,40 +72,6 @@ create-next-pro rmpage MyPage
 
 ```bash
 create-next-pro rmpage ParentPage.ChildPage
-```
-
----
-
-## ✅ Main Features
-
-- Interactive CLI via `bun` or `bunx`
-- Supports:
-  - TypeScript
-  - ESLint
-  - Tailwind CSS
-  - App Router (with or without `src/`)
-  - i18n (`next-intl`)
-  - Turbopack / Webpack
-  - Custom aliases (`@/*`, `@core/*`, etc.)
-- Automatic generation:
-  - Folders
-  - Base pages: `page.tsx`, `layout.tsx`, `loading.tsx`, `not-found.tsx`, `error.tsx`
-  - `.env`, `.env.local`, `.env.production`, etc.
-  - Clean i18n structure: `/messages/en/*.json`, `/lib/i18n/`
-
----
-
-## 📁 CLI Structure
-
-```plaintext
-create-next-pro/
-├── bin.ts                   # CLI entry point (#!/usr/bin/env bun)
-├── package.json             # Binary declaration
-├── tsconfig.json            # Bun/TypeScript config
-├── README.md
-├── bun.lockb
-└── src/
-    └── index.ts             # Interactive logic (prompts, generation)
 ```
 
 ---
@@ -227,28 +193,70 @@ my-next-app/
 
 ---
 
+## ✅ Main Features
+
+- Interactive CLI via `bun` or `bunx`
+- Supports:
+  - TypeScript
+  - ESLint
+  - Tailwind CSS
+  - App Router (with or without `src/`)
+  - i18n (`next-intl`)
+  - Turbopack / Webpack
+  - Custom aliases (`@/*`, `@core/*`, etc.)
+- Automatic generation:
+  - Folders
+  - Base pages: `page.tsx`, `layout.tsx`, `loading.tsx`, `not-found.tsx`, `error.tsx`
+  - `.env`, `.env.local`, `.env.production`, etc.
+  - Clean i18n structure: `/messages/en/*.json`, `/lib/i18n/`
+
+---
+
+## 📁 CLI Structure
+
+```plaintext
+create-next-pro/
+.
+├── bin.ts                        # CLI entry point (#!/usr/bin/env bun)
+├── bun.lock
+├── create-next-pro-completion.sh # Auto completion for source
+├── FONCTIONALITY.md
+├── install.sh
+├── package.json                  # Binary declaration
+├── README.md
+├── src
+│   ├── index.ts                  # Interactive logic (prompts, generation)
+│   ├── logo.svg
+│   ├── scaffold-dev.ts
+│   └── scaffold.ts
+└── tsconfig.json                 # Bun/TypeScript config
+
+```
+
+---
+
 ## 🚀 Usage
 
 ### Local (dev)
 
 ```bash
 bun install
-bun run bin.ts
+bun dev
 ```
 
 ### Global (on your machine)
 
 ```bash
 bun link
-create-next-pro
+create-next-pro-cli
 ```
 
 ### From another PC (via bunx or global install)
 
 ```bash
-bunx create-next-pro
+bunx create-next-pro-cli
 # or
-bun install -g create-next-pro
+bun install -g create-next-pro-cli
 ```
 
 ---
