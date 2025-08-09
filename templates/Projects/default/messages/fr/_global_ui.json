@@ -26,5 +26,9 @@
       "settings": "Paramètres",
       "user_info": "Informations sur l'utilisateur"
     }
+  },
+  "Loading": {
+    "title": "Chargement en cours",
+    "description": "Veuillez patienter pendant que nous préparons votre expérience..."
   }
 }

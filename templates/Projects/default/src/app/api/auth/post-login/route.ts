@@ -2,7 +2,6 @@ import { getToken } from "next-auth/jwt";
 import { sign } from "jsonwebtoken";
 import { NextResponse, NextRequest } from "next/server";
 import { redirect } from "@/lib/i18n/navigation";
-// import { NextURL } from "next/dist/server/web/next-url";
 
 export async function GET(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
@@ -13,7 +12,7 @@ export async function GET(req: NextRequest) {
       { expiresIn: "7d" }
     );
     const res = NextResponse.redirect(req.nextUrl.origin + "/");
-    res.cookies.set("app_token", appJwt, {
+    res.cookies.set("access_token", appJwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",

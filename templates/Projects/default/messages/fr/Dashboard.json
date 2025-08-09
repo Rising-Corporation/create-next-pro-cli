@@ -10,5 +10,6 @@
       "likes": "J'aime",
       "comments": "Commentaires"
     }
-  }
+  },
+  "logout": "Déconnexion"
 }

@@ -1,6 +1,6 @@
 // app/[locale]/layout.tsx
+import { NextIntlClientProvider } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
-import { NextIntlClientProvider, hasLocale, Locale } from "next-intl";
 import React from "react";
 import "@/app/styles/globals.css"; // Import global styles
 import GlobalHeader from "@/ui/_global/GlobalHeader";
@@ -16,14 +16,13 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-
-  const isConnectedValue = await isConnected();
+  const isConnectedInitial = await isConnected();
 
   return (
     <html lang={locale}>
       <body>
         <NextIntlClientProvider>
-          <GlobalHeader isConnected={isConnectedValue} />
+          <GlobalHeader isConnectedInitial={isConnectedInitial} />
           <GlobalMain>{children}</GlobalMain>
         </NextIntlClientProvider>
       </body>

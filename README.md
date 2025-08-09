@@ -168,13 +168,8 @@ my-next-app/
 │   │   ├── not-found.tsx
 │   │   ├── page.tsx
 │   │   ├── sitemap.ts
-│   │   ├── styles
-│   │   │   └── globals.css
-│   │   └── ui
-│   │       └── dashboard
-│   │           ├── MainDashboard.tsx
-│   │           ├── StatsCard.tsx
-│   │           └── WelcomeCard.tsx
+│   │   └── styles
+│   │       └── globals.css
 │   ├── auth.config.ts
 │   ├── config.ts
 │   ├── lib

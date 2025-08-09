@@ -10,5 +10,6 @@
       "likes": "Likes",
       "comments": "Comments"
     }
-  }
+  },
+  "logout": "Logout"
 }

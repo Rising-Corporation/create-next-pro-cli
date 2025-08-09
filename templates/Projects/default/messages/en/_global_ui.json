@@ -26,5 +26,9 @@
       "settings": "Settings",
       "user_info": "User Information"
     }
+  },
+  "Loading": {
+    "title": "Loading",
+    "description": "Please wait while we prepare your experience..."
   }
 }

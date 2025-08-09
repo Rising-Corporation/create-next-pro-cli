@@ -1,12 +1,15 @@
+// src/ui/Register/page-ui.tsx
 "use client";
+
 import { useTranslations } from "next-intl";
 import { signIn } from "next-auth/react";
 import BackButton from "@/ui/_global/BackButton";
 
-export default function RegisterPage() {
-  const t = useTranslations("register");
+export default function RegisterPageUI() {
+  const t = useTranslations("Register");
+
   return (
-    <main className="py-8 px-4 max-w-md mx-auto">
+    <section className="py-8 px-4 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <BackButton />
@@ -18,6 +21,6 @@ export default function RegisterPage() {
       >
         {t("register_with_google")}
       </button>
-    </main>
+    </section>
   );
 }

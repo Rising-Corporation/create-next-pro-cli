@@ -23,7 +23,7 @@ export default function LocaleSwitcher() {
 
   return (
     <select
-      className="ml-2 border rounded px-2 py-1 text-sm bg-white"
+      className="ml-2 ring rounded px-2 py-1 text-sm  dark:bg-gray-800 dark:text-gray-200"
       value={currentLocale}
       onChange={handleChange}
       aria-label="Select language"

@@ -1,13 +1,8 @@
 // app/[locale]/template/loading.tsx
-"use client";
+import LoadingUI from "@/ui/_global/Loading";
 
 export default function Loading() {
-  const t = useTranslations("_global_ui");
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center">
-      <p className="text-gray-500">{t("common.loading")}</p>
-    </div>
-  );
+  return <LoadingUI />;
 }
 // This component is used to show a loading state while the page is being prepared
 // You can customize it with a spinner, skeletons, or any loading UI you prefer

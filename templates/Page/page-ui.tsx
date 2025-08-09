@@ -1,4 +1,4 @@
-("use client");
+"use client";
 import { useTranslations } from "next-intl";
 import BackButton from "@/ui/_global/BackButton";
 

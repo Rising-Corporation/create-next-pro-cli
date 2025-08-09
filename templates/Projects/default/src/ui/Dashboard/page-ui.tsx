@@ -1,11 +1,12 @@
-("");
+// src/ui/Dashboard/page-ui.tsx
+"use client";
 import { useTranslations } from "next-intl";
 import BackButton from "@/ui/_global/BackButton";
-import WelcomeCard from "@/ui/dashboard/WelcomeCard";
-import StatsCard from "@/ui/dashboard/StatsCard";
+import WelcomeCard from "@/ui/Dashboard/WelcomeCard";
+import StatsCard from "@/ui/Dashboard/StatsCard";
 
 export default function Dashboard() {
-  const t = useTranslations("dashboard");
+  const t = useTranslations("Dashboard");
   return (
     <>
       <div className="flex items-center justify-between mb-6">

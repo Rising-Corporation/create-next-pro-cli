@@ -1,33 +1,54 @@
+"use client";
 import Image from "next/image";
 import UserNav from "@/ui/_global/UserNav";
 import LocaleSwitcher from "@/ui/_global/LocaleSwitcher";
 import PublicNav from "@/ui/_global/PublicNav";
+import { useEffect, useState } from "react";
+import { Link } from "@/lib/i18n/navigation";
+import { isConnected } from "@/lib/auth/isConnected";
+
+type GlobalHeaderProps = {
+  isConnectedInitial: boolean;
+};
 
 export default function GlobalHeader({
-  isConnected,
-}: {
-  isConnected: boolean;
-}) {
+  isConnectedInitial,
+}: GlobalHeaderProps) {
+  const [isConnectedState, setIsConnectedState] = useState(isConnectedInitial);
+
+  // Vérification dynamique côté client (exemple via /api/me)
+  useEffect(() => {
+    async function checkConnection() {
+      setIsConnectedState(await isConnected());
+    }
+    checkConnection();
+    // Optionnel : timer pour rafraîchir périodiquement
+    // const interval = setInterval(checkConnection, 60000);
+    // return () => clearInterval(interval);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-30 w-full border-b bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
+    <header className="fixed top-0 w-full z-50 glass-effect border-b">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <div className="flex items-center gap-3">
-          {/* Logo Next.js SVG */}
-          <Image
-            src="/cnp-logo.svg"
-            alt="Logo"
-            width={63}
-            height={63}
-            className="mr-2"
-          />
-          <span className="text-lg font-semibold tracking-tight select-none">
-            Create Next Pro
-          </span>
-        </div>
-        <nav className="flex items-center gap-4">
-          {isConnected ? <UserNav /> : <PublicNav />}
+        <Link href="/" className="">
+          <div className="flex items-center h-16">
+            <Image
+              src="/cnp-logo.svg"
+              alt="Logo"
+              width={63}
+              height={63}
+              className="mr-2"
+            />
+            <h1 className="text-lg font-semibold tracking-tight select-none">
+              Create Next Pro
+            </h1>
+          </div>
+        </Link>
+
+        {isConnectedState ? <UserNav /> : <PublicNav />}
+        <div className="flex items-center h-16">
           <LocaleSwitcher />
-        </nav>
+        </div>
       </div>
     </header>
   );

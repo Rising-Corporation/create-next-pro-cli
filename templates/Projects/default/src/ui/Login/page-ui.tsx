@@ -1,11 +1,14 @@
+// src/ui/Login/page-ui.tsx
 "use client";
+
 import { useTranslations } from "next-intl";
 import { signIn } from "next-auth/react";
 
-export default function LoginPage() {
-  const t = useTranslations("login");
+export default function LoginPageUI() {
+  const t = useTranslations("Login");
+
   return (
-    <main className="py-8 px-4 max-w-3xl mx-auto">
+    <section className="py-8 px-4 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold">{t("title")}</h1>
       <p className="text-muted mt-2">{t("description")}</p>
       <button
@@ -14,6 +17,6 @@ export default function LoginPage() {
       >
         {t("login_with_google")}
       </button>
-    </main>
+    </section>
   );
 }

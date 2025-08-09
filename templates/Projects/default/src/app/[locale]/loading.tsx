@@ -1,12 +1,9 @@
 // app/[locale]/dashboard/loading.tsx
-"use client";
+
+import LoadingUI from "@/ui/_global/Loading";
 
 export default function Loading() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center">
-      <p className="text-gray-500">Loading ROOT...</p>
-    </div>
-  );
+  return <LoadingUI />;
 }
 // This component is used to show a loading state while the dashboard is being prepared
 // You can customize it with a spinner, skeletons, or any loading UI you prefer
