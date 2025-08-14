@@ -81,7 +81,7 @@ export async function addPage(args: string[]) {
 
   const srcPath = join(process.cwd(), "src", "app", "[locale]");
   const messagesPath = join(process.cwd(), "messages");
-  const templatePath = join(import.meta.dir, "..", "templates", "Page");
+  const templatePath = join(import.meta.dir, "..", "..", "templates", "Page");
   const entries = await readdir(messagesPath, { withFileTypes: true });
   const locales = entries.filter((e) => e.isDirectory()).map((e) => e.name);
 
