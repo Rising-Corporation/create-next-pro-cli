@@ -30,7 +30,13 @@ export async function addComponent(args: string[]) {
   }
 
   const componentNameUpper = capitalize(componentName);
-  const templatePath = join(import.meta.dir, "..", "templates", "Component");
+  const templatePath = join(
+    import.meta.dir,
+    "..",
+    "..",
+    "templates",
+    "Component"
+  );
   const messagesPath = join(process.cwd(), "messages");
 
   // Determine target path for the component
