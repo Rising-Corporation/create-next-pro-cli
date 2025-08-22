@@ -2,7 +2,7 @@
 module.exports = {
   extends: ["@commitlint/config-conventional"],
   rules: {
-    // sujet libre (pas de Upper/Start/Pascal)
+    // subject free (no Upper/Start/Pascal)
     "subject-case": [
       2,
       "never",
