@@ -1,5 +1,11 @@
 ![create-next-pro logo](./public/logo.svg)
 
+![npm version](https://img.shields.io/npm/v/create-next-pro-cli?label=npm%20version)
+![status](https://img.shields.io/badge/status-beta-orange)
+![license](https://img.shields.io/github/license/Rising-Corporation/create-next-pro-cli)
+![dependencies](https://img.shields.io/librariesio/release/npm/create-next-pro-cli)
+![downloads](https://img.shields.io/npm/dw/create-next-pro-cli)
+
 > ⚠️ This project is under active development and currently in beta testing. Not all features are implemented yet, and contributions are welcome!
 
 Initially, changes will be accepted or rejected by the creator, but in a few weeks, contributions will be submitted to a community vote.

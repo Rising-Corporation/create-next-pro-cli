@@ -1,7 +1,11 @@
 {
   "name": "create-next-pro-cli",
-  "version": "0.1.5",
+  "version": "0.1.9",
   "description": "Advanced Next.js project scaffolder with i18n, Tailwind, App Router and more.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rising-Corporation/create-next-pro-cli.git"
+  },
   "bin": {
     "create-next-pro": "./bin.ts"
   },
