@@ -1,4 +1,4 @@
-![create-next-pro logo](./public/logo.svg)
+![create-next-pro logo](./public/cnp-banner.svg)
 
 ![npm](https://img.shields.io/npm/v/create-next-pro-cli?logo=npm&color=orange)
 ![npm dependencies](https://img.shields.io/librariesio/release/npm/create-next-pro-cli?logo=npm)
