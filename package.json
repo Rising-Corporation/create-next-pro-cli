@@ -1,6 +1,6 @@
 {
   "name": "create-next-pro-cli",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Advanced Next.js project scaffolder with i18n, Tailwind, App Router and more.",
   "repository": {
     "type": "git",
@@ -15,7 +15,20 @@
   "scripts": {
     "dev": "bun run bin.ts",
     "scaffold-dev": "bun run src/scaffold-dev.ts",
-    "postinstall": "bash install.sh"
+    "postinstall": "bash install.sh",
+    "commit": "bunx --bun cz",
+    "release": "bunx --bun standard-version",
+    "prepare": "husky"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx,md,css,json}": [
+      "prettier --write"
+    ]
   },
   "keywords": [
     "nextjs",
@@ -30,6 +43,14 @@
     "prompts": "^2.4.2"
   },
   "devDependencies": {
-    "@types/prompts": "^2.4.9"
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@types/prompts": "^2.4.9",
+    "commitizen": "^4.3.1",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
+    "prettier": "^3.6.2",
+    "standard-version": "^9.5.0"
   }
 }

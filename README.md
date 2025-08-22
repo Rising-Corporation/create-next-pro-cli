@@ -1,10 +1,16 @@
 ![create-next-pro logo](./public/logo.svg)
 
-![npm version](https://img.shields.io/npm/v/create-next-pro-cli?label=npm%20version)
+![npm](https://img.shields.io/npm/v/create-next-pro-cli?logo=npm&color=orange)
+![npm dependencies](https://img.shields.io/librariesio/release/npm/create-next-pro-cli?logo=npm)
+![npm downloads](https://img.shields.io/npm/dw/create-next-pro-cli?logo=npm)
+
+![GitHub](https://img.shields.io/github/stars/Rising-Corporation/create-next-pro-cli?style=social&logo=github)
+![GitHub forks](https://img.shields.io/github/forks/Rising-Corporation/create-next-pro-cli?style=social&logo=github)
+![GitHub issues](https://img.shields.io/github/issues/Rising-Corporation/create-next-pro-cli?logo=github)
+
 ![status](https://img.shields.io/badge/status-beta-orange)
-![license](https://img.shields.io/github/license/Rising-Corporation/create-next-pro-cli)
-![dependencies](https://img.shields.io/librariesio/release/npm/create-next-pro-cli)
-![downloads](https://img.shields.io/npm/dw/create-next-pro-cli)
+![license](https://img.shields.io/github/license/Rising-Corporation/create-next-pro-cli?logo=open-source-initiative&logoColor=white)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-blue.svg?logo=conventionalcommits)](https://www.conventionalcommits.org/en/v1.0.0/)
 
 > ⚠️ This project is under active development and currently in beta testing. Not all features are implemented yet, and contributions are welcome!
 
