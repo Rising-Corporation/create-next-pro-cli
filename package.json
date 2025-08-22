@@ -1,6 +1,6 @@
 {
   "name": "create-next-pro-cli",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Advanced Next.js project scaffolder with i18n, Tailwind, App Router and more.",
   "repository": {
     "type": "git",
@@ -18,7 +18,7 @@
     "postinstall": "bash install.sh",
     "commit": "cz",
     "release": "bunx --bun standard-version",
-    "prepare": "husky"
+    "prepare-husky": "husky"
   },
   "config": {
     "commitizen": {
