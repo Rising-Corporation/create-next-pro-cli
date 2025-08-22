@@ -1,6 +1,6 @@
 import templatePageUI from "@/ui/template/page-ui";
 
-export default function LoginPage() {
+export default function templatePage() {
   return <templatePageUI />;
 }
 
