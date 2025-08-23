@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
 import prompts from "prompts";
 import { capitalize, toFileName } from "./utils"; // Assuming you have a utility function to capitalize strings
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 
 export async function addPage(args: string[]) {
   let pageName = args[1];
@@ -134,6 +134,7 @@ export async function addPage(args: string[]) {
   const jsonTemplate = join(templatePath, "page.json");
   if (!existsSync(jsonTemplate)) {
     console.warn("⚠️ Missing template page.json.");
+    return;
   }
   const content = await readFile(jsonTemplate, "utf-8");
   const replaced = content
@@ -142,10 +143,7 @@ export async function addPage(args: string[]) {
   for (const locale of locales) {
     // Only process if messages/<locale> is a directory
     const localeDir = join(messagesPath, locale);
-    if (
-      !existsSync(localeDir) ||
-      !require("node:fs").statSync(localeDir).isDirectory()
-    )
+    if (!existsSync(localeDir) || !statSync(localeDir).isDirectory())
       continue;
     const jsonTarget = join(messagesPath, locale, `${jsonFileName}.json`);
     let current: Record<string, any> = {};
