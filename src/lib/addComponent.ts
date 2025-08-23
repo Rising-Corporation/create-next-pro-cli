@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
 import prompts from "prompts";
 import { capitalize } from "./utils"; // Assuming you have a utility function to capitalize strings
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 
 export async function addComponent(args: string[]) {
   let componentName = args[1];
@@ -90,10 +90,7 @@ export async function addComponent(args: string[]) {
   for (const locale of langDirs) {
     // Only process if messages/<locale> is a directory
     const localeDir = join(messagesPath, locale);
-    if (
-      !existsSync(localeDir) ||
-      !require("node:fs").statSync(localeDir).isDirectory()
-    )
+    if (!existsSync(localeDir) || !statSync(localeDir).isDirectory())
       continue;
     let jsonTarget;
     if (pageScope) {
