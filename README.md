@@ -1,5 +1,11 @@
 ![create-next-pro logo](./public/cnp-banner.svg)
 
+# Runtime Support
+
+[![Bun](https://img.shields.io/badge/Bun-%23000000?logo=bun&logoColor=white&style=for-the-badge)](https://bun.sh)
+[![Node.js](https://img.shields.io/badge/Node.js-%23339933?logo=node.js&logoColor=white&style=for-the-badge)](https://nodejs.org)
+[![Deno](https://img.shields.io/badge/Deno-%23000000?logo=deno&logoColor=white&style=for-the-badge)](https://deno.land)
+
 ![npm](https://img.shields.io/npm/v/create-next-pro-cli?logo=npm&color=orange)
 ![npm dependencies](https://img.shields.io/librariesio/release/npm/create-next-pro-cli?logo=npm)
 ![npm downloads](https://img.shields.io/npm/dw/create-next-pro-cli?logo=npm)
@@ -102,25 +108,26 @@ create-next-pro rmpage ParentPage.ChildPage
 
 ```plaintext
 my-next-app/
+.
 ├── eslint.config.mjs
 ├── messages
 │   ├── en
-│   │   ├── dashboard.json
+│   │   ├── Dashboard.json
 │   │   ├── _global_ui.json
 │   │   ├── _home.json
-│   │   ├── login.json
-│   │   ├── register.json
-│   │   ├── settings.json
-│   │   └── user_info.json
+│   │   ├── Login.json
+│   │   ├── Register.json
+│   │   ├── Settings.json
+│   │   └── UserInfo.json
 │   ├── en.ts
 │   ├── fr
-│   │   ├── dashboard.json
+│   │   ├── Dashboard.json
 │   │   ├── _global_ui.json
 │   │   ├── _home.json
-│   │   ├── login.json
-│   │   ├── register.json
-│   │   ├── settings.json
-│   │   └── user_info.json
+│   │   ├── Login.json
+│   │   ├── Register.json
+│   │   ├── Settings.json
+│   │   └── UserInfo.json
 │   ├── fr.ts
 │   └── getMergedMessages.ts
 ├── middleware.ts
@@ -129,26 +136,17 @@ my-next-app/
 ├── package.json
 ├── postcss.config.mjs
 ├── public
-│   ├── cnp-logo.ico
 │   ├── cnp-logo.png
-│   ├── cnp-logo.svg
-│   ├── file.svg
-│   ├── globe.svg
-│   ├── next.svg
-│   ├── vercel.svg
-│   └── window.svg
+│   └── cnp-logo.svg
 ├── README.md
 ├── src
 │   ├── app
 │   │   ├── api
-│   │   │   ├── auth
-│   │   │   │   ├── [...nextauth]
-│   │   │   │   │   └── route.ts
-│   │   │   │   ├── [...nextauth].ts
-│   │   │   │   └── post-login
-│   │   │   │       └── route.ts
-│   │   │   └── me
-│   │   │       └── route.ts
+│   │   │   └── auth
+│   │   │       ├── [...nextauth]
+│   │   │       │   └── route.ts
+│   │   │       └── post-login
+│   │   │           └── route.ts
 │   │   ├── favicon.ico
 │   │   ├── layout.tsx
 │   │   ├── [locale]
@@ -161,20 +159,20 @@ my-next-app/
 │   │   │   │   │   ├── loading.tsx
 │   │   │   │   │   └── page.tsx
 │   │   │   │   ├── layout.tsx
-│   │   │   │   ├── login
+│   │   │   │   ├── Login
 │   │   │   │   │   └── page.tsx
-│   │   │   │   └── register
+│   │   │   │   └── Register
 │   │   │   │       └── page.tsx
 │   │   │   └── (user)
-│   │   │       ├── dashboard
+│   │   │       ├── Dashboard
 │   │   │       │   ├── error.tsx
 │   │   │       │   ├── loading.tsx
 │   │   │       │   └── page.tsx
 │   │   │       ├── layout.tsx
-│   │   │       ├── settings
+│   │   │       ├── Settings
 │   │   │       │   ├── loading.tsx
 │   │   │       │   └── page.tsx
-│   │   │       └── user_info
+│   │   │       └── UserInfo
 │   │   │           ├── loading.tsx
 │   │   │           └── page.tsx
 │   │   ├── not-found.tsx
@@ -186,24 +184,39 @@ my-next-app/
 │   ├── config.ts
 │   ├── lib
 │   │   ├── auth
+│   │   │   ├── disconnect.ts
 │   │   │   └── isConnected.ts
-│   │   └── i18n
-│   │       ├── navigation.ts
-│   │       ├── request.ts
-│   │       └── routing.ts
+│   │   ├── i18n
+│   │   │   ├── navigation.ts
+│   │   │   ├── request.ts
+│   │   │   └── routing.ts
+│   │   └── utils.ts
 │   └── ui
-│       ├── dashboard
-│       │   ├── page.tsx
+│       ├── Dashboard
+│       │   ├── LogoutButton.tsx
+│       │   ├── page-ui.tsx
 │       │   ├── StatsCard.tsx
 │       │   └── WelcomeCard.tsx
 │       ├── _global
 │       │   ├── BackButton.tsx
+│       │   ├── Button.tsx
 │       │   ├── GlobalHeader.tsx
 │       │   ├── GlobalMain.tsx
+│       │   ├── Loading.tsx
 │       │   ├── LocaleSwitcher.tsx
 │       │   ├── PublicNav.tsx
+│       │   ├── ThemeToggle.tsx
 │       │   └── UserNav.tsx
-│       └── _home
+│       ├── _home
+│       │   └── page-ui.tsx
+│       ├── Login
+│       │   └── page-ui.tsx
+│       ├── Register
+│       │   └── page-ui.tsx
+│       ├── Settings
+│       │   └── page-ui.tsx
+│       └── UserInfo
+│           └── page-ui.tsx
 ├── tailwind.config.ts
 └── tsconfig.json
 ```
@@ -212,20 +225,22 @@ my-next-app/
 
 ## ✅ Main Features
 
-- Interactive CLI via `bun` or `bunx`
-- Supports:
-  - TypeScript
-  - ESLint
-  - Tailwind CSS
-  - App Router (with or without `src/`)
-  - i18n (`next-intl`)
-  - Turbopack / Webpack
-  - Custom aliases (`@/*`, `@core/*`, etc.)
-- Automatic generation:
-  - Folders
-  - Base pages: `page.tsx`, `layout.tsx`, `loading.tsx`, `not-found.tsx`, `error.tsx`
-  - `.env`, `.env.local`, `.env.production`, etc.
+- Interactive CLI available for Bun, Node.js, or Deno
+- Multi-runtime support: Bun, Node.js, Deno
+- Features:
+  - TypeScript integration
+  - ESLint configuration
+  - Tailwind CSS setup
+  - App Router support (with or without `src/` directory)
+  - Internationalization using `next-intl`
+  - Turbopack or Webpack support
+  - Custom path aliases (e.g., `@/*`, `@core/*`)
+  - Next-auth with custom cookies
+  - Automatic generation of pages and components
   - Clean i18n structure: `/messages/en/*.json`, `/lib/i18n/`
+  - Add or remove pages and components via CLI
+  - Bash and Zsh autocompletion
+  - Interactive installation and runtime detection
 
 ---
 
@@ -234,19 +249,26 @@ my-next-app/
 ```plaintext
 create-next-pro/
 .
-├── bin.ts                        # CLI entry point (#!/usr/bin/env bun)
-├── bun.lock
-├── create-next-pro-completion.sh # Auto completion for source
-├── FUNCTIONALITY.md
+├── bin.ts
+├── create-next-pro-completion.sh
 ├── install.sh
-├── package.json                  # Binary declaration
-├── README.md
+├── package.json
+├── public
+│   ├── cnp-banner.svg
+│   └── logo.svg
 ├── src
-│   ├── index.ts                  # Interactive logic (prompts, generation)
-│   ├── logo.svg
+│   ├── index.ts
+│   ├── lib
+│   │   ├── addComponent.ts
+│   │   ├── addPage.ts
+│   │   ├── createProject.ts
+│   │   ├── createProjectWithPrompt.ts
+│   │   ├── rmPage.ts
+│   │   ├── utils.test.ts
+│   │   └── utils.ts
 │   ├── scaffold-dev.ts
 │   └── scaffold.ts
-└── tsconfig.json                 # Bun/TypeScript config
+└── tsconfig.json
 
 ```
 
@@ -254,26 +276,31 @@ create-next-pro/
 
 ## 🚀 Install & Usage
 
-### Local from git (dev)
+### Local from git ( dev & bun only )
 
 ```bash
+git clone https://github.com/Rising-Corporation/create-next-pro-cli.git
 bun install
 bun dev
 ```
 
-### Global (on your machine)
+- then Global ( on your machine )
 
 ```bash
 bun link create-next-pro-cli
 create-next-pro my-next-project
 ```
 
-### From another PC (via bunx or global install)
+### From npm (via bunx , npx ... or global install)
 
 ```bash
 bunx create-next-pro-cli # to try without install
-# or
-bun install -g create-next-pro-cli
+```
+
+- or
+
+```bash
+bun install -g create-next-pro-cli #ℹ️
 ```
 
 > ℹ️ To enable autocompletion automatically, add the `--trust` option when installing globally with Bun:
@@ -288,7 +315,7 @@ bun install -g create-next-pro-cli
 > bash install.sh
 > ```
 
-> or add the autocompletion line to your `.bashrc`/`.zshrc` :
+> Or add the autocompletion line to your `.bashrc`/`.zshrc` :
 >
 > ```bash
 > source ~/.bun/install/global/node_modules/create-next-pro-cli/create-next-pro-completion.sh
@@ -299,33 +326,24 @@ bun install -g create-next-pro-cli
 > ```bash
 > source ~/.bashrc
 > ```
+>
+> ||
+>
+> ```bash
+> source ~/.zshrc
+> ```
 
 ---
 
-## 🛣️ Roadmap
+## 🛣️ Roadmap in coming for beta v0.2.0
 
-- [x] Bun config + `tsconfig.json`
-- [x] `bin.ts` CLI entry point
-- [x] CLI project structure `src/index.ts`
 - [ ] Implementation of interactive prompts
-- [x] Basic Next.js project scaffolding
-- [x] CLI file/page generation
-- [x] Custom alias support
-- [x] Next-auth with custom cookies
-- [x] Full `next-intl` support with `lib/i18n/` and `messages/`
+- [ ] Create library features
+- [ ] Create API features
 - [ ] Generation of `.env.*`
 - [ ] Multi-platform testing (`bunx`, `link`, `npm`, etc.)
-- [x] Publish to npm or Bun registry
-
----
-
-## ✨ Coming Soon
-
-- Additional Components templates (admin panel, landing page, etc.)
-- Library templates
-- API templates
-- Prettier / Husky / Commitlint integration
-- Auto deployment to Vercel
+- [ ] Additional Components templates (admin panel, landing page, etc.)
+- [ ] Auto deployment to Vercel
 
 ---
 

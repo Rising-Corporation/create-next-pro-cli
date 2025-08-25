@@ -36,7 +36,7 @@ export async function scaffoldProject(options: ScaffoldOptions) {
     "..",
     "templates",
     "Projects",
-    "default"
+    "default",
   );
 
   // Check if target directory exists
@@ -46,7 +46,7 @@ export async function scaffoldProject(options: ScaffoldOptions) {
       await rm(targetPath, { recursive: true, force: true });
     } else {
       console.error(
-        "❌ Target directory already exists. Use --force to overwrite."
+        "❌ Target directory already exists. Use --force to overwrite.",
       );
       process.exit(1);
     }
@@ -65,7 +65,8 @@ export async function scaffoldProject(options: ScaffoldOptions) {
       const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
       pkg.dependencies = pkg.dependencies || {};
       if (options.useI18n) {
-        pkg.dependencies["next-intl"] = pkg.dependencies["next-intl"] || "^3.0.0";
+        pkg.dependencies["next-intl"] =
+          pkg.dependencies["next-intl"] || "^4.3.5";
       }
       await writeFile(pkgPath, JSON.stringify(pkg, null, 2));
     }
@@ -73,7 +74,7 @@ export async function scaffoldProject(options: ScaffoldOptions) {
     // Write CLI configuration to project root
     await writeFile(
       join(targetPath, "cnp.config.json"),
-      JSON.stringify(options, null, 2)
+      JSON.stringify(options, null, 2),
     );
 
     console.log("✅ Project scaffolded successfully!");

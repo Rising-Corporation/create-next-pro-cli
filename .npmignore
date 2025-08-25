@@ -1,0 +1,25 @@
+# Ignore source files and configs not needed in npm package
+
+test/
+__tests__/
+*.md
+*.log
+*.lock
+bun.lock
+.idea/
+.vscode/
+.DS_Store
+.husky/
+commitlint.config.js
+lint-staged.config.js
+
+# Keep only the CLI entry, package.json, install.sh, completion script, and necessary assets
+!bin.ts
+!package.json
+!install.sh
+!create-next-pro-completion.sh
+!public/
+!dist/
+!templates/
+!LICENSE
+
