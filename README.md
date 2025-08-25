@@ -237,7 +237,7 @@ create-next-pro/
 ├── bin.ts                        # CLI entry point (#!/usr/bin/env bun)
 ├── bun.lock
 ├── create-next-pro-completion.sh # Auto completion for source
-├── FONCTIONALITY.md
+├── FUNCTIONALITY.md
 ├── install.sh
 ├── package.json                  # Binary declaration
 ├── README.md
