@@ -1,4 +1,4 @@
-![create-next-pro logo](./public/cnp-banner.svg)
+<img src="./public/cnp-banner.svg" alt="create-next-pro logo" style="width:100%;" />
 
 # Runtime Support
 
