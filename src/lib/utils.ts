@@ -1,8 +1,32 @@
+import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
 /**
  * Capitalize the first letter of a string.
  */
 export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+export interface CNPConfig {
+  useI18n?: boolean;
+  [key: string]: any;
+}
+
+/**
+ * Load CLI configuration from the project root.
+ * Returns null if the configuration file is missing or invalid.
+ */
+export async function loadConfig(): Promise<CNPConfig | null> {
+  const configPath = join(process.cwd(), "cnp.config.json");
+  if (!existsSync(configPath)) return null;
+  try {
+    const raw = await readFile(configPath, "utf-8");
+    return JSON.parse(raw) as CNPConfig;
+  } catch {
+    return null;
+  }
 }
 
 /**

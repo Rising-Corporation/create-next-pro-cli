@@ -1,6 +1,6 @@
 // src/scaffold.ts
 
-import { cp, mkdir, rm } from "node:fs/promises";
+import { cp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 
@@ -59,7 +59,22 @@ export async function scaffoldProject(options: ScaffoldOptions) {
     console.log("📦 Copying files from template...");
     await cp(templatePath, targetPath, { recursive: true });
 
-    // Future customization: remove unused files if useTailwind === false, etc.
+    // Apply configuration: add dependencies or files based on prompt choices
+    const pkgPath = join(targetPath, "package.json");
+    if (existsSync(pkgPath)) {
+      const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
+      pkg.dependencies = pkg.dependencies || {};
+      if (options.useI18n) {
+        pkg.dependencies["next-intl"] = pkg.dependencies["next-intl"] || "^3.0.0";
+      }
+      await writeFile(pkgPath, JSON.stringify(pkg, null, 2));
+    }
+
+    // Write CLI configuration to project root
+    await writeFile(
+      join(targetPath, "cnp.config.json"),
+      JSON.stringify(options, null, 2)
+    );
 
     console.log("✅ Project scaffolded successfully!");
     console.log(`➡️  cd ${options.projectName} && bun install && bun dev`);
