@@ -1,6 +1,6 @@
 {
   "name": "create-next-pro-cli",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Advanced Next.js project scaffolder with i18n, Tailwind, App Router and more.",
   "repository": {
     "type": "git",
