@@ -10,6 +10,8 @@ import { dirname, resolve } from "node:path";
 import { addComponent } from "./lib/addComponent";
 import { addPage } from "./lib/addPage";
 import { rmPage } from "./lib/rmPage";
+import { addLib } from "./lib/addLib";
+import { addApi } from "./lib/addApi";
 import { createProject } from "./lib/createProject";
 import { createProjectWithPrompt } from "./lib/createProjectWithPrompt";
 
@@ -117,6 +119,8 @@ Usage:
   create-next-pro <project-name> [--force]
   create-next-pro addpage [options]
   create-next-pro addcomponent [options]
+  create-next-pro addlib [name]
+  create-next-pro addapi [name]
   create-next-pro rmpage [options]
 
 Options:
@@ -176,6 +180,22 @@ export async function main() {
    */
   if (args[0] === "addpage") {
     addPage(args);
+    return;
+  }
+
+  /**
+   * Handle addlib command: scaffold a library folder and files.
+   */
+  if (args[0] === "addlib") {
+    addLib(args);
+    return;
+  }
+
+  /**
+   * Handle addapi command: scaffold an API route.
+   */
+  if (args[0] === "addapi") {
+    addApi(args);
     return;
   }
 
