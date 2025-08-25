@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+const RED = "\x1b[31m";
+const RESET = "\x1b[0m";
+
 /**
  * Options for scaffolding a Next.js project.
  */
@@ -50,17 +53,17 @@ export async function scaffoldProject(options: ScaffoldOptions) {
       await rm(targetPath, { recursive: true, force: true });
     } else {
       console.error(
-        "❌ Target directory already exists. Use --force to overwrite.",
+        `${RED}[X] Target directory already exists. Use --force to overwrite.${RESET}`,
       );
       process.exit(1);
     }
   }
 
   try {
-    console.log("📁 Creating project directory...");
+    console.log("Creating project directory...");
     await mkdir(targetPath, { recursive: true });
 
-    console.log("📦 Copying files from template...");
+    console.log("Copying files from template...");
     await cp(templatePath, targetPath, { recursive: true });
 
     // Apply configuration: add dependencies or files based on prompt choices
@@ -81,10 +84,25 @@ export async function scaffoldProject(options: ScaffoldOptions) {
       JSON.stringify(options, null, 2),
     );
 
-    console.log("✅ Project scaffolded successfully!");
-    console.log(`➡️  cd ${options.projectName} && bun install && bun dev`);
+    console.log("Project setup complete.");
+    console.log("");
+    console.log("To get started:");
+    console.log(`  cd ${options.projectName}`);
+    console.log("");
+    console.log(
+      "Then install dependencies and launch the dev server with your preferred tool:",
+    );
+
+    console.log("  bun install && bun dev");
+    console.log("  npm install && npm run dev");
+    console.log("  pnpm install && pnpm run dev");
+    console.log("");
+    console.log("Documentation and examples can be found at:");
+    console.log("https://github.com/Rising-Corporation/create-next-pro-cli");
   } catch (err) {
-    console.error("❌ Error during scaffolding:", err);
+    // Affiche une croix ASCII et le texte en rouge si le terminal le supporte
+
+    console.error(`${RED}[X] Error during project creation:${RESET}`, err);
     process.exit(1);
   }
 }

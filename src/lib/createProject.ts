@@ -13,6 +13,6 @@ export async function createProject(nameArg: string, force: boolean) {
     force,
   };
 
-  console.log(`📦 Creating project "${response.projectName}"...`);
+  console.log(`Creating project "${response.projectName}"...`);
   await scaffoldProject(response);
 }

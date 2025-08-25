@@ -1,0 +1,7 @@
+{
+  "title": "Connexion",
+  "description": "Connectez-vous pour accéder à votre compte.",
+  "login_with_google": "Se connecter avec Google",
+  "login_with_github": "Se connecter avec GitHub",
+  "login_with_email": "Se connecter avec Email"
+}

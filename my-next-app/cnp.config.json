@@ -1,0 +1,11 @@
+{
+  "projectName": "my-next-app",
+  "useTypescript": true,
+  "useEslint": true,
+  "useTailwind": true,
+  "useSrcDir": true,
+  "useTurbopack": true,
+  "useI18n": true,
+  "customAlias": true,
+  "importAlias": "@core/*"
+}
