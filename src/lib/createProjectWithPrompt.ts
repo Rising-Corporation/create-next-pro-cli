@@ -5,7 +5,7 @@ export async function createProjectWithPrompt() {
     {
       type: "text",
       name: "projectName",
-      message: "🧱 Project name:",
+      message: "Project name:",
       initial: "my-next-app",
     },
     {
@@ -72,7 +72,7 @@ export async function createProjectWithPrompt() {
     },
   ]);
 
-  console.log("\n✅ Your choices:");
+  console.log("\nYour choices:");
   console.log(response);
 
   await scaffoldProject(response);
