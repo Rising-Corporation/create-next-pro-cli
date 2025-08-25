@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Installation script for create-next-pro
 
 # Detect runtimes

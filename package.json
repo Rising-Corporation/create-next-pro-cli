@@ -7,7 +7,7 @@
     "url": "git+https://github.com/Rising-Corporation/create-next-pro-cli.git"
   },
   "bin": {
-    "create-next-pro": "./bin.ts"
+    "create-next-pro": "./dist/bin.js"
   },
   "author": "MrRise",
   "license": "MIT",
