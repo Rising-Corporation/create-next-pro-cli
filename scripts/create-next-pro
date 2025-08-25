@@ -1,9 +1,10 @@
 #!/usr/bin/env sh
-if command -v bun >/dev/null 2>&1; then
-  exec bun "$(dirname "$0")/bin.bun.js" "$@"
-elif command -v node >/dev/null 2>&1; then
-  exec node "$(dirname "$0")/bin.node.js" "$@"
+PKG_ROOT="$(dirname "$(dirname "$0")")/lib/node_modules/create-next-pro-cli/dist"
+if command -v bun >/dev/null 2>&1 && [ -f "$PKG_ROOT/bin.bun.js" ]; then
+  exec bun "$PKG_ROOT/bin.bun.js" "$@"
+elif command -v node >/dev/null 2>&1 && [ -f "$PKG_ROOT/bin.node.js" ]; then
+  exec node "$PKG_ROOT/bin.node.js" "$@"
 else
-  echo "Error: need bun or node in PATH" >&2
+  echo "Error: need bun or node in PATH, or package not found" >&2
   exit 1
 fi

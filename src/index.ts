@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import prompts from "prompts";
 import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 
 import { addComponent } from "./lib/addComponent";
 import { addPage } from "./lib/addPage";
@@ -59,10 +60,14 @@ async function installCompletion(shell: "bash" | "zsh") {
   fs.copyFileSync(completionSrc, completionDst);
   ensureLineInRc(rcFile(shell), `source "${completionDst}"`);
 }
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJsonPath = resolve(__dirname, "../package.json");
+const packageJson = fs.readFileSync(packageJsonPath, "utf8");
+
 async function onboarding(): Promise<Cfg> {
-  const pkg = JSON.parse(
-    fs.readFileSync(path.resolve(__dirname, "../package.json"), "utf8"),
-  );
+  const pkg = JSON.parse(packageJson);
   console.log(`🚀 Welcome to create-next-pro v${pkg.version}\n`);
   const res = await prompts(
     [
@@ -121,9 +126,7 @@ Options:
 }
 
 function showVersion() {
-  const pkg = JSON.parse(
-    fs.readFileSync(path.resolve(__dirname, "../package.json"), "utf8"),
-  );
+  const pkg = JSON.parse(packageJson);
   console.log(`v${pkg.version}`);
 }
 
