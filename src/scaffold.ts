@@ -6,6 +6,10 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const RED = "\x1b[31m";
+const GREEN = "\x1b[32m";
+const YELLOW = "\x1b[33m";
+const BLUE = "\x1b[34m";
+const CYAN = "\x1b[36m";
 const RESET = "\x1b[0m";
 
 /**
@@ -84,25 +88,30 @@ export async function scaffoldProject(options: ScaffoldOptions) {
       JSON.stringify(options, null, 2),
     );
 
-    console.log("Project setup complete.");
+    console.log("Project setup complete!");
     console.log("");
     console.log("To get started:");
-    console.log(`  cd ${options.projectName}`);
+    console.log(`    ${GREEN}cd ${options.projectName}${RESET}`);
     console.log("");
     console.log(
       "Then install dependencies and launch the dev server with your preferred tool:",
     );
 
-    console.log("  bun install && bun dev");
-    console.log("  npm install && npm run dev");
-    console.log("  pnpm install && pnpm run dev");
+    console.log(`    ${GREEN}bun install && bun dev${RESET}`);
+    console.log(`    ${GREEN}npm install && npm run dev${RESET}`);
+    console.log(`    ${GREEN}pnpm install && pnpm run dev${RESET}`);
     console.log("");
     console.log("Documentation and examples can be found at:");
-    console.log("https://github.com/Rising-Corporation/create-next-pro-cli");
+    console.log(
+      `    ${CYAN}https://github.com/Rising-Corporation/create-next-pro-cli${RESET}`,
+    );
+    console.log(
+      "_-`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`-_",
+    );
   } catch (err) {
     // Affiche une croix ASCII et le texte en rouge si le terminal le supporte
 
-    console.error(`${RED}[X] Error during project creation:${RESET}`, err);
+    console.error(`    ${RED}[X] Error during project creation:${RESET}`, err);
     process.exit(1);
   }
 }
