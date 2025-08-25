@@ -16,6 +16,9 @@
     "dev": "bun run bin.ts",
     "scaffold-dev": "bun run src/scaffold-dev.ts",
     "postinstall": "bash install.sh",
+    "test": "bun test",
+    "build": "bun build bin.ts --outdir dist --target bun",
+    "prepublishOnly": "bun run build",
     "commit": "cz",
     "release": "bunx --bun standard-version",
     "prepare-husky": "husky"
