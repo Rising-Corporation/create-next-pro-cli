@@ -23,7 +23,13 @@ jobs:
       name: ENV
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
       - run: bun install
       - run: bun run version-patch
       - run: bun run build
