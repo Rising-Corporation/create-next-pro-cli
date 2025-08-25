@@ -1,7 +1,9 @@
 import { join } from "node:path";
 import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
 import prompts from "prompts";
+
 import { capitalize, toFileName, loadConfig } from "./utils";
+
 import { existsSync, statSync } from "node:fs";
 
 export async function addPage(args: string[]) {
@@ -157,6 +159,7 @@ export async function addPage(args: string[]) {
     const jsonTemplate = join(templatePath, "page.json");
     if (!existsSync(jsonTemplate)) {
       console.warn("⚠️ Missing template page.json.");
+
     } else {
       const content = await readFile(jsonTemplate, "utf-8");
       const replaced = content
