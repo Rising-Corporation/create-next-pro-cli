@@ -17,12 +17,14 @@
     "scaffold-dev": "bun run src/scaffold-dev.ts",
     "postinstall": "bash install.sh",
     "test": "bun test",
+    "clean": "rm -rf dist",
     "build": "bun build bin.ts --outdir dist --target bun",
-    "prepublishOnly": "bun run build",
+    "prepublishOnly": "bun run clean && bun run build",
     "commit": "cz",
     "release": "bunx --bun standard-version",
     "prepare-husky": "husky",
-    "version-patch": "npm version patch"
+    "version-patch": "npm version patch",
+    "git-fullpush": "git add -A && bun commit && bun version-patch && git push origin master"
   },
   "config": {
     "commitizen": {
