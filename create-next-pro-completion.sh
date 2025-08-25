@@ -17,7 +17,7 @@ _create_next_pro_complete() {
     # List all nested page/component paths under src/ui
     local IFS=$'\n'
     local items=( $(find src/ui -type d | sed 's|src/ui/||; /^$/d' | grep -v '^$' | grep -v '^\.$' | grep -v '^src/ui$') )
-    # Retire explicitement src/ui
+    # Explicitly remove src/ui
     items=( "${items[@]}" )
     COMPREPLY=( $(compgen -W "${items[*]}" -- ${cur}) )
     return 0
@@ -30,6 +30,14 @@ _create_next_pro_complete() {
     local IFS=$'\n'
     local children=( $(find src/ui/${parent} -mindepth 1 -type d | sed "s|src/ui/${parent}/||") )
     COMPREPLY=( $(compgen -W "${children[*]}" -- ${prefix}) )
+    return 0
+  fi
+  
+  # Autocomplete page names for rmpage (based on src/ui)
+  if [[ ${COMP_CWORD} == 2 && ${prev} == "rmpage" ]]; then
+    local IFS=$'\n'
+    local pages=( $(find src/ui -type d | sed 's|src/ui/||; /^$/d' | grep -v '^$' | grep -v '^\.$' | grep -v '^src/ui$') )
+    COMPREPLY=( $(compgen -W "${pages[*]}" -- ${cur}) )
     return 0
   fi
 }

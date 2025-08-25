@@ -1,10 +1,11 @@
 <img src="./public/cnp-banner.svg" alt="create-next-pro logo" style="width:100%;" />
 
-# Runtime Support
+## Runtime Support
 
 [![Bun](https://img.shields.io/badge/Bun-%23000000?logo=bun&logoColor=white&style=for-the-badge)](https://bun.sh)
 [![Node.js](https://img.shields.io/badge/Node.js-%23339933?logo=node.js&logoColor=white&style=for-the-badge)](https://nodejs.org)
-[![Deno](https://img.shields.io/badge/Deno-%23000000?logo=deno&logoColor=white&style=for-the-badge)](https://deno.land)
+
+<!-- [![Deno](https://img.shields.io/badge/Deno-%23000000?logo=deno&logoColor=white&style=for-the-badge)](https://deno.land) -->
 
 ![npm](https://img.shields.io/npm/v/create-next-pro-cli?logo=npm&color=orange)
 ![npm dependencies](https://img.shields.io/librariesio/release/npm/create-next-pro-cli?logo=npm)

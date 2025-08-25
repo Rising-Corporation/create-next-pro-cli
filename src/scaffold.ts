@@ -3,6 +3,7 @@
 import { cp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 /**
  * Options for scaffolding a Next.js project.
@@ -31,8 +32,11 @@ interface ScaffoldOptions {
  */
 export async function scaffoldProject(options: ScaffoldOptions) {
   const targetPath = join(process.cwd(), options.projectName);
+
+  const __dirname = new URL(".", import.meta.url); // or :
+  // const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const templatePath = join(
-    import.meta.dir,
+    fileURLToPath(__dirname),
     "..",
     "templates",
     "Projects",
