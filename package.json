@@ -24,8 +24,6 @@
   "scripts": {
     "dev": "bun run bin.bun.ts",
     "scaffold-dev": "bun run src/scaffold-dev.ts",
-    "postinstall": "bash install.sh",
-    "prepare": "chmod +x dist/create-next-pro",
     "test": "vitest run",
     "clean": "rm -rf dist",
     "build": "bun run clean && bun run build:node && bun run build:bun && cp scripts/create-next-pro dist/create-next-pro && chmod +x dist/create-next-pro",
