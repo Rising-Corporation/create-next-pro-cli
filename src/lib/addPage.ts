@@ -1,7 +1,9 @@
 import { join } from "node:path";
 import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
 import prompts from "prompts";
-import { capitalize, toFileName } from "./utils"; // Assuming you have a utility function to capitalize strings
+
+import { capitalize, toFileName, loadConfig } from "./utils";
+
 import { existsSync, statSync } from "node:fs";
 
 export async function addPage(args: string[]) {
@@ -79,11 +81,34 @@ export async function addPage(args: string[]) {
     if (longFlags.has("--" + flag)) flags.add(flag);
   }
 
-  const srcPath = join(process.cwd(), "src", "app", "[locale]");
-  const messagesPath = join(process.cwd(), "messages");
+  const config = await loadConfig();
+  if (!config) {
+    console.error("❌ Configuration file cnp.config.json not found. Run this command from the project root.");
+    return;
+  }
+  const useI18n = !!config.useI18n;
+
+  const srcSegments = ["src", "app"];
+  if (useI18n) srcSegments.push("[locale]");
+  const srcPath = join(process.cwd(), ...srcSegments);
+  if (!existsSync(srcPath)) {
+    console.error(`❌ Expected directory not found: ${srcPath}`);
+    return;
+  }
+
+  let messagesPath: string | null = null;
+  let locales: string[] = [];
+  if (useI18n) {
+    messagesPath = join(process.cwd(), "messages");
+    if (!existsSync(messagesPath)) {
+      console.error("❌ Messages directory missing. Ensure i18n was configured.");
+      return;
+    }
+    const entries = await readdir(messagesPath, { withFileTypes: true });
+    locales = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+  }
+
   const templatePath = join(import.meta.dir, "..", "..", "templates", "Page");
-  const entries = await readdir(messagesPath, { withFileTypes: true });
-  const locales = entries.filter((e) => e.isDirectory()).map((e) => e.name);
 
   // Create folders/files for nested or simple page
   let uiPageDir, localePagePath, jsonFileName;
@@ -130,39 +155,47 @@ export async function addPage(args: string[]) {
     console.log(`📄 File created: ${dst}`);
   }
 
-  // Add JSON to parent object if nested, otherwise create a simple file
-  const jsonTemplate = join(templatePath, "page.json");
-  if (!existsSync(jsonTemplate)) {
-    console.warn("⚠️ Missing template page.json.");
-    return;
-  }
-  const content = await readFile(jsonTemplate, "utf-8");
-  const replaced = content
-    .replace(/template/g, childName || pageName)
-    .replace(/Template/g, capitalize(childName || pageName));
-  for (const locale of locales) {
-    // Only process if messages/<locale> is a directory
-    const localeDir = join(messagesPath, locale);
-    if (!existsSync(localeDir) || !statSync(localeDir).isDirectory())
-      continue;
-    const jsonTarget = join(messagesPath, locale, `${jsonFileName}.json`);
-    let current: Record<string, any> = {};
-    if (existsSync(jsonTarget)) {
-      const jsonFile = await readFile(jsonTarget, "utf-8");
-      try {
-        current = JSON.parse(jsonFile) as Record<string, any>;
-      } catch {
-        current = {};
+  if (useI18n && messagesPath) {
+    const jsonTemplate = join(templatePath, "page.json");
+    if (!existsSync(jsonTemplate)) {
+      console.warn("⚠️ Missing template page.json.");
+
+    } else {
+      const content = await readFile(jsonTemplate, "utf-8");
+      const replaced = content
+        .replace(/template/g, childName || pageName)
+        .replace(/Template/g, capitalize(childName || pageName));
+      for (const locale of locales) {
+        // Only process if messages/<locale> is a directory
+        const localeDir = join(messagesPath, locale);
+        if (!existsSync(localeDir) || !statSync(localeDir).isDirectory())
+          continue;
+        const jsonTarget = join(messagesPath, locale, `${jsonFileName}.json`);
+        let current: Record<string, any> = {};
+        if (existsSync(jsonTarget)) {
+          const jsonFile = await readFile(jsonTarget, "utf-8");
+          try {
+            current = JSON.parse(jsonFile) as Record<string, any>;
+          } catch {
+            current = {};
+          }
+        }
+        if (parentName && childName) {
+          current[childName] = JSON.parse(replaced);
+        } else {
+          // fichier simple
+          current = JSON.parse(replaced);
+        }
+        await writeFile(jsonTarget, JSON.stringify(current, null, 2));
       }
     }
-    if (parentName && childName) {
-      current[childName] = JSON.parse(replaced);
-    } else {
-      // fichier simple
-      current = JSON.parse(replaced);
-    }
-    await writeFile(jsonTarget, JSON.stringify(current, null, 2));
+  } else {
+    console.log("ℹ️ Skipping translation templates; next-intl not enabled.");
   }
 
-  console.log(`✅ Page "${pageName}" with templates added for each locale.`);
+  console.log(
+    `✅ Page "${pageName}" with templates added${
+      useI18n ? " for each locale" : ""
+    }.`
+  );
 }
