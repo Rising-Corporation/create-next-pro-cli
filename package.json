@@ -1,30 +1,42 @@
 {
   "name": "create-next-pro-cli",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Advanced Next.js project scaffolder with i18n, Tailwind, App Router and more.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Rising-Corporation/create-next-pro-cli.git"
   },
   "bin": {
-    "create-next-pro": "./dist/bin.js"
+    "create-next-pro": "./dist/create-next-pro"
   },
+  "files": [
+    "dist",
+    "templates",
+    "create-next-pro-completion.sh",
+    "public/cnp-banner.svg",
+    "public/logo.svg",
+    "LICENSE",
+    "README.md"
+  ],
   "author": "MrRise",
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "bun run bin.ts",
+    "dev": "bun run bin.bun.ts",
     "scaffold-dev": "bun run src/scaffold-dev.ts",
     "postinstall": "bash install.sh",
-    "test": "bun test",
+    "prepare": "chmod +x dist/create-next-pro",
+    "test": "vitest run",
     "clean": "rm -rf dist",
-    "build": "bun build bin.ts --outdir dist --target bun",
+    "build": "bun run clean && bun run build:node && bun run build:bun && cp scripts/create-next-pro dist/create-next-pro && chmod +x dist/create-next-pro",
+    "build:node": "tsup",
+    "build:bun": "bun build bin.bun.ts --outdir dist --target=bun",
     "prepublishOnly": "bun run clean && bun run build",
     "commit": "cz",
     "release": "bunx --bun standard-version",
     "prepare-husky": "husky",
     "version-patch": "npm version patch",
-    "git-fullpush": "git add -A && bun commit && bun version-patch && git push origin master"
+    "git-fullpush": "bun run build && git add -A && bun commit && git push origin master && bun version-patch"
   },
   "config": {
     "commitizen": {
@@ -51,12 +63,18 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
+    "@types/node": "^22",
     "@types/prompts": "^2.4.9",
     "commitizen": "^4.3.1",
+    "csstype": "^3.1.3",
     "cz-conventional-changelog": "^3.3.0",
     "husky": "^9.1.7",
+    "kleur": "^4.1.5",
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2",
-    "standard-version": "^9.5.0"
+    "standard-version": "^9.5.0",
+    "tsup": "^8.5.0",
+    "undici-types": "^6",
+    "vitest": "^3.2.4"
   }
 }

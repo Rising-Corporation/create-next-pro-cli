@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noEmit": false,
+    "outDir": "dist/node",
+    "types": ["node"]
+  },
+  "include": ["bin.node.ts", "src/**/*.ts"]
+}

@@ -8,7 +8,7 @@ export async function createProject(nameArg: string, force: boolean) {
     useSrcDir: true,
     useTurbopack: true,
     useI18n: true,
-    customAlias: false,
+    customAlias: true,
     importAlias: "@/*",
     force,
   };
