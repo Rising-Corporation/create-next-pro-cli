@@ -21,7 +21,8 @@
     "prepublishOnly": "bun run build",
     "commit": "cz",
     "release": "bunx --bun standard-version",
-    "prepare-husky": "husky"
+    "prepare-husky": "husky",
+    "version-patch": "npm version patch"
   },
   "config": {
     "commitizen": {
