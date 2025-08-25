@@ -12,6 +12,12 @@
   - Add a component to a page or globally
   - Create the TSX file in `src/ui/<Page>/` or `src/ui/_global/`
   - Add the component to the page or global translation JSON
+- `addlib` command:
+  - Scaffold a library in `src/lib`
+  - `addlib mylib` creates `src/lib/mylib/index.ts`
+  - `addlib mylib.foo` adds `src/lib/mylib/foo.ts` and exports it from `index.ts`
+- `addapi` command:
+  - Add an API route under `src/app/api/<name>/route.ts`
 - `rmpage` command:
   - Remove a page and all its associated files
     - Folders/files in `src/ui`, `src/app/[locale]`, and `messages/<locale>`
