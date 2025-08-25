@@ -1,8 +1,8 @@
 import { join } from "node:path";
 import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
 import prompts from "prompts";
-import { capitalize } from "./utils"; // Assuming you have a utility function to capitalize strings
-import { existsSync } from "node:fs";
+import { capitalize, loadConfig } from "./utils";
+import { existsSync, statSync } from "node:fs";
 
 export async function addComponent(args: string[]) {
   let componentName = args[1];
@@ -29,6 +29,15 @@ export async function addComponent(args: string[]) {
     componentName = response.componentName;
   }
 
+  const config = await loadConfig();
+  if (!config) {
+    console.error(
+      "❌ Configuration file cnp.config.json not found. Run this command from the project root."
+    );
+    return;
+  }
+  const useI18n = !!config.useI18n;
+
   const componentNameUpper = capitalize(componentName);
   const templatePath = join(
     import.meta.dir,
@@ -37,7 +46,14 @@ export async function addComponent(args: string[]) {
     "templates",
     "Component"
   );
-  const messagesPath = join(process.cwd(), "messages");
+  let messagesPath: string | null = null;
+  if (useI18n) {
+    messagesPath = join(process.cwd(), "messages");
+    if (!existsSync(messagesPath)) {
+      console.error("❌ Messages directory missing. Ensure i18n was configured.");
+      return;
+    }
+  }
 
   // Determine target path for the component
   let componentTargetPath;
@@ -76,44 +92,44 @@ export async function addComponent(args: string[]) {
     );
   }
 
-  // Add the component to each language's JSON file (only folders)
-  const entries = await readdir(messagesPath, { withFileTypes: true });
-  const langDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
-  const jsonTemplate = join(templatePath, "component.json");
-  if (!existsSync(jsonTemplate)) {
-    console.error("❌ Template component.json not found:", jsonTemplate);
-    return;
-  }
-  const jsonContent = await readFile(jsonTemplate, "utf-8");
-  const parsed = JSON.parse(jsonContent);
-
-  for (const locale of langDirs) {
-    // Only process if messages/<locale> is a directory
-    const localeDir = join(messagesPath, locale);
-    if (
-      !existsSync(localeDir) ||
-      !require("node:fs").statSync(localeDir).isDirectory()
-    )
-      continue;
-    let jsonTarget;
-    if (pageScope) {
-      jsonTarget = join(messagesPath, locale, `${pageScope}.json`);
-    } else {
-      jsonTarget = join(messagesPath, locale, `_global_ui.json`);
+  if (useI18n && messagesPath) {
+    const entries = await readdir(messagesPath, { withFileTypes: true });
+    const langDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+    const jsonTemplate = join(templatePath, "component.json");
+    if (!existsSync(jsonTemplate)) {
+      console.error("❌ Template component.json not found:", jsonTemplate);
+      return;
     }
+    const jsonContent = await readFile(jsonTemplate, "utf-8");
+    const parsed = JSON.parse(jsonContent);
 
-    let current: Record<string, any> = {};
-    if (existsSync(jsonTarget)) {
-      const jsonFile = await readFile(jsonTarget, "utf-8");
-      current = JSON.parse(jsonFile) as Record<string, any>;
+    for (const locale of langDirs) {
+      // Only process if messages/<locale> is a directory
+      const localeDir = join(messagesPath, locale);
+      if (!existsSync(localeDir) || !statSync(localeDir).isDirectory())
+        continue;
+      let jsonTarget;
+      if (pageScope) {
+        jsonTarget = join(messagesPath, locale, `${pageScope}.json`);
+      } else {
+        jsonTarget = join(messagesPath, locale, `_global_ui.json`);
+      }
+
+      let current: Record<string, any> = {};
+      if (existsSync(jsonTarget)) {
+        const jsonFile = await readFile(jsonTarget, "utf-8");
+        current = JSON.parse(jsonFile) as Record<string, any>;
+      }
+      current[componentNameUpper] = parsed;
+      await writeFile(jsonTarget, JSON.stringify(current, null, 2));
     }
-    current[componentNameUpper] = parsed;
-    await writeFile(jsonTarget, JSON.stringify(current, null, 2));
+  } else {
+    console.log("ℹ️ Skipping translation entries; next-intl not enabled.");
   }
 
   console.log(
     `✅ Component "${componentNameUpper}" added ${
       pageScope ? `to page ${pageScope}` : "globally"
-    } with localized messages.`
+    }${useI18n ? " with localized messages" : ""}.`
   );
 }
