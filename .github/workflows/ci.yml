@@ -32,10 +32,7 @@ jobs:
       - run: bun install
       - run: bun run version-patch
       - run: bun run build
-      - name: Set up npm auth
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: bun publish --registry=https://registry.npmjs.org/
+      - name: Set up .npmrc
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+      - name: Publish package
+        run: npm publish
