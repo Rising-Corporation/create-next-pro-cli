@@ -1,7 +1,9 @@
 import { join } from "node:path";
 import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
 import prompts from "prompts";
+
 import { capitalize, loadConfig } from "./utils";
+
 import { existsSync, statSync } from "node:fs";
 
 export async function addComponent(args: string[]) {
@@ -92,6 +94,7 @@ export async function addComponent(args: string[]) {
     );
   }
 
+
   if (useI18n && messagesPath) {
     const entries = await readdir(messagesPath, { withFileTypes: true });
     const langDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
@@ -99,6 +102,7 @@ export async function addComponent(args: string[]) {
     if (!existsSync(jsonTemplate)) {
       console.error("❌ Template component.json not found:", jsonTemplate);
       return;
+
     }
     const jsonContent = await readFile(jsonTemplate, "utf-8");
     const parsed = JSON.parse(jsonContent);
