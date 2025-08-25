@@ -1,5 +1,6 @@
 # Ignore source files and configs not needed in npm package
 
+src/
 test/
 __tests__/
 *.md
@@ -12,6 +13,7 @@ bun.lock
 .husky/
 commitlint.config.js
 lint-staged.config.js
+
 
 # Keep only the CLI entry, package.json, install.sh, completion script, and necessary assets
 !bin.ts

@@ -13,6 +13,7 @@
 ![GitHub](https://img.shields.io/github/stars/Rising-Corporation/create-next-pro-cli?style=social&logo=github)
 ![GitHub forks](https://img.shields.io/github/forks/Rising-Corporation/create-next-pro-cli?style=social&logo=github)
 ![GitHub issues](https://img.shields.io/github/issues/Rising-Corporation/create-next-pro-cli?logo=github)
+![CI](https://github.com/Rising-Corporation/typed-sse/actions/workflows/ci.yml/badge.svg)
 
 ![status](https://img.shields.io/badge/status-beta-orange)
 ![license](https://img.shields.io/github/license/Rising-Corporation/create-next-pro-cli?logo=open-source-initiative&logoColor=white)
