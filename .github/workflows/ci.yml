@@ -17,15 +17,17 @@ jobs:
 
   publish:
     needs: test-build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     environment:
-      name: NMP_TOKEN
-    env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      name: ENV
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
       - run: bun install
       - run: bun run build
+      - name: Set up npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: bun publish
