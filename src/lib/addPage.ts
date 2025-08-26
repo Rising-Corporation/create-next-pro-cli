@@ -83,7 +83,9 @@ export async function addPage(args: string[]) {
 
   const config = await loadConfig();
   if (!config) {
-    console.error("❌ Configuration file cnp.config.json not found. Run this command from the project root.");
+    console.error(
+      "❌ Configuration file cnp.config.json not found. Run this command from the project root.",
+    );
     return;
   }
   const useI18n = !!config.useI18n;
@@ -101,14 +103,21 @@ export async function addPage(args: string[]) {
   if (useI18n) {
     messagesPath = join(process.cwd(), "messages");
     if (!existsSync(messagesPath)) {
-      console.error("❌ Messages directory missing. Ensure i18n was configured.");
+      console.error(
+        "❌ Messages directory missing. Ensure i18n was configured.",
+      );
       return;
     }
     const entries = await readdir(messagesPath, { withFileTypes: true });
     locales = entries.filter((e) => e.isDirectory()).map((e) => e.name);
   }
 
-  const templatePath = join(import.meta.dir, "..", "..", "templates", "Page");
+  const templatePath = join(
+    new URL("..", import.meta.url).pathname,
+    "..",
+    "templates",
+    "Page",
+  );
 
   // Create folders/files for nested or simple page
   let uiPageDir, localePagePath, jsonFileName;
@@ -159,7 +168,6 @@ export async function addPage(args: string[]) {
     const jsonTemplate = join(templatePath, "page.json");
     if (!existsSync(jsonTemplate)) {
       console.warn("⚠️ Missing template page.json.");
-
     } else {
       const content = await readFile(jsonTemplate, "utf-8");
       const replaced = content
@@ -196,6 +204,6 @@ export async function addPage(args: string[]) {
   console.log(
     `✅ Page "${pageName}" with templates added${
       useI18n ? " for each locale" : ""
-    }.`
+    }.`,
   );
 }
