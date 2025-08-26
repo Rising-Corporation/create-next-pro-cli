@@ -143,7 +143,10 @@ export async function addPage(args: string[]) {
     await writeFile(uiPageFile, uiContent);
     console.log(`📄 File created: ${uiPageFile}`);
   } else {
-    console.warn("⚠️ Template page-ui.tsx manquant.");
+    console.warn(
+      "⚠️ Missing template file: page-ui.tsx at path:",
+      uiPageTemplate,
+    );
   }
   if (!existsSync(localePagePath)) {
     await mkdir(localePagePath, { recursive: true });
@@ -153,7 +156,7 @@ export async function addPage(args: string[]) {
     const src = join(templatePath, filename);
     const dst = join(localePagePath, filename);
     if (!existsSync(src)) {
-      console.warn(`⚠️ Missing template file: ${filename}`);
+      console.warn(`⚠️ Missing template file: ${filename} at path: ${src}`);
       continue;
     }
     const content = await readFile(src, "utf-8");
@@ -167,7 +170,7 @@ export async function addPage(args: string[]) {
   if (useI18n && messagesPath) {
     const jsonTemplate = join(templatePath, "page.json");
     if (!existsSync(jsonTemplate)) {
-      console.warn("⚠️ Missing template page.json.");
+      console.warn("⚠️ Missing template: page.json at path:", jsonTemplate);
     } else {
       const content = await readFile(jsonTemplate, "utf-8");
       const replaced = content
