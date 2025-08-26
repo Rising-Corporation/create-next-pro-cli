@@ -34,7 +34,7 @@ export async function addComponent(args: string[]) {
   const config = await loadConfig();
   if (!config) {
     console.error(
-      "❌ Configuration file cnp.config.json not found. Run this command from the project root."
+      "❌ Configuration file cnp.config.json not found. Run this command from the project root.",
     );
     return;
   }
@@ -42,17 +42,18 @@ export async function addComponent(args: string[]) {
 
   const componentNameUpper = capitalize(componentName);
   const templatePath = join(
-    import.meta.dir,
-    "..",
+    new URL("..", import.meta.url).pathname,
     "..",
     "templates",
-    "Component"
+    "Component",
   );
   let messagesPath: string | null = null;
   if (useI18n) {
     messagesPath = join(process.cwd(), "messages");
     if (!existsSync(messagesPath)) {
-      console.error("❌ Messages directory missing. Ensure i18n was configured.");
+      console.error(
+        "❌ Messages directory missing. Ensure i18n was configured.",
+      );
       return;
     }
   }
@@ -90,10 +91,9 @@ export async function addComponent(args: string[]) {
   } else {
     console.error(
       "❌ Template Component.tsx introuvable :",
-      templateComponentPath
+      templateComponentPath,
     );
   }
-
 
   if (useI18n && messagesPath) {
     const entries = await readdir(messagesPath, { withFileTypes: true });
@@ -102,7 +102,6 @@ export async function addComponent(args: string[]) {
     if (!existsSync(jsonTemplate)) {
       console.error("❌ Template component.json not found:", jsonTemplate);
       return;
-
     }
     const jsonContent = await readFile(jsonTemplate, "utf-8");
     const parsed = JSON.parse(jsonContent);
@@ -134,6 +133,6 @@ export async function addComponent(args: string[]) {
   console.log(
     `✅ Component "${componentNameUpper}" added ${
       pageScope ? `to page ${pageScope}` : "globally"
-    }${useI18n ? " with localized messages" : ""}.`
+    }${useI18n ? " with localized messages" : ""}.`,
   );
 }
