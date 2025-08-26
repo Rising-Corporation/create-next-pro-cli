@@ -114,7 +114,6 @@ export async function addPage(args: string[]) {
 
   const templatePath = join(
     new URL("..", import.meta.url).pathname,
-    "..",
     "templates",
     "Page",
   );

@@ -16,7 +16,7 @@ export async function rmPage(args: string[]) {
   }
 
   // Remove translation files messages/<lang>/<PageName>.json
-  const messagesPath = join(process.cwd(), "messages");
+  const messagesPath = join(process.cwd(), "messages"); // No template path used here, so no change needed
   const entries = await readdir(messagesPath, { withFileTypes: true });
   const langDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
   for (const locale of langDirs) {
@@ -24,7 +24,7 @@ export async function rmPage(args: string[]) {
     if (existsSync(jsonTarget)) {
       await writeFile(jsonTarget, "");
       await import("node:child_process").then((cp) =>
-        cp.execSync(`rm -f '${jsonTarget}'`)
+        cp.execSync(`rm -f '${jsonTarget}'`),
       );
       console.log(`🗑️ Deleted: ${jsonTarget}`);
     }
@@ -34,7 +34,7 @@ export async function rmPage(args: string[]) {
   const uiPageDir = join(process.cwd(), "src", "ui", pageName);
   if (existsSync(uiPageDir)) {
     await import("node:child_process").then((cp) =>
-      cp.execSync(`rm -rf '${uiPageDir}'`)
+      cp.execSync(`rm -rf '${uiPageDir}'`),
     );
     console.log(`🗑️ Deleted: ${uiPageDir}`);
   }
@@ -43,7 +43,7 @@ export async function rmPage(args: string[]) {
   const appLocaleDir = join(process.cwd(), "src", "app", "[locale]", pageName);
   if (existsSync(appLocaleDir)) {
     await import("node:child_process").then((cp) =>
-      cp.execSync(`rm -rf '${appLocaleDir}'`)
+      cp.execSync(`rm -rf '${appLocaleDir}'`),
     );
     console.log(`🗑️ Deleted: ${appLocaleDir}`);
   }

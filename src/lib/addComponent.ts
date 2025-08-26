@@ -43,7 +43,6 @@ export async function addComponent(args: string[]) {
   const componentNameUpper = capitalize(componentName);
   const templatePath = join(
     new URL("..", import.meta.url).pathname,
-    "..",
     "templates",
     "Component",
   );
