@@ -92,6 +92,24 @@ create-next-pro addcomponent MyComponent -P MyPage
 create-next-pro addcomponent MyComponent -P ParentPage.ChildPage
 ```
 
+### Create a library
+
+```bash
+create-next-pro addlib mylib
+```
+
+### Add a file to a library
+
+```bash
+create-next-pro addlib mylib.foo
+```
+
+### Create an API route
+
+```bash
+create-next-pro addapi hello
+```
+
 ### Remove a page
 
 ```bash
