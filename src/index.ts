@@ -51,7 +51,7 @@ function ensureLineInRc(file: string, line: string) {
   }
 }
 async function installCompletion(shell: "bash" | "zsh") {
-  // Lit le script d’auto-complétion depuis le package (racine du package)
+  // read script from package
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const completionSrc = path.resolve(
     __dirname,
@@ -105,7 +105,11 @@ async function onboarding(): Promise<Cfg> {
   if (cfg.completionInstalled) await installCompletion(cfg.shell);
   writeCfg(cfg);
   console.log("\n✅ Configuration saved.");
-  console.log("you can now use the CLI ! ex : create-next-pro <project-name>");
+  console.log("you can now use the CLI ! ex : ");
+  console.log("  Without prompt (will change in future) :");
+  console.log("    create-next-pro my-next-project");
+  console.log("  With prompt :");
+  console.log("    create-next-pro");
   console.log(
     "For more information, visit: https://github.com/Rising-Corporation/create-next-pro-cli",
   );

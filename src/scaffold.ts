@@ -4,13 +4,7 @@ import { cp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-
-const RED = "\x1b[31m";
-const GREEN = "\x1b[32m";
-const YELLOW = "\x1b[33m";
-const BLUE = "\x1b[34m";
-const CYAN = "\x1b[36m";
-const RESET = "\x1b[0m";
+import { red, green, yellow, blue, cyan } from "./lib/helper/consoleColor";
 
 /**
  * Options for scaffolding a Next.js project.
@@ -57,7 +51,7 @@ export async function scaffoldProject(options: ScaffoldOptions) {
       await rm(targetPath, { recursive: true, force: true });
     } else {
       console.error(
-        `${RED}[X] Target directory already exists. Use --force to overwrite.${RESET}`,
+        red("[X] Target directory already exists. Use --force to overwrite."),
       );
       process.exit(1);
     }
@@ -91,19 +85,20 @@ export async function scaffoldProject(options: ScaffoldOptions) {
     console.log("Project setup complete!");
     console.log("");
     console.log("To get started:");
-    console.log(`    ${GREEN}cd ${options.projectName}${RESET}`);
+    console.log("    " + green(`cd ${options.projectName}`));
     console.log("");
     console.log(
       "Then install dependencies and launch the dev server with your preferred tool:",
     );
 
-    console.log(`    ${GREEN}bun install && bun dev${RESET}`);
-    console.log(`    ${GREEN}npm install && npm run dev${RESET}`);
-    console.log(`    ${GREEN}pnpm install && pnpm run dev${RESET}`);
+    console.log("    " + green(`bun install && bun dev`));
+    console.log("    " + green(`npm install && npm run dev`));
+    console.log("    " + green(`pnpm install && pnpm run dev`));
     console.log("");
     console.log("Documentation and examples can be found at:");
     console.log(
-      `    ${CYAN}https://github.com/Rising-Corporation/create-next-pro-cli${RESET}`,
+      "    " +
+        cyan("https://github.com/Rising-Corporation/create-next-pro-cli"),
     );
     console.log(
       "_-`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`_`'-_-'`-_",
@@ -111,7 +106,7 @@ export async function scaffoldProject(options: ScaffoldOptions) {
   } catch (err) {
     // Affiche une croix ASCII et le texte en rouge si le terminal le supporte
 
-    console.error(`    ${RED}[X] Error during project creation:${RESET}`, err);
+    console.error(red("[X] Error during project creation:"), err);
     process.exit(1);
   }
 }

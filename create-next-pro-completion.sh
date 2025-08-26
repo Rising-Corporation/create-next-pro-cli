@@ -4,7 +4,7 @@ _create_next_pro_complete() {
   COMPREPLY=()
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  opts="addpage addcomponent addlib addapi rmpage"
+  opts="addpage addcomponent addlib addapi rmpage --help --version --reconfigure"
 
   # Autocomplete commands
   if [[ ${COMP_CWORD} == 1 ]]; then
