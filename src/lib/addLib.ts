@@ -36,7 +36,11 @@ export async function addLib(args: string[]) {
     await mkdir(libDir, { recursive: true });
   }
 
-  const templateDir = join(import.meta.dir, "..", "..", "templates", "Lib");
+  const templateDir = join(
+    new URL("..", import.meta.url).pathname,
+    "templates",
+    "Lib",
+  );
   const indexTemplate = join(templateDir, "index.ts");
   const fileTemplate = join(templateDir, "item.ts");
 
@@ -102,10 +106,7 @@ export async function addLib(args: string[]) {
     }
 
     indexContent =
-      imports.join("\n") +
-      "\n\nexport { " +
-      exportsSet.join(", ") +
-      " };\n";
+      imports.join("\n") + "\n\nexport { " + exportsSet.join(", ") + " };\n";
     await writeFile(indexPath, indexContent);
     console.log(`✏️ Updated index: ${indexPath}`);
   }

@@ -30,7 +30,11 @@ export async function addApi(args: string[]) {
     await mkdir(apiDir, { recursive: true });
   }
 
-  const templateDir = join(import.meta.dir, "..", "..", "templates", "Api");
+  const templateDir = join(
+    new URL("..", import.meta.url).pathname,
+    "templates",
+    "Api",
+  );
   const routeTemplate = join(templateDir, "route.ts");
   const routePath = join(apiDir, "route.ts");
 
