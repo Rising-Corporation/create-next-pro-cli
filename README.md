@@ -20,7 +20,7 @@
 ![license](https://img.shields.io/github/license/Rising-Corporation/create-next-pro-cli?logo=open-source-initiative&logoColor=white)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-blue.svg?logo=conventionalcommits)](https://www.conventionalcommits.org/en/v1.0.0/)
 
-> ⚠️ This project is under active development and currently in beta testing. Not all features are implemented yet, and contributions are welcome!
+> ⚠️ This project is under active development and currently in beta testing. You may encounter bugs or crashes until the first release. Not all features are implemented yet, and contributions are welcome!
 
 Initially, changes will be accepted or rejected by the creator, but in a few weeks, contributions will be submitted to a community vote.
 
