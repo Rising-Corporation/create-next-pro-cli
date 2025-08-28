@@ -124,6 +124,7 @@ export async function addComponent(args: string[]) {
       }
       current[componentNameUpper] = parsed;
       await writeFile(jsonTarget, JSON.stringify(current, null, 2));
+      console.log(`📄 File updated: ${jsonTarget}`);
     }
   } else {
     console.log("ℹ️ Skipping translation entries; next-intl not enabled.");
