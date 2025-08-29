@@ -197,6 +197,7 @@ export async function addPage(args: string[]) {
           current = JSON.parse(replaced);
         }
         await writeFile(jsonTarget, JSON.stringify(current, null, 2));
+        console.log(`📄 File created: ${jsonTarget}`);
       }
     }
   } else {
