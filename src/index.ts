@@ -14,6 +14,8 @@ import { addLib } from "./lib/addLib";
 import { addApi } from "./lib/addApi";
 import { createProject } from "./lib/createProject";
 import { createProjectWithPrompt } from "./lib/createProjectWithPrompt";
+import { addLanguage } from "./lib/addLanguage";
+import { addText } from "./lib/addText";
 
 type Cfg = {
   version: 1;
@@ -125,6 +127,8 @@ Usage:
   create-next-pro addcomponent [options]
   create-next-pro addlib [name]
   create-next-pro addapi [name]
+  create-next-pro addlanguage [locale]
+  create-next-pro addtext <path> [text]
   create-next-pro rmpage [options]
 
 Options:
@@ -200,6 +204,16 @@ export async function main() {
    */
   if (args[0] === "addapi") {
     addApi(args);
+    return;
+  }
+
+  if (args[0] === "addlanguage") {
+    await addLanguage(args);
+    return;
+  }
+
+  if (args[0] === "addtext") {
+    await addText(args);
     return;
   }
 
