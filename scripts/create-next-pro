@@ -1,10 +1,39 @@
 #!/usr/bin/env sh
-PKG_ROOT="$(dirname "$(dirname "$0")")/lib/node_modules/create-next-pro-cli/dist"
-if command -v bun >/dev/null 2>&1 && [ -f "$PKG_ROOT/bin.bun.js" ]; then
-  exec bun "$PKG_ROOT/bin.bun.js" "$@"
-elif command -v node >/dev/null 2>&1 && [ -f "$PKG_ROOT/bin.node.js" ]; then
-  exec node "$PKG_ROOT/bin.node.js" "$@"
+set -eu
+
+# Resolve $0 in absolute real path (handle PATH + symlinks)
+resolve_self() {
+  _self="$1"
+  case "$_self" in
+    /*) : ;;                                  # already absolute
+    *)  _self="$(command -v -- "$_self" || printf '%s' "$_self")" ;;
+  esac
+  # follow symlinks
+  while [ -L "$_self" ]; do
+    _dir="$(cd -- "$(dirname -- "$_self")" && pwd -P)"
+    _link="$(readlink -- "$_self")"
+    case "$_link" in
+      /*) _self="$_link" ;;
+      *)  _self="$_dir/$_link" ;;
+    esac
+  done
+  _dir="$(cd -- "$(dirname -- "$_self")" && pwd -P)"
+  printf '%s/%s\n' "$_dir" "$(basename -- "$_self")"
+}
+
+SELF_PATH="$(resolve_self "$0")"                 # …/create-next-pro
+DIST_DIR="$(cd -- "$(dirname -- "$SELF_PATH")" && pwd -P)"   # …/dist
+PKG_DIR="$(cd -- "$DIST_DIR/.." && pwd -P)"      # …/create-next-pro-cli
+
+# (optional) debug
+# echo "SELF_PATH=$SELF_PATH"; echo "DIST_DIR=$DIST_DIR"; echo "PKG_DIR=$PKG_DIR" >&2
+
+# Launch your real entrypoint from the right folder
+if command -v bun >/dev/null 2>&1 && [ -f "$DIST_DIR/bin.bun.js" ]; then
+  exec bun "$DIST_DIR/bin.bun.js" "$@"
+elif command -v node >/dev/null 2>&1 && [ -f "$DIST_DIR/bin.node.js" ]; then
+  exec node "$DIST_DIR/bin.node.js" "$@"
 else
-  echo "Error: need bun or node in PATH, or package not found" >&2
+  echo "Error: need bun or node in PATH, or entry file not found" >&2
   exit 1
 fi
