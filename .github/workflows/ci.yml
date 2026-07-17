@@ -213,9 +213,8 @@ jobs:
           version="${{ steps.release.outputs.version }}"
           existing=$(npm view "create-next-pro-cli@$version" version --json 2>/dev/null | jq -r '. // empty') || true
           if [ "$existing" = "$version" ]; then
-            published_head=$(npm view "create-next-pro-cli@$version" gitHead --json | jq -r .)
-            test "$published_head" = "$(git rev-parse HEAD)"
-            echo "create-next-pro-cli@$version is already published from this release commit"
+            bun scripts/verify-npm-provenance.ts create-next-pro-cli "$version" "$GITHUB_SHA" "$GITHUB_RUN_ID"
+            echo "create-next-pro-cli@$version is already published by this trusted workflow"
           else
             npm publish "${{ steps.package.outputs.archive }}" --access public
           fi
@@ -234,7 +233,10 @@ jobs:
           test "$(git rev-list -n 1 "v$expected")" = "$(git rev-parse HEAD)"
           test "$(git ls-remote origin refs/heads/master | cut -f1)" = "$(git rev-parse HEAD)"
           test "$(git ls-remote origin "refs/tags/v$expected^{}" | cut -f1)" = "$(git rev-parse HEAD)"
-          test "$(npm view "create-next-pro-cli@$expected" gitHead --json | jq -r .)" = "$(git rev-parse HEAD)"
+          if [ "${{ steps.release.outputs.action }}" = release ]; then
+            test "$(git rev-parse HEAD^)" = "$GITHUB_SHA"
+          fi
+          bun scripts/verify-npm-provenance.ts create-next-pro-cli "$expected" "$GITHUB_SHA" "$GITHUB_RUN_ID"
           test "$(npm access get status create-next-pro-cli)" = "create-next-pro-cli: public"
           npm owner ls create-next-pro-cli | grep -Eq '^mrrise[[:space:]]'
       - name: Release summary
