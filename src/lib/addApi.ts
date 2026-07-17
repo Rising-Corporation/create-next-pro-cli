@@ -4,8 +4,9 @@ import prompts from "prompts";
 import { existsSync } from "node:fs";
 
 import { loadConfig } from "./utils";
+import { resolvePackageRoot } from "../runtime/node-context";
 
-export async function addApi(args: string[]) {
+export async function addApi(args: string[], cwd = process.cwd()) {
   let apiName = args[1];
   if (!apiName || apiName.startsWith("-")) {
     const response = await prompts.prompt({
@@ -17,7 +18,7 @@ export async function addApi(args: string[]) {
     apiName = response.apiName;
   }
 
-  const config = await loadConfig();
+  const config = await loadConfig(cwd);
   if (!config) {
     console.error(
       "❌ Configuration file cnp.config.json not found. Run this command from the project root.",
@@ -25,13 +26,13 @@ export async function addApi(args: string[]) {
     return;
   }
 
-  const apiDir = join(process.cwd(), "src", "app", "api", apiName);
+  const apiDir = join(cwd, "src", "app", "api", apiName);
   if (!existsSync(apiDir)) {
     await mkdir(apiDir, { recursive: true });
   }
 
   const templateDir = join(
-    new URL("..", import.meta.url).pathname,
+    resolvePackageRoot(import.meta.url),
     "templates",
     "Api",
   );
@@ -46,7 +47,7 @@ export async function addApi(args: string[]) {
     } else {
       await writeFile(
         routePath,
-        `import { NextResponse } from \"next/server\";\n\nexport async function GET() {\n  return NextResponse.json({ message: \"Hello from ${apiName}\" });\n}\n`,
+        `import { NextResponse } from "next/server";\n\nexport async function GET() {\n  return NextResponse.json({ message: "Hello from ${apiName}" });\n}\n`,
       );
     }
     console.log(`📄 File created: ${routePath}`);

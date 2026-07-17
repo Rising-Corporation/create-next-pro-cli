@@ -13,31 +13,31 @@
 
 ### Phase 1.0 — Inventaire et critères de référence
 
-- [ ] started — Cartographier les points d'entrée Bun/Node.js, les commandes, les templates et les artefacts distribués
-- [ ] finished — Valider l'inventaire et consigner les écarts entre documentation, code source et package publié
-- [ ] started — Définir la matrice de compatibilité Bun/Node.js et les scénarios critiques
-- [ ] finished — Valider les critères d'acceptation de la phase
+- [x] started — Cartographier les points d'entrée Bun/Node.js, les commandes, les templates et les artefacts distribués
+- [x] finished — Valider l'inventaire et consigner les écarts entre documentation, code source et package publié
+- [x] started — Définir la matrice de compatibilité Bun/Node.js et les scénarios critiques
+- [x] finished — Valider les critères d'acceptation de la phase
 
 ### Phase 1.1 — Configuration et architecture du CLI
 
-- [ ] started — Séparer le cœur métier, les adaptateurs runtime, les interactions terminal et les accès au système de fichiers
-- [ ] finished — Vérifier le typage strict et les frontières de modules avec TypeScript
-- [ ] started — Harmoniser les scripts de lint, format, test et build pour Bun et Node.js
-- [ ] finished — Exécuter avec succès les contrôles de configuration et les builds des deux runtimes
+- [x] started — Séparer le cœur métier, les adaptateurs runtime, les interactions terminal et les accès au système de fichiers
+- [x] finished — Vérifier le typage strict et les frontières de modules avec TypeScript
+- [x] started — Harmoniser les scripts de lint, format, test et build pour Bun et Node.js
+- [x] finished — Exécuter avec succès les contrôles de configuration et les builds des deux runtimes
 
 ### Phase 1.2 — Tests du scaffolding existant
 
-- [ ] started — Ajouter des tests unitaires pour la validation, le nommage et la résolution de chemins
-- [ ] finished — Exécuter les tests unitaires sans erreur
-- [ ] started — Ajouter des tests d'intégration dans des répertoires temporaires pour la création et les sous-commandes critiques
-- [ ] finished — Vérifier que les fixtures générées sont valides et que les fichiers existants sont préservés
+- [x] started — Ajouter des tests unitaires pour la validation, le nommage et la résolution de chemins
+- [x] finished — Exécuter les tests unitaires sans erreur
+- [x] started — Ajouter des tests d'intégration dans des répertoires temporaires pour la création et les sous-commandes critiques
+- [x] finished — Vérifier que les fixtures générées sont valides et que les fichiers existants sont préservés
 
 ### Phase 1.3 — Validation finale
 
-- [ ] started — Exécuter formatage, lint, tests et builds Bun/Node.js
-- [ ] finished — Confirmer que tous les contrôles passent ou documenter précisément tout blocage préexistant
-- [ ] started — Mettre à jour le statut et résumer la phase
-- [ ] finished — Clore la phase 1 après validation de tous les livrables
+- [x] started — Exécuter formatage, lint, tests et builds Bun/Node.js
+- [x] finished — Confirmer que tous les contrôles passent ou documenter précisément tout blocage préexistant
+- [x] started — Mettre à jour le statut et résumer la phase
+- [x] finished — Clore la phase 1 après validation de tous les livrables
 
 No visual test: le périmètre est un CLI et ne modifie aucune interface graphique.
 

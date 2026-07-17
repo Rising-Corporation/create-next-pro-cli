@@ -1,0 +1,3 @@
+[test]
+root = "src"
+pathIgnorePatterns = ["templates/**", "my-next-app/**"]

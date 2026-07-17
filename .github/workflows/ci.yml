@@ -6,33 +6,28 @@ on:
   pull_request:
 
 jobs:
-  test-build:
+  validate-cli:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
-      - run: bun install
-      - run: bun test
-      - run: bun run build
-  publish:
-    needs: test-build
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment:
-      name: ENV
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
-      - name: Configure Git
+          bun-version: 1.3.14
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - name: Smoke test Node.js bundle
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-      - run: bun install
-      - run: bun run version-patch
-      - run: bun run build
-      - name: Set up .npmrc
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-      - name: Publish package
-        run: npm publish
+          node dist/bin.node.js --help
+          node dist/bin.node.js --version
+      - name: Smoke test Bun bundle
+        run: |
+          bun dist/bin.bun.js --help
+          bun dist/bin.bun.js --version
+      - name: Smoke test launcher with Bun preferred
+        run: dist/create-next-pro --help
+      - name: Smoke test launcher with Node.js only
+        run: env PATH="$(dirname "$(command -v node)"):/usr/bin:/bin" dist/create-next-pro --help
+      - run: npm pack --dry-run

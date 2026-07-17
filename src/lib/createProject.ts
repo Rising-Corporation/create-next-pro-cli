@@ -1,5 +1,11 @@
 import { scaffoldProject } from "../scaffold";
-export async function createProject(nameArg: string, force: boolean) {
+import type { CliContext } from "../core/contracts";
+
+export async function createProject(
+  nameArg: string,
+  force: boolean,
+  context?: Pick<CliContext, "cwd" | "terminal">,
+) {
   const response = {
     projectName: nameArg,
     useTypescript: true,
@@ -13,6 +19,10 @@ export async function createProject(nameArg: string, force: boolean) {
     force,
   };
 
-  console.log(`Creating project "${response.projectName}"...`);
-  await scaffoldProject(response);
+  const terminal = context?.terminal ?? console;
+  terminal.log(`Creating project "${response.projectName}"...`);
+  await scaffoldProject(response, {
+    cwd: context?.cwd ?? process.cwd(),
+    terminal,
+  });
 }

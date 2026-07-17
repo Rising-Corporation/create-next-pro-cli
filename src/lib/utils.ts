@@ -18,8 +18,10 @@ export interface CNPConfig {
  * Load CLI configuration from the project root.
  * Returns null if the configuration file is missing or invalid.
  */
-export async function loadConfig(): Promise<CNPConfig | null> {
-  const configPath = join(process.cwd(), "cnp.config.json");
+export async function loadConfig(
+  cwd = process.cwd(),
+): Promise<CNPConfig | null> {
+  const configPath = join(cwd, "cnp.config.json");
   if (!existsSync(configPath)) return null;
   try {
     const raw = await readFile(configPath, "utf-8");
