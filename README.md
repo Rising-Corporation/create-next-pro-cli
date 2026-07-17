@@ -2,26 +2,56 @@
 
 # create-next-pro-cli
 
-`create-next-pro` génère et fait évoluer des projets Next.js 16 avec TypeScript, App Router, React 19, Tailwind CSS 4, `next-intl` et Auth.js.
+[![Bun](https://img.shields.io/badge/Bun-1.3%2B-000000?logo=bun&logoColor=white)](https://bun.sh)
+[![Node.js](https://img.shields.io/badge/Node.js-24%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![npm](https://img.shields.io/npm/v/create-next-pro-cli?logo=npm&color=CB3837)](https://www.npmjs.com/package/create-next-pro-cli)
+[![npm downloads](https://img.shields.io/npm/dw/create-next-pro-cli?logo=npm)](https://www.npmjs.com/package/create-next-pro-cli)
+[![CI](https://github.com/Rising-Corporation/create-next-pro-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/Rising-Corporation/create-next-pro-cli/actions/workflows/ci.yml)
+[![GitHub stars](https://img.shields.io/github/stars/Rising-Corporation/create-next-pro-cli?style=social)](https://github.com/Rising-Corporation/create-next-pro-cli)
+[![GitHub issues](https://img.shields.io/github/issues/Rising-Corporation/create-next-pro-cli?logo=github)](https://github.com/Rising-Corporation/create-next-pro-cli/issues)
+[![License](https://img.shields.io/github/license/Rising-Corporation/create-next-pro-cli?logo=open-source-initiative&logoColor=white)](./LICENSE)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org/en/v1.0.0/)
 
-Le lanceur utilise Bun lorsqu'il est disponible et revient automatiquement à Node.js. Aucun runtime n'est mémorisé. Les projets générés sont validés avec Bun, npm et pnpm.
+`create-next-pro` generates and evolves Next.js 16 projects with TypeScript, App Router, React 19, Tailwind CSS 4, `next-intl`, and Auth.js.
 
-## Prérequis
+The launcher uses Bun when available and automatically falls back to Node.js. No runtime selection is persisted. Generated projects are validated with Bun, npm, and pnpm.
 
-- Node.js 24 ou supérieur, ou Bun 1.3 ou supérieur pour exécuter le CLI.
-- Bun 1.3+, npm fourni avec Node.js 24+, ou pnpm 11+ pour le projet généré.
+## Purpose
+
+`create-next-pro` provides a reproducible, production-oriented Next.js foundation and commands to evolve it without manually relocating files. The scaffolder separates App Router routes, interfaces under `src/ui`, translated messages, and application libraries to keep the structure clear as the application grows.
+
+The CLI is built around a runtime-independent core, injectable terminal and file-system adapters, and generators confined to the project root. The distributed template includes internationalization, authentication, a CSP policy, environment validation, and automated quality checks.
+
+## Main features
+
+- direct or interactive Next.js 16 project creation;
+- Bun-first CLI execution with an automatic Node.js fallback;
+- generated projects compatible with Bun, npm, and pnpm;
+- generation of pages, components, libraries, and API routes;
+- addition of `next-intl` locales and messages;
+- direct or interactive page removal with a tree-based selector;
+- nested routes and interfaces using `Parent.Child` notation;
+- customizable import aliases such as `@/*` or `@core/*`;
+- dedicated Bash and Zsh completion;
+- confined file operations and allowlist-based template copying;
+- Auth.js, CSP, environment validation, Vitest, and Playwright in the template.
+
+## Requirements
+
+- Node.js 24 or later, or Bun 1.3 or later, to run the CLI.
+- Bun 1.3+, the npm version bundled with Node.js 24+, or pnpm 11+ for generated projects.
 
 ## Installation
 
 ```bash
 bun install --global create-next-pro-cli
-# ou
+# or
 npm install --global create-next-pro-cli
-# ou
+# or
 pnpm add --global create-next-pro-cli
 ```
 
-Sans installation globale :
+Without a global installation:
 
 ```bash
 bunx create-next-pro-cli my-app
@@ -29,97 +59,210 @@ npx create-next-pro-cli my-app
 pnpm dlx create-next-pro-cli my-app
 ```
 
-Au premier lancement, l'assistant propose l'installation de l'autocomplétion Bash ou Zsh. `create-next-pro --reconfigure` permet de relancer cet assistant sans dupliquer la configuration du shell.
+On first launch, the onboarding assistant offers to install Bash or Zsh completion. Run `create-next-pro --reconfigure` to start the assistant again without duplicating the shell configuration.
 
-## Créer un projet
+## Create a project
 
 ```bash
 create-next-pro my-app
 cd my-app
 ```
 
-Installez ensuite les dépendances avec le gestionnaire de votre choix :
+Then install dependencies with your preferred package manager:
 
 ```bash
 bun install && bun run dev
-# ou
+# or
 npm install && npm run dev
-# ou
+# or
 pnpm install && pnpm run dev
 ```
 
-Une destination existante est refusée par défaut. `--force` autorise uniquement le remplacement de la destination enfant demandée :
+An existing destination is rejected by default. `--force` only permits replacement of the requested child destination:
 
 ```bash
 create-next-pro my-app --force
 ```
 
-Sans nom de projet, le CLI ouvre l'assistant interactif. L'alias d'import doit respecter la forme `<préfixe>/*`, par exemple `@/*` ou `@core/*`. Il est écrit dans `tsconfig.json` et `cnp.config.json`, puis réutilisé par les générateurs.
+Without a project name, the CLI opens the interactive assistant. The import alias must follow the `<prefix>/*` form, such as `@/*` or `@core/*`. It is written to `tsconfig.json` and `cnp.config.json`, then reused by the generators.
 
-## Commandes d'évolution
+## Project evolution commands
 
-Les commandes suivantes s'exécutent depuis la racine d'un projet généré.
+Run the following commands from the root of a generated project.
 
 ```bash
-# Pages simples ou imbriquées
+# Simple or nested pages
 create-next-pro addpage profile
 create-next-pro addpage account.security
 
-# Composants globaux ou rattachés à une page
+# Global components or components attached to a page
 create-next-pro addcomponent Alert
 create-next-pro addcomponent PasswordForm --page account.security
 
-# Bibliothèques et modules
+# Libraries and modules
 create-next-pro addlib analytics
 create-next-pro addlib analytics.trackEvent
 
 # Routes API
 create-next-pro addapi health
 
-# Langues et traductions
+# Locales and translations
 create-next-pro addlanguage de
-create-next-pro addtext dashboard.welcome "Bienvenue"
+create-next-pro addtext dashboard.welcome "Welcome"
 
-# Suppression directe
+# Direct removal
 create-next-pro rmpage account.security
 
-# Menu arborescent autocomplétable avec confirmation
+# Tree-based autocomplete menu with confirmation
 create-next-pro rmpage
 ```
 
-`addpage` crée par défaut `layout`, `page` et `loading`. Les options longues disponibles sont `--layout`, `--page`, `--loading`, `--not-found`, `--error`, `--global-error`, `--route`, `--template` et `--default`. Les formes courtes historiques restent disponibles.
+`addpage` creates `layout`, `page`, and `loading` files by default. Available long options are `--layout`, `--page`, `--loading`, `--not-found`, `--error`, `--global-error`, `--route`, `--template`, and `--default`. The historical short forms remain available.
 
-`rmpage` ne propose que les routes contenant réellement un `page.tsx`. Les groupes Next.js et répertoires techniques sont masqués. La suppression est confinée au projet et préserve les parents partagés et fichiers étrangers.
+`rmpage` only lists routes that contain an actual `page.tsx`. Next.js route groups and technical directories are hidden. Removal is confined to the project and preserves shared parent directories and unrelated files.
 
-## Options générales
+## Generated project architecture
+
+The Next.js route and its interface are separate: `src/app` owns routing while `src/ui` owns page components. Translations remain organized by locale and domain.
 
 ```text
---help          Afficher l'aide
---version, -v   Afficher la version
---reconfigure   Relancer la configuration du CLI
---force         Remplacer une destination de projet existante
+my-app/
+├── .env.example
+├── cnp.config.json
+├── messages/
+│   ├── en/
+│   │   ├── _global_ui.json
+│   │   ├── _home.json
+│   │   ├── dashboard.json
+│   │   ├── login.json
+│   │   ├── register.json
+│   │   ├── settings.json
+│   │   └── userInfo.json
+│   ├── en.ts
+│   ├── fr/
+│   │   └── ...
+│   └── fr.ts
+├── public/
+│   ├── logo.png
+│   └── logo.svg
+├── src/
+│   ├── app/
+│   │   ├── [locale]/
+│   │   │   ├── (public)/
+│   │   │   │   ├── _home/
+│   │   │   │   ├── login/
+│   │   │   │   └── register/
+│   │   │   ├── (user)/
+│   │   │   │   ├── dashboard/
+│   │   │   │   ├── settings/
+│   │   │   │   └── userInfo/
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   ├── api/auth/[...nextauth]/route.ts
+│   │   └── styles/globals.css
+│   ├── lib/
+│   │   ├── i18n/
+│   │   ├── security/csp.ts
+│   │   └── utils.ts
+│   ├── ui/
+│   │   ├── _global/
+│   │   ├── _home/
+│   │   ├── dashboard/
+│   │   ├── login/
+│   │   ├── register/
+│   │   ├── settings/
+│   │   └── userInfo/
+│   ├── auth.ts
+│   ├── config.ts
+│   ├── env.ts
+│   └── proxy.ts
+├── tests/
+│   ├── consumer/
+│   ├── e2e/
+│   ├── rendering/
+│   └── unit/
+├── next.config.ts
+├── package.json
+├── playwright.config.ts
+├── pnpm-workspace.yaml
+└── tsconfig.json
 ```
 
-## Environnement et sécurité
+Template working files (`.env`, the nested Git repository, caches, screenshots, and test results) are not copied into generated projects. The CLI creates `cnp.config.json` with the project name and selected alias.
 
-Le projet généré contient `.env.example`, jamais le `.env` local de la template. Copiez-le avant de configurer Auth.js :
+## CLI architecture
+
+```text
+create-next-pro-cli/
+├── bin.bun.ts
+├── bin.node.ts
+├── src/
+│   ├── cli/
+│   │   ├── completion.ts
+│   │   ├── onboarding.ts
+│   │   └── registry.ts
+│   ├── core/
+│   │   ├── contracts.ts
+│   │   ├── page-catalog.ts
+│   │   ├── project-paths.ts
+│   │   └── template-manifest.ts
+│   ├── lib/
+│   │   ├── addApi.ts
+│   │   ├── addComponent.ts
+│   │   ├── addLanguage.ts
+│   │   ├── addLib.ts
+│   │   ├── addPage.ts
+│   │   ├── addText.ts
+│   │   ├── createProject.ts
+│   │   └── rmPage.ts
+│   ├── release/
+│   │   └── model.ts
+│   ├── runtime/
+│   │   └── node-context.ts
+│   ├── index.ts
+│   └── scaffold.ts
+├── templates/
+│   ├── Components/
+│   ├── Pages/
+│   ├── Projects/default/
+│   └── Routes/
+├── create-next-pro-completion.sh
+├── create-next-pro-completion.zsh
+├── package.json
+└── tsup.config.ts
+```
+
+The CLI registry resolves commands to a shared asynchronous interface. The core defines contracts, the page catalog, and path boundaries; runtime adapters provide prompts, console access, and file-system operations. Bun and Node.js bundles are built separately and selected by the `dist/create-next-pro` launcher.
+
+## Global options
+
+```text
+--help          Show help
+--version, -v   Show the version
+--reconfigure   Run CLI configuration again
+--force         Replace an existing project destination
+```
+
+## Environment and security
+
+Generated projects contain `.env.example`, never the template's local `.env`. Copy it before configuring Auth.js:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Les identifiants OAuth, dépôts Git imbriqués, caches, dépendances installées, artefacts Playwright et contextes d'agent sont exclus de la génération et du paquet npm. Pour un déploiement sans authentification, utilisez `AUTH_DISABLED=true`.
+OAuth credentials, nested Git repositories, caches, installed dependencies, Playwright artifacts, and agent context are excluded from generated projects and the npm package. For deployments without authentication, use `AUTH_DISABLED=true`.
 
-## Qualité
+## Quality
 
-Dans le dépôt du CLI :
+In the CLI repository:
 
 ```bash
 bun install --frozen-lockfile
 bun run check
 ```
 
-Dans un projet généré, les mêmes scripts fonctionnent avec les trois gestionnaires :
+In a generated project, the same scripts work with all three package managers:
 
 ```bash
 bun run check
@@ -127,9 +270,9 @@ npm run check
 pnpm run check
 ```
 
-Les validations couvrent format, lint, TypeScript, Vitest, build Next.js et contrat de rendu. `npm pack --dry-run --json` permet d'inspecter le contenu distribuable du CLI.
+Validation covers formatting, linting, TypeScript, Vitest, the Next.js build, and the rendering contract. Use `npm pack --dry-run --json` to inspect the CLI's distributable contents.
 
-## Développement
+## Development
 
 ```bash
 git clone https://github.com/Rising-Corporation/create-next-pro-cli.git
@@ -140,4 +283,4 @@ bun link
 create-next-pro --help
 ```
 
-Licence MIT. Les contributions sont décrites dans [CONTRIBUTING.md](./CONTRIBUTING.md).
+MIT licensed. Contribution guidelines are available in [CONTRIBUTING.md](./CONTRIBUTING.md).
