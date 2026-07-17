@@ -11,7 +11,13 @@ export function capitalize(str: string): string {
 
 export interface CNPConfig {
   useI18n?: boolean;
+  importAlias?: string;
   [key: string]: any;
+}
+
+export function configuredAliasPrefix(config: CNPConfig): string {
+  const alias = config.importAlias ?? "@/*";
+  return alias.endsWith("/*") ? alias.slice(0, -2) : "@";
 }
 
 /**

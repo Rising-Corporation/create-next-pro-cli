@@ -66,4 +66,13 @@ describe("CLI entrypoint", () => {
     await expect(main(fixture.context)).resolves.toBe(1);
     expect(fixture.error).toHaveBeenCalledWith("package unavailable");
   });
+
+  test("serves machine completion without onboarding", async () => {
+    const fixture = context(["__complete"]);
+    fixture.context.fs.readText = vi.fn(async (target: string) =>
+      target.endsWith("package.json") ? '{"version":"1.2.3"}' : "{}",
+    );
+    await expect(main(fixture.context)).resolves.toBe(0);
+    expect(fixture.log).toHaveBeenCalledWith("rmpage");
+  });
 });

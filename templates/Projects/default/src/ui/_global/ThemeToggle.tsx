@@ -1,53 +1,59 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "./Button";
+import { useTranslations } from "next-intl";
+
+const themeChangeEvent = "template-theme-change";
+
+function getThemeSnapshot() {
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
+
+function getServerThemeSnapshot() {
+  return "light";
+}
+
+function subscribeToThemeChange(onStoreChange: () => void) {
+  window.addEventListener(themeChangeEvent, onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+
+  return () => {
+    window.removeEventListener(themeChangeEvent, onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
 
 export default function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false);
+  const t = useTranslations("_global_ui");
+  const theme = useSyncExternalStore(
+    subscribeToThemeChange,
+    getThemeSnapshot,
+    getServerThemeSnapshot,
+  );
+  const isDark = theme === "dark";
 
-  useEffect(() => {
-    // Initial state from html class
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
-
-  const toggleTheme = () => {
-    const html = document.documentElement;
-    if (html.classList.contains("dark")) {
-      html.classList.add("light");
-      html.classList.remove("dark");
-      setIsDark(false);
-      localStorage.setItem("theme", "light");
-    } else {
-      html.classList.add("dark");
-      html.classList.remove("light");
-      setIsDark(true);
-      localStorage.setItem("theme", "dark");
-    }
+  const applyTheme = (dark: boolean) => {
+    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.classList.toggle("light", !dark);
+    localStorage.setItem("theme", dark ? "dark" : "light");
+    window.dispatchEvent(new Event(themeChangeEvent));
   };
-
-  useEffect(() => {
-    // On mount, set theme from localStorage
-    const theme = localStorage.getItem("theme");
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-      document.documentElement.classList.remove("light");
-      setIsDark(true);
-    } else if (theme === "light") {
-      document.documentElement.classList.add("light");
-      document.documentElement.classList.remove("dark");
-      setIsDark(false);
-    }
-  }, []);
 
   return (
     <Button
-      onClick={toggleTheme}
-      className="ml-2 p-2 rounded-full hover:bg-white/10 transition-colors  "
-      aria-label="Toggle theme"
+      onClick={() => applyTheme(!isDark)}
+      className="rounded-full p-0 dark:hover:bg-white/10 light:hover:bg-black/10 transition-colors"
+      aria-label={t("toggle_theme")}
+      variant="ghost"
+      size="icon"
       type="button"
     >
-      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      {isDark ? (
+        <Sun className="h-5 w-5 text-white" />
+      ) : (
+        <Moon className="h-5 w-5 text-black" />
+      )}
     </Button>
   );
 }

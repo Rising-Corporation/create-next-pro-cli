@@ -25,6 +25,12 @@ export function createCommandRegistry(): ReadonlyMap<string, CommandHandler> {
     ["addapi", legacyHandler(addApi)],
     ["addlanguage", legacyHandler(addLanguage)],
     ["addtext", legacyHandler(addText)],
-    ["rmpage", legacyHandler(rmPage)],
+    [
+      "rmpage",
+      async (args, context) => {
+        await rmPage(args, context.cwd, context.prompt, context.terminal);
+        return success();
+      },
+    ],
   ]);
 }

@@ -1,4 +1,4 @@
-"use client"; // DO NOT FORGET , this is a client component.
+"use client";
 import { Link } from "@/lib/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useRef } from "react";
@@ -8,14 +8,17 @@ import { Menu, X } from "lucide-react";
 
 const navLinks = [
   { href: "/", labelKey: "public_nav.links.home" },
-  { href: "/Login", labelKey: "public_nav.links.login" },
-  { href: "/Register", labelKey: "public_nav.links.register" },
+  { href: "/login", labelKey: "public_nav.links.login" },
+  { href: "/register", labelKey: "public_nav.links.register" },
 ];
 
 const PublicNav = () => {
   const t = useTranslations("_global_ui");
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const firstLinkRef = useRef<HTMLAnchorElement>(null);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -25,6 +28,7 @@ const PublicNav = () => {
 
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
+      firstLinkRef.current?.focus();
     }
 
     return () => {
@@ -32,32 +36,47 @@ const PublicNav = () => {
     };
   }, [open]);
 
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && open) {
+        setOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [open]);
+
   return (
-    <nav aria-label="Public navigation">
-      <div className="flex justify-between items-center h-16">
-        <ul className="flex gap-2 md:gap-4 hidden md:flex items-center space-x-4">
+    <nav aria-label="Public navigation" className="justify-self-end">
+      <div className="flex h-16 items-center gap-1 sm:gap-2">
+        <ul className="hidden items-center gap-2 md:flex lg:gap-4">
           {navLinks.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="inline-block rounded px-3 py-1.5 text-sm font-medium dark:text-gray-400 light:text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="inline-block rounded px-3 py-1.5 text-sm font-medium dark:text-stone-100 light:text-stone-900 dark:hover:bg-white/10 light:hover:bg-black/10 transition-colors focus:outline-none focus-visible:ring-2"
               >
                 {t(link.labelKey)}
               </Link>
             </li>
           ))}
         </ul>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center">
           <ThemeToggle />
         </div>
-        <div className="md:hidden flex items-center">
+        <div className="flex items-center md:hidden">
           <Button
-            variant="default"
-            onClick={() => setOpen((o) => !o)}
+            ref={menuButtonRef}
+            variant="ghost"
+            size="icon"
             className="focus:outline-none"
+            onClick={() => setOpen((o) => !o)}
             aria-label="Menu"
+            aria-expanded={open}
+            aria-controls="public-mobile-menu"
           >
-            {open ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
         </div>
       </div>
@@ -66,19 +85,34 @@ const PublicNav = () => {
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
           <div
+            id="public-mobile-menu"
             ref={menuRef}
-            className="mobil-menu absolute top-4 left-1/2 -translate-x-1/2 flex flex-col gap-2  rounded-xl p-4 shadow-lg animate-fade-in z-50 w-11/12 max-w-xs"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t("public_nav.menu")}
+            className="mobil-menu absolute top-20 left-1/2 z-50 flex w-11/12 max-w-xs -translate-x-1/2 flex-col gap-2 rounded-xl p-4 shadow-lg animate-fade-in"
           >
-            <Link href="/Login" onClick={() => setOpen(false)}>
+            <Link ref={firstLinkRef} href="/" onClick={() => setOpen(false)}>
               <Button
                 variant="ghost"
-                className="w-full text-white justify-center hover:text-blue-300  cursor-pointer glass-effect"
+                className="w-full justify-center cursor-pointer glass-effect"
+              >
+                {t("public_nav.links.home")}
+              </Button>
+            </Link>
+            <Link href="/login" onClick={() => setOpen(false)}>
+              <Button
+                variant="ghost"
+                className="w-full justify-center cursor-pointer glass-effect"
               >
                 {t("public_nav.links.login")}
               </Button>
             </Link>
-            <Link href="/Register" onClick={() => setOpen(false)}>
-              <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 justify-center cursor-pointer">
+            <Link href="/register" onClick={() => setOpen(false)}>
+              <Button
+                className="w-full justify-center cursor-pointer"
+                variant="ghost"
+              >
                 {t("public_nav.links.register")}
               </Button>
             </Link>

@@ -1,68 +1,76 @@
 @import "tailwindcss";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../../../tailwind.config.ts";
 
 /* @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"); */
 
-/* Dark mode : fond noir, texte blanc */
-.dark {
-  --background: 0 0% 0%; /* noir */
-  --foreground: 0 0% 100%; /* blanc */
-  --card: 0 0% 0%;
-  --card-foreground: 0 0% 100%;
-  --popover: 0 0% 0%;
-  --popover-foreground: 0 0% 100%;
-  --primary: 0 0% 100%; /* blanc */
-  --primary-foreground: 0 0% 0%; /* noir */
-  --secondary: 0 0% 20%; /* gris foncé */
-  --secondary-foreground: 0 0% 100%;
-  --muted: 0 0% 20%;
-  --muted-foreground: 0 0% 80%;
-  --accent: 0 0% 20%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 20%;
-  --input: 0 0% 20%;
-  --ring: 0 0% 100%;
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
+
+:root {
   --radius: 0.75rem;
 }
 
-/* Light mode : fond blanc, texte noir */
+/* Light mode : background white, text black */
+:root,
 .light {
-  --background: 0 0% 100%; /* blanc */
-  --foreground: 0 0% 0%; /* noir */
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 0%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 0%;
-  --primary: 0 0% 0%; /* noir */
-  --primary-foreground: 0 0% 100%; /* blanc */
-  --secondary: 0 0% 95%; /* gris très clair */
-  --secondary-foreground: 0 0% 0%;
-  --muted: 0 0% 95%;
-  --muted-foreground: 0 0% 20%;
-  --accent: 0 0% 95%;
-  --accent-foreground: 0 0% 0%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 80%;
-  --input: 0 0% 80%;
-  --ring: 0 0% 0%;
+  --background: 245 245 245; /* white*/
+  --foreground: 0 0 0; /* black */
+  --card: 255 255 255;
+  --card-foreground: 0 0 0;
+  --popover: 255 255 255;
+  --popover-foreground: 0 0 0;
+  --primary: 0 0 0; /* black */
+  --primary-foreground: 255 255 255; /* white */
+  --secondary: 220 220 220; /* very light gray */
+  --secondary-foreground: 0 0 0;
+  --muted: 242 242 242;
+  --muted-foreground: 51 51 51; /* dark gray */
+  --accent: 242 242 242;
+  --accent-foreground: 0 0 0;
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
+  --border: 204 204 204;
+  --input: 204 204 204;
+  --ring: 0 0 0;
+  --radius: 0.75rem;
+}
+
+/* Dark mode : background black, text white */
+.dark {
+  --background: 0 0 0; /* black */
+  --foreground: 255 255 255; /* white */
+  --card: 0 0 0;
+  --card-foreground: 255 255 255;
+  --popover: 0 0 0;
+  --popover-foreground: 255 255 255;
+  --primary: 255 255 255; /* white */
+  --primary-foreground: 0 0 0; /* black */
+  --secondary: 30 30 30; /* dark gray */
+  --secondary-foreground: 255 255 255;
+  --muted: 51 51 51; /* dark gray */
+  --muted-foreground: 204 204 204;
+  --accent: 51 51 51; /* dark gray */
+  --accent-foreground: 255 255 255;
+  --destructive: 127 29 29;
+  --destructive-foreground: 255 255 255;
+  --border: 51 51 51;
+  --input: 51 51 51;
+  --ring: 255 255 255;
+  --radius: 0.75rem;
 }
 
 * {
-  border-color: hsl(var(--border));
+  border-color: rgb(var(--border));
 }
 
 body {
   font-family: "Inter", sans-serif;
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
   line-height: 1.6;
-  transition: background 0.3s, color 0.3s;
+  transition:
+    background 0.3s,
+    color 0.3s;
 }
 
 .gradient-text {
@@ -84,49 +92,8 @@ body {
   border: 1px solid #444;
 }
 .light .glass-effect {
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid #ccc;
-}
-
-.chat-bubble-user {
-  background: linear-gradient(135deg, #fff 0%, #bbb 100%);
-  border-radius: 18px 18px 4px 18px;
-  color: #000;
-}
-.light .chat-bubble-user {
-  background: linear-gradient(135deg, #000 0%, #888 100%);
-  color: #fff;
-}
-
-.chat-bubble-ai {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 18px 18px 18px 4px;
-  border: 1px solid #444;
-  color: #000;
-}
-.light .chat-bubble-ai {
-  background: rgba(0, 0, 0, 0.12);
-  border: 1px solid #ccc;
-  color: #fff;
-}
-
-.typing-indicator {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #fff;
-  animation: typing 1.4s infinite ease-in-out;
-}
-.light .typing-indicator {
-  background-color: #000;
-}
-
-.typing-indicator:nth-child(1) {
-  animation-delay: -0.32s;
-}
-.typing-indicator:nth-child(2) {
-  animation-delay: -0.16s;
 }
 
 @keyframes typing {
@@ -142,29 +109,114 @@ body {
   }
 }
 
+/* 1) Déclarer des variables animables (pour interpolation fluide) */
+@property --c1x {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 25%;
+}
+@property --c1y {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 25%;
+}
+@property --c2x {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 75%;
+}
+@property --c2y {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 75%;
+}
+
+/* alpha (0..1) */
+@property --a1 {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.9;
+}
+@property --a2 {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.9;
+}
+
 .hero-pattern {
-  background-image: radial-gradient(
-      circle at 25% 25%,
-      rgba(255, 255, 255, 0.18) 0%,
-      transparent 50%
+  /* 2) Animation légère */
+  animation: heroDrift 60s ease-in-out infinite;
+}
+
+/* 3) Keyframes: déplacement de quelques % + alpha léger */
+@keyframes heroDrift {
+  0% {
+    --c1x: 20%;
+    --c1y: 25%;
+    --c2x: 75%;
+    --c2y: 75%;
+    --a1: 0.9;
+    --a2: 0.99;
+  }
+  50% {
+    --c1x: 28%;
+    --c1y: 60%;
+    --c2x: 65%;
+    --c2y: 45%;
+    --a1: 0.99;
+    --a2: 0.95;
+  }
+  100% {
+    --c1x: 20%;
+    --c1y: 25%;
+    --c2x: 75%;
+    --c2y: 75%;
+    --a1: 0.9;
+    --a2: 0.99;
+  }
+}
+
+/* 4) Tu reconstruis ensuite tes gradients en utilisant ces variables */
+
+/* DARK */
+.dark .hero-pattern {
+  background-image:
+    radial-gradient(
+      circle at var(--c1x) var(--c1y),
+      rgba(0, 0, 0, var(--a1)) 0%,
+      transparent 80%
     ),
     radial-gradient(
-      circle at 75% 75%,
-      rgba(180, 180, 180, 0.18) 0%,
+      circle at var(--c2x) var(--c2y),
+      rgba(31, 31, 31, var(--a2)) 0%,
+      transparent 80%
+    );
+}
+
+/* LIGHT (mêmes positions animées, mais alpha + stops adaptés) */
+.light .hero-pattern {
+  /* option: alpha un peu plus bas en light */
+  --a1: 0.1;
+  --a2: 0.5;
+
+  background-image:
+    radial-gradient(
+      circle at var(--c1x) var(--c1y),
+      rgba(150, 150, 150, var(--a1)) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at var(--c2x) var(--c2y),
+      rgba(150, 150, 150, var(--a2)) 0%,
       transparent 50%
     );
 }
-.light .hero-pattern {
-  background-image: radial-gradient(
-      circle at 25% 25%,
-      rgba(0, 0, 0, 0.08) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 75% 75%,
-      rgba(120, 120, 120, 0.08) 0%,
-      transparent 50%
-    );
+
+/* 5) Accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .hero-pattern {
+    animation: none;
+  }
 }
 
 .light .mobil-menu {
@@ -175,16 +227,12 @@ body {
   background: rgba(0, 0, 0, 0.9);
 }
 
-.light .text-white,
+/* .light .text-white,
 .light .text-gray-300,
 .light .text-gray-400 {
   color: black;
-}
+} */
 
-.light button.text-white:hover,
-.light a:hover {
-  color: rgb(142, 197, 255);
-}
 .gsi-material-button {
   user-select: none;
   -webkit-user-select: none;
@@ -212,7 +260,10 @@ body {
   padding: 0 12px;
   position: relative;
   text-align: center;
-  transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s;
+  transition:
+    background-color 0.218s,
+    border-color 0.218s,
+    box-shadow 0.218s;
   vertical-align: middle;
   white-space: nowrap;
   width: auto;
@@ -293,9 +344,11 @@ body {
 }
 
 .gsi-material-button:not(:disabled):hover {
-  -webkit-box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
+  -webkit-box-shadow:
+    0 1px 2px 0 rgba(60, 64, 67, 0.3),
     0 1px 3px 1px rgba(60, 64, 67, 0.15);
-  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
+  box-shadow:
+    0 1px 2px 0 rgba(60, 64, 67, 0.3),
     0 1px 3px 1px rgba(60, 64, 67, 0.15);
 }
 

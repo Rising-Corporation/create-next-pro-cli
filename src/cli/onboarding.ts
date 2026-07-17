@@ -55,9 +55,14 @@ async function installCompletion(
   const directory = configDirectory(context);
   const source = path.join(
     context.packageRoot,
-    "create-next-pro-completion.sh",
+    shell === "zsh"
+      ? "create-next-pro-completion.zsh"
+      : "create-next-pro-completion.sh",
   );
-  const target = path.join(directory, "completion.sh");
+  const target = path.join(
+    directory,
+    `completion.${shell === "zsh" ? "zsh" : "sh"}`,
+  );
   await context.fs.mkdir(directory);
   await context.fs.copyFile(source, target);
   const rcFile = path.join(

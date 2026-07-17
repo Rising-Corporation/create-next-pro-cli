@@ -34,7 +34,7 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
+  },
 );
 
 import type { ButtonHTMLAttributes, DetailedHTMLProps, ReactNode } from "react";
@@ -42,12 +42,7 @@ import type { ButtonHTMLAttributes, DetailedHTMLProps, ReactNode } from "react";
 type ButtonProps = {
   className?: string;
   variant?:
-    | "default"
-    | "destructive"
-    | "outline"
-    | "secondary"
-    | "ghost"
-    | "link";
+    "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
   asChild?: boolean;
   children?: ReactNode;
@@ -68,7 +63,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {children}
       </Comp>
     );
-  }
+  },
 );
 Button.displayName = "Button";
 

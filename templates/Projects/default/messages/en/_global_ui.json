@@ -1,5 +1,21 @@
 {
+  "user_nav": {
+    "links": {
+      "home": "Home",
+      "dashboard": "Dashboard",
+      "settings": "Settings",
+      "user_info": "User Information"
+    }
+  },
+  "Loading": {
+    "title": "Loading",
+    "description": "Please wait while we prepare your experience..."
+  },
+  "back": "Back",
+  "select_language": "Select language",
+  "toggle_theme": "Toggle theme",
   "public_nav": {
+    "menu": "Public navigation menu",
     "links": {
       "home": "Home",
       "login": "Login",
@@ -19,16 +35,13 @@
       "search": "Search"
     }
   },
-  "user_nav": {
-    "links": {
-      "home": "Home",
-      "dashboard": "Dashboard",
-      "settings": "Settings",
-      "user_info": "User Information"
-    }
+  "error": {
+    "title": "Something went wrong!",
+    "retry": "Try again"
   },
-  "Loading": {
-    "title": "Loading",
-    "description": "Please wait while we prepare your experience..."
+  "not_found": {
+    "title": "Not Found",
+    "description": "Could not find the requested resource",
+    "home": "Return Home"
   }
 }
