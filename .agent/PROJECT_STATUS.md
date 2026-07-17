@@ -12,7 +12,7 @@
 - Validation visuelle : non applicable, le périmètre actuel est un CLI sans UI
 - Phase suivante planifiée : Phase 2 — Intégration sécurisée de la nouvelle template Next.js 16
 - Statut de la phase 2 : planifiée, aucune implémentation démarrée
-- Sous-phases prévues pour la phase 2 : 7, de la baseline au paquet/CI
+- Sous-phases prévues pour la phase 2 : 8, de la baseline au paquet/CI, dont une mise à niveau stable des dépendances du CLI
 - Dépendance de la phase 2 : achever le socle de validation de la phase 1
 - Validation visuelle de la phase 2 : obligatoire sur captures desktop et mobile générées depuis une fixture propre
 

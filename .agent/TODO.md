@@ -89,7 +89,20 @@ Dépendance : achever les critères de référence et le socle de validation de 
 - Tests : intégration par commande sur copies temporaires, snapshots de structure et build après mutations
 - Estimation : 6 à 10 heures
 
-### Phase 2.4 — Qualité, sécurité applicative et validation consumer
+### Phase 2.4 — Mise à niveau stable des dépendances du CLI
+
+- [ ] started — Établir l'inventaire des dépendances directes, de développement et transitives du `package.json` et de `bun.lock`, puis relever les dernières versions stables disponibles à la date d'exécution
+- [ ] finished — Produire une matrice version actuelle/cible, changements majeurs, prérequis Bun/Node.js et migrations nécessaires pour chaque package
+- [ ] started — Mettre à niveau `prompts` et l'outillage du CLI (`commitlint`, types Node/prompts, Commitizen, Husky, lint-staged, Prettier, tsup, Vitest et dépendances associées) sans sélectionner de version alpha, beta, RC ou canary
+- [ ] finished — Adapter configuration, imports, scripts et hooks aux changements incompatibles, puis régénérer `bun.lock` de façon déterministe
+- [ ] started — Identifier et retirer les dépendances devenues inutiles ou redondantes, notamment celles qui ne sont référencées ni par le code, ni par le build, ni par les hooks
+- [ ] finished — Vérifier qu'aucune dépendance runtime nécessaire n'est classée uniquement en `devDependencies` et que le paquet installé n'embarque pas d'outillage inutile
+- [ ] started — Exécuter l'audit de sécurité après mise à niveau et documenter toute vulnérabilité sans correctif stable plutôt que d'accepter une préversion automatiquement
+- [ ] finished — Valider installation gelée, format, lint, typecheck, tests et builds du CLI sous les versions minimales supportées de Bun et Node.js
+- Tests : `bun outdated`, installation avec lockfile gelé, `bun audit`, contrôles qualité, tests et builds Bun/Node.js, test du binaire empaqueté
+- Estimation : 3 à 6 heures
+
+### Phase 2.5 — Qualité, sécurité applicative et validation consumer
 
 - [ ] started — Exécuter dans la template `format:check`, lint, typecheck, tests Bun, audit, build et vérification du rendu statique/dynamique
 - [ ] finished — Confirmer que les routes publiques sont pré-rendues, que les routes privées/Auth restent dynamiques et que les en-têtes de sécurité sont présents
@@ -100,7 +113,7 @@ Dépendance : achever les critères de référence et le socle de validation de 
 - Tests : `bun run check`, `bun run audit`, `bun run test:consumer`, tests du binaire Node.js/Bun
 - Estimation : 4 à 6 heures
 
-### Phase 2.5 — Validation visuelle desktop et mobile
+### Phase 2.6 — Validation visuelle desktop et mobile
 
 - [ ] started — Générer une fixture propre puis exécuter Playwright sur les routes publiques anglaises et françaises, la navigation mobile, le thème et la redirection des routes privées
 - [ ] finished — Produire `artifacts/captures/phase-2-template-integration-desktop.png` et `artifacts/captures/phase-2-template-integration-mobile.png`
@@ -109,7 +122,7 @@ Dépendance : achever les critères de référence et le socle de validation de 
 - Tests : `bun run test:e2e` sur Chromium desktop et Pixel 5, assertions d'accessibilité et inspection visuelle obligatoire
 - Estimation : 2 à 4 heures
 
-### Phase 2.6 — Paquet, CI et clôture
+### Phase 2.7 — Paquet, CI et clôture
 
 - [ ] started — Faire exécuter par la CI racine les contrôles du CLI, la génération consumer, les contrôles de la template et Playwright sans publier depuis une branche non taguée
 - [ ] finished — Vérifier que le workflow échoue si un fichier interdit est inclus, si le projet généré diverge ou si une capture/test régresse
@@ -117,7 +130,7 @@ Dépendance : achever les critères de référence et le socle de validation de 
 - [ ] finished — Confirmer qu'un tag Git public correspond exactement à la version npm candidate, sans publier pendant la phase de validation
 - [ ] started — Mettre à jour le statut, les métriques et le résumé de phase avec les commandes et artefacts réellement validés
 - [ ] finished — Clore la phase uniquement après passage de tous les contrôles et inspection des captures
-- Tests finaux : format, lint, typecheck, tests unitaires/intégration, builds Bun/Node.js, `npm pack --dry-run`, consumer, audit, rendu et Playwright
+- Tests finaux : vérification des versions stables et du lockfile, format, lint, typecheck, tests unitaires/intégration, builds Bun/Node.js, `npm pack --dry-run`, consumer, audit, rendu et Playwright
 - Estimation : 3 à 5 heures
 
-Risques et hypothèses : la nouvelle template est considérée comme la cible fonctionnelle, mais ses répertoires générés et son dépôt Git interne ne font pas partie du produit. Les suppressions actuelles de `my-next-app` et le dossier `templates/Projects/default-old` appartiennent à l'utilisateur et restent hors de cette phase. Bun et Node.js doivent être accessibles dans le `PATH` avant toute validation d'implémentation.
+Risques et hypothèses : la nouvelle template est considérée comme la cible fonctionnelle, mais ses répertoires générés et son dépôt Git interne ne font pas partie du produit. « Dernière version stable » exclut toute préversion et doit être résolue depuis le registre au moment de l'exécution ; une mise à niveau majeure peut imposer une migration ou le remplacement d'un outil obsolète. Les suppressions actuelles de `my-next-app` et le dossier `templates/Projects/default-old` appartiennent à l'utilisateur et restent hors de cette phase. Bun et Node.js doivent être accessibles dans le `PATH` avant toute validation d'implémentation.
