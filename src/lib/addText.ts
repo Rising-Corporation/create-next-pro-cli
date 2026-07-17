@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { readFile, writeFile, readdir } from "node:fs/promises";
 
 import { loadConfig } from "./utils";
+import { assertSafeTarget, parseLogicalName } from "../core/project-paths";
 
 function defaultText(key: string) {
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -15,6 +16,7 @@ export async function addText(args: string[], cwd = process.cwd()) {
     return;
   }
   const providedText = args.slice(2).join(" ");
+  parseLogicalName(pathArg, "translation path");
 
   const config = await loadConfig(cwd);
   if (!config?.useI18n) {
@@ -40,6 +42,7 @@ export async function addText(args: string[], cwd = process.cwd()) {
 
   for (const locale of locales) {
     const filePath = join(messagesPath, locale, `${fileName}.json`);
+    await assertSafeTarget(cwd, filePath);
     let data: Record<string, any> = {};
     if (existsSync(filePath)) {
       const raw = await readFile(filePath, "utf-8");

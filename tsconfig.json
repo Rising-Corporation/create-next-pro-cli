@@ -7,6 +7,12 @@
     "types": ["bun", "node"],
     "verbatimModuleSyntax": true
   },
-  "include": ["bin.bun.ts", "bin.node.ts", "src/**/*.ts", "tsup.config.ts"],
+  "include": [
+    "bin.bun.ts",
+    "bin.node.ts",
+    "scripts/**/*.ts",
+    "src/**/*.ts",
+    "tsup.config.ts"
+  ],
   "exclude": ["dist", "my-next-app", "node_modules", "templates"]
 }

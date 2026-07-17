@@ -4,6 +4,7 @@ import prompts from "prompts";
 
 import { capitalize, loadConfig } from "./utils";
 import { resolvePackageRoot } from "../runtime/node-context";
+import { assertSafeTarget, parseLogicalName } from "../core/project-paths";
 
 import { existsSync, statSync } from "node:fs";
 
@@ -14,7 +15,6 @@ export async function addComponent(args: string[], cwd = process.cwd()) {
   if (pageIndex !== -1 && args[pageIndex + 1]) {
     pageScope = args[pageIndex + 1];
   }
-
   // Handle nested pageScope (e.g. ParentPage.ChildPage)
   let nestedPath = null;
   if (pageScope && pageScope.includes(".")) {
@@ -31,6 +31,8 @@ export async function addComponent(args: string[], cwd = process.cwd()) {
     });
     componentName = response.componentName;
   }
+  parseLogicalName(componentName, "component name");
+  if (pageScope) parseLogicalName(pageScope, "page name");
 
   const config = await loadConfig(cwd);
   if (!config) {
@@ -73,6 +75,7 @@ export async function addComponent(args: string[], cwd = process.cwd()) {
     componentTargetPath = join(cwd, "src", "ui", "_global");
     translationKey = "_global_ui";
   }
+  await assertSafeTarget(cwd, componentTargetPath);
   if (!existsSync(componentTargetPath)) {
     await mkdir(componentTargetPath, { recursive: true });
   }
@@ -113,7 +116,8 @@ export async function addComponent(args: string[], cwd = process.cwd()) {
         continue;
       let jsonTarget;
       if (pageScope) {
-        jsonTarget = join(messagesPath, locale, `${pageScope}.json`);
+        const [messageFile] = pageScope.split(".");
+        jsonTarget = join(messagesPath, locale, `${messageFile}.json`);
       } else {
         jsonTarget = join(messagesPath, locale, `_global_ui.json`);
       }
@@ -123,7 +127,17 @@ export async function addComponent(args: string[], cwd = process.cwd()) {
         const jsonFile = await readFile(jsonTarget, "utf-8");
         current = JSON.parse(jsonFile) as Record<string, any>;
       }
-      current[componentNameUpper] = parsed;
+      if (pageScope?.includes(".")) {
+        const child = pageScope.split(".")[1];
+        const childMessages =
+          current[child] && typeof current[child] === "object"
+            ? (current[child] as Record<string, unknown>)
+            : {};
+        childMessages[componentNameUpper] = parsed;
+        current[child] = childMessages;
+      } else {
+        current[componentNameUpper] = parsed;
+      }
       await writeFile(jsonTarget, JSON.stringify(current, null, 2));
       console.log(`📄 File updated: ${jsonTarget}`);
     }

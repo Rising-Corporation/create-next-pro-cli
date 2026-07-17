@@ -1,2 +1,2 @@
 #!/usr/bin/env sh
-bunx --bun commitlint --edit "$1"
+bun run commitlint --edit "$1"

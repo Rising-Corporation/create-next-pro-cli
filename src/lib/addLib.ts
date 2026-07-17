@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 
 import { loadConfig, capitalize } from "./utils";
 import { resolvePackageRoot } from "../runtime/node-context";
+import { assertSafeTarget, parseLogicalName } from "../core/project-paths";
 
 export async function addLib(args: string[], cwd = process.cwd()) {
   let libArg = args[1];
@@ -17,11 +18,14 @@ export async function addLib(args: string[], cwd = process.cwd()) {
     });
     libArg = response.libArg;
   }
+  const libSegments = parseLogicalName(libArg, "library name");
 
   let libName = libArg;
   let fileName: string | null = null;
-  if (libArg.includes(".")) {
-    [libName, fileName] = libArg.split(".");
+  if (libSegments.length === 2) {
+    [libName, fileName] = libSegments;
+  } else if (libSegments.length > 2) {
+    throw new Error("Libraries currently support exactly library.module.");
   }
 
   const config = await loadConfig(cwd);
@@ -33,6 +37,7 @@ export async function addLib(args: string[], cwd = process.cwd()) {
   }
 
   const libDir = join(cwd, "src", "lib", libName);
+  await assertSafeTarget(cwd, libDir);
   if (!existsSync(libDir)) {
     await mkdir(libDir, { recursive: true });
   }

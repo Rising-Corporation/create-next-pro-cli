@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import { onboarding, readConfig } from "./cli/onboarding";
+import { printCompletions } from "./cli/completion";
 import { createCommandRegistry } from "./cli/registry";
 import { CliError, type CliContext, type ExitCode } from "./core/contracts";
 import { createProject } from "./lib/createProject";
@@ -48,6 +49,11 @@ export async function main(
     const args = [...context.argv];
     const options = parseOptions(args);
     const version = await packageVersion(context);
+
+    if (args[0] === "__complete") {
+      await printCompletions(args, context);
+      return 0;
+    }
 
     if (options.help) {
       context.terminal.log(HELP_TEXT);

@@ -1,12 +1,20 @@
 // src/scaffold.ts
 
-import { cp, mkdir, rm, writeFile, readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, rm, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { red, green, cyan } from "./lib/helper/consoleColor";
 import { CliError } from "./core/contracts";
 import type { Terminal } from "./core/contracts";
+import {
+  normalizeImportAlias,
+  validateProjectName,
+} from "./core/project-paths";
+import {
+  copyTemplate,
+  customizeGeneratedProject,
+} from "./core/template-manifest";
 
 /**
  * Options for scaffolding a Next.js project.
@@ -43,15 +51,42 @@ export async function scaffoldProject(
   options: ScaffoldOptions,
   runtime: ScaffoldRuntimeOptions = {},
 ) {
+  const requiredFeatures: Array<keyof ScaffoldOptions> = [
+    "useTypescript",
+    "useEslint",
+    "useTailwind",
+    "useSrcDir",
+    "useTurbopack",
+    "useI18n",
+  ];
+  const unsupported = requiredFeatures.filter(
+    (feature) => options[feature] !== true,
+  );
+  if (unsupported.length > 0) {
+    throw new CliError(
+      `The default Next.js 16 template requires: ${unsupported.join(", ")}.`,
+    );
+  }
   const cwd = runtime.cwd ?? process.cwd();
   const terminal = runtime.terminal ?? console;
-  const targetPath = join(cwd, options.projectName);
+  const projectName = validateProjectName(options.projectName);
+  const importAlias = normalizeImportAlias(
+    options.customAlias === false ? "@/*" : options.importAlias || "@/*",
+  );
+  const targetPath = join(cwd, projectName);
 
   const __dirname = new URL(".", import.meta.url); // or :
   // const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const templatePath =
     runtime.templatePath ??
     join(fileURLToPath(__dirname), "..", "templates", "Projects", "default");
+  const resolvedCwd = resolve(cwd);
+  const resolvedTarget = resolve(targetPath);
+  if (!resolvedTarget.startsWith(`${resolvedCwd}/`)) {
+    throw new CliError(
+      "The project destination must be a child of the current directory.",
+    );
+  }
 
   // Check if target directory exists
   if (existsSync(targetPath)) {
@@ -73,24 +108,13 @@ export async function scaffoldProject(
     await mkdir(targetPath, { recursive: true });
 
     terminal.log("Copying files from template...");
-    await cp(templatePath, targetPath, { recursive: true });
-
-    // Apply configuration: add dependencies or files based on prompt choices
-    const pkgPath = join(targetPath, "package.json");
-    if (existsSync(pkgPath)) {
-      const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
-      pkg.dependencies = pkg.dependencies || {};
-      if (options.useI18n) {
-        pkg.dependencies["next-intl"] =
-          pkg.dependencies["next-intl"] || "^4.3.5";
-      }
-      await writeFile(pkgPath, JSON.stringify(pkg, null, 2));
-    }
+    await copyTemplate(templatePath, targetPath);
+    await customizeGeneratedProject(targetPath, projectName, importAlias);
 
     // Write CLI configuration to project root
     await writeFile(
       join(targetPath, "cnp.config.json"),
-      JSON.stringify(options, null, 2),
+      `${JSON.stringify({ ...options, projectName, importAlias }, null, 2)}\n`,
     );
 
     terminal.log("Project setup complete!");

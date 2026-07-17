@@ -5,18 +5,39 @@ on:
     branches: ["master"]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   validate-cli:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          registry-url: https://registry.npmjs.org
       - run: bun install --frozen-lockfile
+      - name: Validate commit messages
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            bun run commitlint:range -- --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}"
+          elif git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            bun run commitlint:range -- --from "${{ github.event.before }}" --to "${{ github.sha }}"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            bun run commitlint:range -- --from HEAD^ --to HEAD
+          fi
       - run: bun run check
       - name: Smoke test Node.js bundle
         run: |
@@ -30,4 +51,160 @@ jobs:
         run: dist/create-next-pro --help
       - name: Smoke test launcher with Node.js only
         run: env PATH="$(dirname "$(command -v node)"):/usr/bin:/bin" dist/create-next-pro --help
-      - run: npm pack --dry-run
+      - name: Inspect package contents
+        run: |
+          bun run package:pack /tmp/create-next-pro-pack.json
+          bun run package:inspect /tmp/create-next-pro-pack.json
+      - name: Validate completion adapters
+        run: |
+          bash -n create-next-pro-completion.sh
+          zsh -n create-next-pro-completion.zsh
+
+  validate-template:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        manager: [bun, npm, pnpm]
+    defaults:
+      run:
+        working-directory: templates/Projects/default
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - name: Install dependencies
+        run: |
+          if [ "${{ matrix.manager }}" = bun ]; then bun install --frozen-lockfile; else ${{ matrix.manager }} install; fi
+      - run: ${{ matrix.manager }} run check
+      - name: Audit Bun dependency graph
+        if: matrix.manager == 'bun'
+        run: bun audit
+      - name: Install Chromium
+        if: matrix.manager == 'bun'
+        run: bunx playwright install --with-deps chromium
+      - name: Run visual integration tests
+        if: matrix.manager == 'bun'
+        run: bun run test:e2e
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [validate-cli, validate-template]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: ENV
+    permissions:
+      contents: write
+    concurrency:
+      group: npm-release-master
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: bun install --frozen-lockfile
+      - name: Configure release identity
+        run: |
+          git config user.name "create-next-pro release bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Resolve release state
+        id: release
+        shell: bash
+        run: |
+          git fetch --force origin master '+refs/tags/*:refs/tags/*'
+          bun run release:check > /tmp/release.json
+          cat /tmp/release.json
+          echo "action=$(jq -r .action /tmp/release.json)" >> "$GITHUB_OUTPUT"
+          echo "version=$(jq -r .targetVersion /tmp/release.json)" >> "$GITHUB_OUTPUT"
+      - name: Prepare next patch
+        if: steps.release.outputs.action == 'release'
+        run: bun run release:prepare
+      - name: Verify resumable release
+        if: steps.release.outputs.action == 'resume'
+        run: bun run release:resume
+      - name: Build and inspect release archive
+        if: steps.release.outputs.action == 'release' || steps.release.outputs.action == 'resume'
+        id: package
+        shell: bash
+        run: |
+          bun run check
+          bun run package:pack /tmp/create-next-pro-pack.json
+          archive=$(bun run --silent package:inspect /tmp/create-next-pro-pack.json | tail -n 1)
+          test -f "$archive"
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
+          sha256sum "$archive" | tee /tmp/create-next-pro-package.sha256
+      - name: Install and smoke test release archive
+        if: steps.release.outputs.action == 'release' || steps.release.outputs.action == 'resume'
+        shell: bash
+        run: |
+          root=$(mktemp -d)
+          trap 'rm -rf "$root"' EXIT
+          npm install --prefix "$root/install" "$GITHUB_WORKSPACE/${{ steps.package.outputs.archive }}"
+          cli="$root/install/node_modules/.bin/create-next-pro"
+          "$cli" --help
+          "$cli" --version
+          mkdir -p "$root/config/create-next-pro" "$root/work"
+          printf '%s\n' '{"version":1,"shell":"bash","completionInstalled":false,"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}' > "$root/config/create-next-pro/config.json"
+          cd "$root/work"
+          XDG_CONFIG_HOME="$root/config" "$cli" release-smoke
+          test -f release-smoke/package.json
+      - name: Persist release commit and tag
+        if: steps.release.outputs.action == 'release'
+        shell: bash
+        run: |
+          bun run release:commit -- "${{ steps.release.outputs.version }}"
+          git push --atomic origin HEAD:master "refs/tags/v${{ steps.release.outputs.version }}:refs/tags/v${{ steps.release.outputs.version }}"
+      - name: Publish exact archive
+        if: steps.release.outputs.action == 'release' || steps.release.outputs.action == 'resume'
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          version="${{ steps.release.outputs.version }}"
+          existing=$(npm view "create-next-pro-cli@$version" version --json 2>/dev/null | jq -r '. // empty') || true
+          if [ "$existing" = "$version" ]; then
+            published_head=$(npm view "create-next-pro-cli@$version" gitHead --json | jq -r .)
+            test "$published_head" = "$(git rev-parse HEAD)"
+            echo "create-next-pro-cli@$version is already published from this release commit"
+          else
+            npm publish "${{ steps.package.outputs.archive }}" --access public
+          fi
+      - name: Verify public release convergence
+        if: steps.release.outputs.action == 'release' || steps.release.outputs.action == 'resume'
+        shell: bash
+        run: |
+          expected="${{ steps.release.outputs.version }}"
+          for attempt in 1 2 3 4 5 6; do
+            published=$(npm view create-next-pro-cli version --json | jq -r .) || true
+            [ "$published" = "$expected" ] && break
+            sleep 10
+          done
+          test "$published" = "$expected"
+          test "$(git show "v$expected:package.json" | jq -r .version)" = "$expected"
+          test "$(git rev-list -n 1 "v$expected")" = "$(git rev-parse HEAD)"
+      - name: Release summary
+        if: always()
+        run: |
+          {
+            echo "## npm release"
+            echo "- action: ${{ steps.release.outputs.action || 'not-resolved' }}"
+            echo "- version: ${{ steps.release.outputs.version || 'not-resolved' }}"
+            echo "- source: ${{ github.sha }}"
+          } >> "$GITHUB_STEP_SUMMARY"

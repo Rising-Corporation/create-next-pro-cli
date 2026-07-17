@@ -29,10 +29,18 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 #local-development
 .old-dev
+.agent
+.cursor
+.vscode
 
-# IntelliJ based IDEs
+#old-template
+templates/Projects/default-old
+
+# IDEs
 .idea
 .vscode
+.cursor
+.agent
 
 # Finder (MacOS) folder config
 .DS_Store

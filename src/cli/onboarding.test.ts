@@ -49,4 +49,30 @@ describe("onboarding", () => {
     });
     await expect(readConfig(context)).resolves.toBeNull();
   });
+
+  test("installs the shell-specific completion idempotently", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "cnp-completion-"));
+    temporaryDirectories.push(root);
+    const context = createNodeContext({
+      env: { XDG_CONFIG_HOME: root, SHELL: "/bin/zsh" },
+      homeDir: root,
+      terminal: { log: vi.fn(), warn: vi.fn(), error: vi.fn() },
+      prompt: vi.fn(async () => ({
+        shell: "zsh",
+        completion: true,
+      })) as PromptRunner,
+    });
+
+    await onboarding(context, "1.2.3");
+    await onboarding(context, "1.2.3");
+
+    expect(
+      await readFile(
+        path.join(root, "create-next-pro", "completion.zsh"),
+        "utf8",
+      ),
+    ).toContain("compdef _create_next_pro create-next-pro");
+    const rc = await readFile(path.join(root, ".zshrc"), "utf8");
+    expect(rc.match(/source /g)).toHaveLength(1);
+  });
 });

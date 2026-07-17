@@ -1,5 +1,21 @@
 {
+  "user_nav": {
+    "links": {
+      "home": "Accueil",
+      "dashboard": "Tableau de bord",
+      "settings": "Paramètres",
+      "user_info": "Informations sur l'utilisateur"
+    }
+  },
+  "Loading": {
+    "title": "Chargement en cours",
+    "description": "Veuillez patienter pendant que nous préparons votre expérience..."
+  },
+  "back": "Retour",
+  "select_language": "Choisir la langue",
+  "toggle_theme": "Changer de thème",
   "public_nav": {
+    "menu": "Menu de navigation publique",
     "links": {
       "home": "Accueil",
       "login": "Connexion",
@@ -19,16 +35,13 @@
       "search": "Recherche"
     }
   },
-  "user_nav": {
-    "links": {
-      "home": "Accueil",
-      "dashboard": "Tableau de bord",
-      "settings": "Paramètres",
-      "user_info": "Informations sur l'utilisateur"
-    }
+  "error": {
+    "title": "Une erreur est survenue !",
+    "retry": "Réessayer"
   },
-  "Loading": {
-    "title": "Chargement en cours",
-    "description": "Veuillez patienter pendant que nous préparons votre expérience..."
+  "not_found": {
+    "title": "Page introuvable",
+    "description": "La ressource demandée est introuvable",
+    "home": "Retour à l'accueil"
   }
 }

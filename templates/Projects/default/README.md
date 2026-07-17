@@ -1,137 +1,81 @@
-# My Next.js Project
+# Create Next Pro Template
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-pro`](https://github.com/Rising-Corporation/create-next-pro-cli).
+Next.js App Router template for `create-next-pro-cli`.
 
-## 🚀 Getting Started
+## Runtime
 
-First, run the development server:
+This template is Bun-first. Do not use npm, pnpm, or yarn for project scripts.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `src/app/[locale]/page.tsx`. The page auto-updates as you edit the file.
-
-## ✨ Features
-
-This project comes with the following features pre-configured:
-
-- **🌍 Internationalization (i18n)** - Using `next-intl` with locale-based routing
-- **🎨 Tailwind CSS** - Utility-first CSS framework
-- **⚡ TypeScript** - Type-safe development
-- **🔐 Authentication** - NextAuth.js integration
-- **📱 Responsive Design** - Mobile-first approach
-- **⚙️ ESLint & Prettier** - Code quality and formatting
-- **🎯 App Router** - Latest Next.js routing system
-
-## 🛠️ CLI Commands
-
-You can use `create-next-pro` to add and manage your project structure:
-
-### Add a new page:
+Required:
 
 ```bash
-create-next-pro addpage MyPage
+bun --version
+node --version
 ```
 
-### Add a nested page:
+Node must satisfy `>=24.0.0`.
+
+## Setup
 
 ```bash
-create-next-pro addpage ParentPage.ChildPage
+bun install
+cp .env.example .env
+bun run dev
 ```
 
-### Add a component (global):
+Open `http://localhost:3000`.
+
+## Environment
+
+Auth.js v5 supports Google OAuth when credentials are configured. The public
+application, checks and production build work without OAuth credentials.
+
+Optional Google OAuth values (set all three together):
 
 ```bash
-create-next-pro addcomponent MyComponent
+AUTH_SECRET=
+AUTH_GOOGLE_ID=
+AUTH_GOOGLE_SECRET=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+AUTH_TRUST_HOST=false
+AUTH_DISABLED=false
 ```
 
-### Add a component in a specific page:
+The template also accepts the legacy aliases `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `PROJECT_PRODUCTION_URL` to ease migration from older generated projects.
+
+## Scripts
 
 ```bash
-create-next-pro addcomponent MyComponent -P MyPage
+bun run dev
+bun run lint
+bun run typecheck
+bun run build
+bun run verify:rendering
+bun test
+bun run test:e2e
+bun run test:consumer
+bun run audit
+bun run check
 ```
 
-### Add a library:
+## Template Features
 
-```bash
-create-next-pro addlib mylib
-```
+- Next.js 16 App Router
+- React 19
+- Auth.js v5 through `next-auth@beta`
+- Google OAuth provider
+- Protected user routes
+- `next-intl` locale routing for `en` and `fr`
+- Tailwind CSS 4 theme tokens
+- Playwright smoke captures for desktop and mobile
 
-### Add an API route:
+## Rendering and CSP
 
-```bash
-create-next-pro addapi hello
-```
+Public localized pages are prerendered for `en` and `fr`. Authenticated routes
+and Auth.js handlers stay dynamic. `bun run verify:rendering` checks this boundary
+after every production build.
 
-### Add a new language (i18n):
-
-```bash
-create-next-pro addlanguage fr
-```
-
-### Add translation text:
-
-```bash
-create-next-pro addtext MyPage.welcome "Welcome to my page"
-```
-
-### Remove a page:
-
-```bash
-create-next-pro rmpage MyPage
-```
-
-## 📁 Project Structure
-
-```
-src/
-├── app/
-│   ├── [locale]/           # Internationalization routing
-│   │   ├── (public)/       # Public pages (login, register)
-│   │   └── (user)/         # Protected pages (dashboard, settings)
-│   └── api/                # API routes
-├── lib/                    # Utility libraries
-│   ├── auth/               # Authentication helpers
-│   └── i18n/               # Internationalization config
-└── ui/                     # UI components organized by page
-```
-
-## 🌐 Internationalization
-
-The project supports multiple languages through the `messages/` directory:
-
-- `messages/en/` - English translations
-- `messages/fr/` - French translations
-- Add more languages with `create-next-pro addlanguage <locale>`
-
-## 🔐 Authentication
-
-Authentication is configured with NextAuth.js. Check `src/auth.config.ts` for configuration and `/api/auth/` for auth routes.
-
-## 📚 Learn More
-
-To learn more about the technologies used:
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [next-intl Documentation](https://next-intl-docs.vercel.app/)
-- [NextAuth.js Documentation](https://next-auth.js.org/)
-
-## 🚀 Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new) from the creators of Next.js.
-
-Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
----
-
-Created with ❤️ using [create-next-pro](https://github.com/Rising-Corporation/create-next-pro-cli)
+The default Content Security Policy follows the stable static-rendering setup
+documented by Next.js and allows the framework's inline bootstrap scripts. Projects
+with stricter compliance requirements can adopt a per-request nonce, with the
+tradeoff that nonce-protected pages become dynamically rendered.

@@ -5,6 +5,7 @@ import { existsSync } from "node:fs";
 
 import { loadConfig } from "./utils";
 import { resolvePackageRoot } from "../runtime/node-context";
+import { assertSafeTarget, parseLogicalName } from "../core/project-paths";
 
 export async function addApi(args: string[], cwd = process.cwd()) {
   let apiName = args[1];
@@ -17,6 +18,7 @@ export async function addApi(args: string[], cwd = process.cwd()) {
     });
     apiName = response.apiName;
   }
+  const apiSegments = parseLogicalName(apiName, "API route name");
 
   const config = await loadConfig(cwd);
   if (!config) {
@@ -26,7 +28,8 @@ export async function addApi(args: string[], cwd = process.cwd()) {
     return;
   }
 
-  const apiDir = join(cwd, "src", "app", "api", apiName);
+  const apiDir = join(cwd, "src", "app", "api", ...apiSegments);
+  await assertSafeTarget(cwd, apiDir);
   if (!existsSync(apiDir)) {
     await mkdir(apiDir, { recursive: true });
   }
