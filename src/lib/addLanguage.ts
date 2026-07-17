@@ -16,19 +16,21 @@ function generateLocales(): string[] {
         if (name && name.toLowerCase() !== code) {
           locales.push(code);
         }
-      } catch {}
+      } catch {
+        // Ignore values that are not recognized as language codes.
+      }
     }
   }
   return locales.sort();
 }
 
-export async function addLanguage(args: string[]) {
-  const config = await loadConfig();
+export async function addLanguage(args: string[], cwd = process.cwd()) {
+  const config = await loadConfig(cwd);
   if (!config?.useI18n) {
     console.error("❌ i18n is not enabled in this project.");
     return;
   }
-  const messagesPath = join(process.cwd(), "messages");
+  const messagesPath = join(cwd, "messages");
   if (!existsSync(messagesPath)) {
     console.error("❌ Messages directory missing. Ensure i18n was configured.");
     return;
@@ -51,7 +53,7 @@ export async function addLanguage(args: string[]) {
     return;
   }
 
-  const routingFile = join(process.cwd(), "src", "lib", "i18n", "routing.ts");
+  const routingFile = join(cwd, "src", "lib", "i18n", "routing.ts");
   if (!existsSync(routingFile)) {
     console.error("❌ routing.ts not found. Are you in project root?");
     return;
@@ -77,8 +79,11 @@ export async function addLanguage(args: string[]) {
       .filter(Boolean);
     if (!localesArr.includes(locale)) {
       localesArr.push(locale);
-      const newLocales = `locales: [${localesArr.map((l) => `"${l}"`).join(", " )}]`;
-      const newContent = routingContent.replace(/locales:\s*\[[^\]]*\]/, newLocales);
+      const newLocales = `locales: [${localesArr.map((l) => `"${l}"`).join(", ")}]`;
+      const newContent = routingContent.replace(
+        /locales:\s*\[[^\]]*\]/,
+        newLocales,
+      );
       await writeFile(routingFile, newContent);
       console.log(`📄 File updated: ${routingFile}`);
     }

@@ -1,7 +1,9 @@
 import { scaffoldProject } from "../scaffold";
-import prompts from "prompts";
-export async function createProjectWithPrompt() {
-  const response = await prompts.prompt([
+import type { ScaffoldOptions } from "../scaffold";
+import type { CliContext } from "../core/contracts";
+
+export async function createProjectWithPrompt(context: CliContext) {
+  const response = await context.prompt<keyof ScaffoldOptions>([
     {
       type: "text",
       name: "projectName",
@@ -72,8 +74,12 @@ export async function createProjectWithPrompt() {
     },
   ]);
 
-  console.log("\nYour choices:");
-  console.log(response);
+  const options = response as unknown as ScaffoldOptions;
+  context.terminal.log("\nYour choices:");
+  context.terminal.log(options);
 
-  await scaffoldProject(response);
+  await scaffoldProject(options, {
+    cwd: context.cwd,
+    terminal: context.terminal,
+  });
 }

@@ -5,12 +5,10 @@ import { readFile, writeFile, readdir } from "node:fs/promises";
 import { loadConfig } from "./utils";
 
 function defaultText(key: string) {
-  return key
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export async function addText(args: string[]) {
+export async function addText(args: string[], cwd = process.cwd()) {
   const pathArg = args[1];
   if (!pathArg) {
     console.error("❌ Dot path parameter is required.");
@@ -18,12 +16,12 @@ export async function addText(args: string[]) {
   }
   const providedText = args.slice(2).join(" ");
 
-  const config = await loadConfig();
+  const config = await loadConfig(cwd);
   if (!config?.useI18n) {
     console.error("❌ i18n is not enabled in this project.");
     return;
   }
-  const messagesPath = join(process.cwd(), "messages");
+  const messagesPath = join(cwd, "messages");
   if (!existsSync(messagesPath)) {
     console.error("❌ Messages directory missing. Ensure i18n was configured.");
     return;
@@ -47,7 +45,9 @@ export async function addText(args: string[]) {
       const raw = await readFile(filePath, "utf-8");
       try {
         data = JSON.parse(raw) as Record<string, any>;
-      } catch {}
+      } catch {
+        // Preserve the current behavior by replacing invalid JSON with an object.
+      }
     }
     let cursor = data;
     for (let i = 0; i < segments.length - 1; i++) {

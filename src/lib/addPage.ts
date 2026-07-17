@@ -3,10 +3,11 @@ import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
 import prompts from "prompts";
 
 import { capitalize, toFileName, loadConfig } from "./utils";
+import { resolvePackageRoot } from "../runtime/node-context";
 
 import { existsSync, statSync } from "node:fs";
 
-export async function addPage(args: string[]) {
+export async function addPage(args: string[], cwd = process.cwd()) {
   let pageName = args[1];
   if (!pageName || pageName.startsWith("-")) {
     const response = await prompts.prompt({
@@ -26,7 +27,7 @@ export async function addPage(args: string[]) {
   }
 
   let shortFlags = args.find((arg) => /^-[A-Za-z]+$/.test(arg));
-  let longFlags = new Set(args.filter((a) => a.startsWith("--")));
+  const longFlags = new Set(args.filter((a) => a.startsWith("--")));
   const flags = new Set<string>();
 
   if (!shortFlags && Array.from(longFlags).length === 0) {
@@ -81,7 +82,7 @@ export async function addPage(args: string[]) {
     if (longFlags.has("--" + flag)) flags.add(flag);
   }
 
-  const config = await loadConfig();
+  const config = await loadConfig(cwd);
   if (!config) {
     console.error(
       "❌ Configuration file cnp.config.json not found. Run this command from the project root.",
@@ -92,7 +93,7 @@ export async function addPage(args: string[]) {
 
   const srcSegments = ["src", "app"];
   if (useI18n) srcSegments.push("[locale]");
-  const srcPath = join(process.cwd(), ...srcSegments);
+  const srcPath = join(cwd, ...srcSegments);
   if (!existsSync(srcPath)) {
     console.error(`❌ Expected directory not found: ${srcPath}`);
     return;
@@ -101,7 +102,7 @@ export async function addPage(args: string[]) {
   let messagesPath: string | null = null;
   let locales: string[] = [];
   if (useI18n) {
-    messagesPath = join(process.cwd(), "messages");
+    messagesPath = join(cwd, "messages");
     if (!existsSync(messagesPath)) {
       console.error(
         "❌ Messages directory missing. Ensure i18n was configured.",
@@ -113,7 +114,7 @@ export async function addPage(args: string[]) {
   }
 
   const templatePath = join(
-    new URL("..", import.meta.url).pathname,
+    resolvePackageRoot(import.meta.url),
     "templates",
     "Page",
   );
@@ -121,11 +122,11 @@ export async function addPage(args: string[]) {
   // Create folders/files for nested or simple page
   let uiPageDir, localePagePath, jsonFileName;
   if (parentName && childName) {
-    uiPageDir = join(process.cwd(), "src", "ui", parentName, childName);
+    uiPageDir = join(cwd, "src", "ui", parentName, childName);
     localePagePath = join(srcPath, parentName, childName);
     jsonFileName = parentName;
   } else {
-    uiPageDir = join(process.cwd(), "src", "ui", pageName);
+    uiPageDir = join(cwd, "src", "ui", pageName);
     localePagePath = join(srcPath, pageName);
     jsonFileName = pageName;
   }

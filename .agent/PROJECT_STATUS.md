@@ -3,12 +3,12 @@
 - Projet : `create-next-pro-cli`
 - Date d'initialisation du contexte : 2026-07-17
 - Phase courante : Phase 1 — Audit et socle fiable du CLI
-- Statut : planifiée, non démarrée
-- Progression : structure `.agent` initialisée ; implémentation existante à auditer
+- Statut : terminée et validée le 2026-07-17
+- Progression : 4 sous-phases terminées, 16 marqueurs démarrage/validation complétés
 - Tâches prévues pour la phase : 16 marqueurs de démarrage/validation répartis en 4 sous-phases
-- Tâches de la phase complétées : 0
-- Prochaine tâche : cartographier les points d'entrée, commandes, templates et artefacts distribués
-- Blocages connus : Bun et Node.js sont absents du `PATH` de la session ; les contrôles runtime et Prettier restent à exécuter
+- Tâches de la phase complétées : 16/16
+- Prochaine tâche : démarrer la phase 2.0 — baseline, frontières et assainissement de la template
+- Blocages connus : aucun pour la phase 1 ; Node.js 24.18.0 a été validé depuis un binaire officiel isolé sous `/tmp`
 - Validation visuelle : non applicable, le périmètre actuel est un CLI sans UI
 - Phase suivante planifiée : Phase 2 — Intégration sécurisée de la nouvelle template Next.js 16
 - Statut de la phase 2 : planifiée, aucune implémentation démarrée
@@ -18,7 +18,9 @@
 
 ## État technique observé
 
-Le dépôt contient déjà des points d'entrée Bun et Node.js, un cœur TypeScript, des commandes de génération, des artefacts `dist`, un exemple de projet généré et une configuration de build. La présence et la cohérence des modules importés, des templates, des tests et des scripts de qualité restent à vérifier pendant la phase 1.
+Le dépôt contient des points d'entrée Bun et Node.js, un cœur TypeScript, des commandes de génération et une configuration de build désormais validés par la phase 1. L'exemple historique `my-next-app` est en cours de suppression dans les changements utilisateur et n'est plus utilisé comme fixture.
+
+La phase 1 a établi un contexte CLI injectable, un registre asynchrone commun, des codes de sortie déterministes, une configuration TypeScript/ESLint/Prettier et 22 tests de caractérisation isolés. Les bundles Node.js 24 et Bun 1.3, le lanceur multi-runtime et le tarball npm ont été validés localement.
 
 ## Nouvelle template observée
 

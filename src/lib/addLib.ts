@@ -4,8 +4,9 @@ import prompts from "prompts";
 import { existsSync } from "node:fs";
 
 import { loadConfig, capitalize } from "./utils";
+import { resolvePackageRoot } from "../runtime/node-context";
 
-export async function addLib(args: string[]) {
+export async function addLib(args: string[], cwd = process.cwd()) {
   let libArg = args[1];
   if (!libArg || libArg.startsWith("-")) {
     const response = await prompts.prompt({
@@ -23,7 +24,7 @@ export async function addLib(args: string[]) {
     [libName, fileName] = libArg.split(".");
   }
 
-  const config = await loadConfig();
+  const config = await loadConfig(cwd);
   if (!config) {
     console.error(
       "❌ Configuration file cnp.config.json not found. Run this command from the project root.",
@@ -31,13 +32,13 @@ export async function addLib(args: string[]) {
     return;
   }
 
-  const libDir = join(process.cwd(), "src", "lib", libName);
+  const libDir = join(cwd, "src", "lib", libName);
   if (!existsSync(libDir)) {
     await mkdir(libDir, { recursive: true });
   }
 
   const templateDir = join(
-    new URL("..", import.meta.url).pathname,
+    resolvePackageRoot(import.meta.url),
     "templates",
     "Lib",
   );

@@ -3,13 +3,14 @@ import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
 import prompts from "prompts";
 
 import { capitalize, loadConfig } from "./utils";
+import { resolvePackageRoot } from "../runtime/node-context";
 
 import { existsSync, statSync } from "node:fs";
 
-export async function addComponent(args: string[]) {
+export async function addComponent(args: string[], cwd = process.cwd()) {
   let componentName = args[1];
   let pageScope = null;
-  let pageIndex = args.findIndex((arg) => arg === "-P" || arg === "--page");
+  const pageIndex = args.findIndex((arg) => arg === "-P" || arg === "--page");
   if (pageIndex !== -1 && args[pageIndex + 1]) {
     pageScope = args[pageIndex + 1];
   }
@@ -31,7 +32,7 @@ export async function addComponent(args: string[]) {
     componentName = response.componentName;
   }
 
-  const config = await loadConfig();
+  const config = await loadConfig(cwd);
   if (!config) {
     console.error(
       "❌ Configuration file cnp.config.json not found. Run this command from the project root.",
@@ -42,13 +43,13 @@ export async function addComponent(args: string[]) {
 
   const componentNameUpper = capitalize(componentName);
   const templatePath = join(
-    new URL("..", import.meta.url).pathname,
+    resolvePackageRoot(import.meta.url),
     "templates",
     "Component",
   );
   let messagesPath: string | null = null;
   if (useI18n) {
-    messagesPath = join(process.cwd(), "messages");
+    messagesPath = join(cwd, "messages");
     if (!existsSync(messagesPath)) {
       console.error(
         "❌ Messages directory missing. Ensure i18n was configured.",
@@ -62,14 +63,14 @@ export async function addComponent(args: string[]) {
   let translationKey;
   if (pageScope) {
     if (nestedPath) {
-      componentTargetPath = join(process.cwd(), "src", "ui", nestedPath);
+      componentTargetPath = join(cwd, "src", "ui", nestedPath);
       translationKey = pageScope;
     } else {
-      componentTargetPath = join(process.cwd(), "src", "ui", pageScope);
+      componentTargetPath = join(cwd, "src", "ui", pageScope);
       translationKey = pageScope;
     }
   } else {
-    componentTargetPath = join(process.cwd(), "src", "ui", "_global");
+    componentTargetPath = join(cwd, "src", "ui", "_global");
     translationKey = "_global_ui";
   }
   if (!existsSync(componentTargetPath)) {

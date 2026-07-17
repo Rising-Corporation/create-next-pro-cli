@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: ["bin.node.ts"],
   format: ["esm"], // ou ["cjs"] si tu préfères CJS
-  target: "node20",
+  target: "node24",
   outDir: "dist",
   dts: false, // évite tout build .d.ts
   clean: true,
