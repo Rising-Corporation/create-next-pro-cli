@@ -9,6 +9,7 @@ const manager = process.env.CNP_PACKAGE_MANAGER ?? "bun";
 const entries = [
   ".env.example",
   ".gitignore",
+  ".prettierignore",
   "README.md",
   "bun.lock",
   "eslint.config.mjs",

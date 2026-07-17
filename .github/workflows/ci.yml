@@ -95,9 +95,36 @@ jobs:
         if: matrix.manager == 'bun'
         run: bun run test:e2e
 
-  publish:
+  release-preflight:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: [validate-cli, validate-template]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: ENV
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Verify npm release identity and package access
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm ping
+          identity=$(npm whoami)
+          test "$identity" = "mrrise"
+          test "$(npm access get status create-next-pro-cli)" = "create-next-pro-cli: public"
+          owners=$(npm owner ls create-next-pro-cli)
+          grep -Eq '^mrrise[[:space:]]' <<< "$owners"
+          echo "Authenticated npm release owner: $identity"
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.RELEASE_ENABLED == 'true'
+    needs: [validate-cli, validate-template, release-preflight]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
@@ -199,6 +226,11 @@ jobs:
           test "$published" = "$expected"
           test "$(git show "v$expected:package.json" | jq -r .version)" = "$expected"
           test "$(git rev-list -n 1 "v$expected")" = "$(git rev-parse HEAD)"
+          test "$(git ls-remote origin refs/heads/master | cut -f1)" = "$(git rev-parse HEAD)"
+          test "$(git ls-remote origin "refs/tags/v$expected^{}" | cut -f1)" = "$(git rev-parse HEAD)"
+          test "$(npm view "create-next-pro-cli@$expected" gitHead --json | jq -r .)" = "$(git rev-parse HEAD)"
+          test "$(npm access get status create-next-pro-cli)" = "create-next-pro-cli: public"
+          npm owner ls create-next-pro-cli | grep -Eq '^mrrise[[:space:]]'
       - name: Release summary
         if: always()
         run: |
