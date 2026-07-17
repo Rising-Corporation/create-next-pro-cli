@@ -55,6 +55,8 @@ jobs:
         run: |
           bun run package:pack /tmp/create-next-pro-pack.json
           bun run package:inspect /tmp/create-next-pro-pack.json
+      - name: Install Zsh for completion validation
+        run: sudo apt-get update && sudo apt-get install --yes zsh
       - name: Validate completion adapters
         run: |
           bash -n create-next-pro-completion.sh
