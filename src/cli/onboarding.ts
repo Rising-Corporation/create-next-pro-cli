@@ -1,6 +1,7 @@
 import path from "node:path";
 
-import type { CliContext } from "../core/contracts";
+import type { CliContext, CommandResult } from "../core/contracts";
+import { commandResult, MutationGateway } from "../core/operations";
 
 export type UserConfig = {
   version: 1;
@@ -24,9 +25,19 @@ export async function readConfig(
   context: CliContext,
 ): Promise<UserConfig | null> {
   try {
-    return JSON.parse(
+    const config = JSON.parse(
       await context.fs.readText(configFile(context)),
     ) as UserConfig;
+    if (
+      config.version !== 1 ||
+      (config.shell !== "bash" && config.shell !== "zsh") ||
+      typeof config.completionInstalled !== "boolean" ||
+      typeof config.createdAt !== "string" ||
+      typeof config.updatedAt !== "string"
+    ) {
+      return null;
+    }
+    return config;
   } catch {
     return null;
   }
@@ -36,16 +47,16 @@ async function ensureLineInRc(
   context: CliContext,
   target: string,
   line: string,
-): Promise<void> {
-  try {
-    const current = context.fs.exists(target)
-      ? await context.fs.readText(target)
-      : "";
-    if (!current.includes(line))
-      await context.fs.appendText(target, `\n${line}\n`);
-  } catch {
-    // Autocompletion is optional and must not make onboarding fail.
-  }
+): Promise<"created" | "updated" | "unchanged"> {
+  const current = context.fs.exists(target)
+    ? await context.fs.readText(target)
+    : "";
+  const gateway = new MutationGateway(context, context.homeDir, "home");
+  return gateway.write(
+    target,
+    current.includes(line) ? current : `${current}\n${line}\n`,
+    { role: "shell-profile", resource: "shell-profile" },
+  );
 }
 
 async function installCompletion(
@@ -63,8 +74,11 @@ async function installCompletion(
     directory,
     `completion.${shell === "zsh" ? "zsh" : "sh"}`,
   );
-  await context.fs.mkdir(directory);
-  await context.fs.copyFile(source, target);
+  const gateway = new MutationGateway(context, directory, "config");
+  await gateway.write(target, await context.fs.readText(source), {
+    role: "completion-script",
+    source: { scope: "package", path: path.basename(source) },
+  });
   const rcFile = path.join(
     context.homeDir,
     shell === "zsh" ? ".zshrc" : ".bashrc",
@@ -75,8 +89,7 @@ async function installCompletion(
 export async function onboarding(
   context: CliContext,
   version: string,
-): Promise<UserConfig> {
-  context.terminal.log(`🚀 Welcome to create-next-pro v${version}\n`);
+): Promise<CommandResult> {
   const response = await context.prompt<"shell" | "completion">(
     [
       {
@@ -102,34 +115,77 @@ export async function onboarding(
   );
 
   if (response.shell !== "bash" && response.shell !== "zsh") {
-    throw new Error("Configuration cancelled.");
+    context.operations.record({
+      action: "cancelled",
+      resource: "command",
+      role: "onboarding",
+      scope: "config",
+      path: ".",
+    });
+    return commandResult(context, {
+      command: "onboarding",
+      summary: "Configuration was cancelled.",
+      configRoot: configDirectory(context),
+      homeRoot: context.homeDir,
+      status: "cancelled",
+    });
   }
 
+  const previous = await readConfig(context);
   const now = new Date().toISOString();
   const config: UserConfig = {
     version: 1,
     shell: response.shell,
     completionInstalled: Boolean(response.completion),
-    createdAt: now,
+    createdAt: previous?.createdAt ?? now,
     updatedAt: now,
   };
-  if (config.completionInstalled)
-    await installCompletion(context, config.shell);
-  await context.fs.mkdir(configDirectory(context));
-  await context.fs.writeText(
+  if (config.completionInstalled) {
+    try {
+      await installCompletion(context, config.shell);
+    } catch (error) {
+      context.operations.record({
+        action: "skipped",
+        resource: "file",
+        role: "completion-installation",
+        scope: "config",
+        path: `completion.${config.shell === "zsh" ? "zsh" : "sh"}`,
+        detail: {
+          reason: error instanceof Error ? error.message : String(error),
+        },
+      });
+      config.completionInstalled = false;
+    }
+  }
+
+  const semanticallyUnchanged =
+    previous?.shell === config.shell &&
+    previous.completionInstalled === config.completionInstalled;
+  if (semanticallyUnchanged && previous) config.updatedAt = previous.updatedAt;
+
+  const gateway = new MutationGateway(
+    context,
+    configDirectory(context),
+    "config",
+  );
+  await gateway.write(
     configFile(context),
-    JSON.stringify(config, null, 2),
+    `${JSON.stringify(config, null, 2)}\n`,
+    { role: "user-configuration", resource: "configuration" },
   );
 
-  context.terminal.log("\n✅ Configuration saved.");
-  context.terminal.log("you can now use the CLI ! ex : ");
-  context.terminal.log("  Without prompt (will change in future) :");
-  context.terminal.log("    create-next-pro my-next-project");
-  context.terminal.log("  With prompt :");
-  context.terminal.log("    create-next-pro");
-  context.terminal.log(
-    "For more information, visit: https://github.com/Rising-Corporation/create-next-pro-cli",
-  );
-  context.terminal.log("Happy coding!  🎉");
-  return config;
+  return commandResult(context, {
+    command: "onboarding",
+    summary: `Configuration for create-next-pro v${version} is ready.`,
+    configRoot: configDirectory(context),
+    homeRoot: context.homeDir,
+    nextSteps: [
+      {
+        kind: "rerun",
+        required: true,
+        message: "Run the original create-next-pro command again.",
+        paths: [],
+      },
+    ],
+  });
 }

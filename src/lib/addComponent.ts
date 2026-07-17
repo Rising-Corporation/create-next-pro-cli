@@ -1,153 +1,237 @@
 import { join } from "node:path";
-import { mkdir, readFile, writeFile, readdir } from "node:fs/promises";
-import prompts from "prompts";
 
-import { capitalize, loadConfig } from "./utils";
-import { resolvePackageRoot } from "../runtime/node-context";
+import { CliError, type CommandHandler } from "../core/contracts";
+import { commandResult, MutationGateway } from "../core/operations";
 import { assertSafeTarget, parseLogicalName } from "../core/project-paths";
+import { capitalize, loadConfig, toIdentifier } from "./utils";
 
-import { existsSync, statSync } from "node:fs";
+type PreparedMessages = {
+  locale: string;
+  target: string;
+  content?: string;
+  exists: boolean;
+};
 
-export async function addComponent(args: string[], cwd = process.cwd()) {
+export const addComponent: CommandHandler = async (args, context) => {
   let componentName = args[1];
-  let pageScope = null;
-  const pageIndex = args.findIndex((arg) => arg === "-P" || arg === "--page");
-  if (pageIndex !== -1 && args[pageIndex + 1]) {
-    pageScope = args[pageIndex + 1];
+  const pageIndex = args.findIndex(
+    (argument) => argument === "-P" || argument === "--page",
+  );
+  const pageScope = pageIndex >= 0 ? args[pageIndex + 1] : undefined;
+  if (pageIndex >= 0 && !pageScope) {
+    throw new CliError("The --page option requires a page name.", {
+      code: "INVALID_ARGUMENT",
+    });
   }
-  // Handle nested pageScope (e.g. ParentPage.ChildPage)
-  let nestedPath = null;
-  if (pageScope && pageScope.includes(".")) {
-    nestedPath = join(...pageScope.split("."));
-  }
-
   if (!componentName || componentName.startsWith("-")) {
-    // Si le nom n'est pas fourni ou est une option, demander via prompt
-    const response = await prompts.prompt({
+    if (context.outputMode === "json") {
+      throw new CliError("Component name is required in JSON mode.", {
+        code: "INTERACTIVE_INPUT_REQUIRED",
+        hint: "Pass the component name after addcomponent.",
+      });
+    }
+    const response = await context.prompt<"componentName">({
       type: "text",
       name: "componentName",
-      message: "🧩 Component name to add:",
+      message: "Component name to add:",
       validate: (name: string) => (name ? true : "Component name is required"),
     });
-    componentName = response.componentName;
+    componentName = String(response.componentName ?? "");
+    if (!componentName) {
+      context.operations.record({
+        action: "cancelled",
+        resource: "command",
+        role: "component-creation",
+        scope: "project",
+        path: ".",
+      });
+      return commandResult(context, {
+        command: "addcomponent",
+        summary: "Component creation was cancelled.",
+        projectRoot: context.cwd,
+        status: "cancelled",
+      });
+    }
   }
-  parseLogicalName(componentName, "component name");
-  if (pageScope) parseLogicalName(pageScope, "page name");
-
-  const config = await loadConfig(cwd);
+  const componentSegments = parseLogicalName(componentName, "component name");
+  if (componentSegments.length !== 1) {
+    throw new CliError("Component names must contain exactly one segment.", {
+      code: "INVALID_ARGUMENT",
+    });
+  }
+  const pageSegments = pageScope
+    ? parseLogicalName(pageScope, "page name")
+    : [];
+  const config = await loadConfig(context);
   if (!config) {
-    console.error(
-      "❌ Configuration file cnp.config.json not found. Run this command from the project root.",
-    );
-    return;
+    throw new CliError("Configuration file cnp.config.json was not found.", {
+      code: "CONFIG_NOT_FOUND",
+      hint: "Run this command from the generated project root.",
+    });
   }
-  const useI18n = !!config.useI18n;
 
-  const componentNameUpper = capitalize(componentName);
-  const templatePath = join(
-    resolvePackageRoot(import.meta.url),
-    "templates",
-    "Component",
-  );
-  let messagesPath: string | null = null;
-  if (useI18n) {
-    messagesPath = join(cwd, "messages");
-    if (!existsSync(messagesPath)) {
-      console.error(
-        "❌ Messages directory missing. Ensure i18n was configured.",
-      );
-      return;
+  const componentNameUpper = capitalize(toIdentifier(componentName));
+  const templateRoot = join(context.packageRoot, "templates", "Component");
+  const componentTemplate = join(templateRoot, "Component.tsx");
+  const messagesTemplate = join(templateRoot, "component.json");
+  if (
+    !context.fs.exists(componentTemplate) ||
+    (config.useI18n && !context.fs.exists(messagesTemplate))
+  ) {
+    throw new CliError("Required component template files were not found.", {
+      code: "TEMPLATE_MISSING",
+      scope: "package",
+      path: "templates/Component",
+    });
+  }
+
+  const targetDirectory = pageScope
+    ? join(context.cwd, "src", "ui", ...pageSegments)
+    : join(context.cwd, "src", "ui", "_global");
+  await assertSafeTarget(context.cwd, targetDirectory, context.fs);
+  const componentFile = join(targetDirectory, `${componentNameUpper}.tsx`);
+  const translationNamespace = pageScope ?? "_global_ui";
+  const componentContent = (await context.fs.readText(componentTemplate))
+    .replace(/Component/g, componentNameUpper)
+    .replace(/componentPage/g, translationNamespace);
+
+  const preparedMessages: PreparedMessages[] = [];
+  if (config.useI18n) {
+    const messagesRoot = join(context.cwd, "messages");
+    if (!context.fs.exists(messagesRoot)) {
+      throw new CliError("The messages directory was not found.", {
+        code: "CONFIG_NOT_FOUND",
+        scope: "project",
+        path: "messages",
+      });
+    }
+    const templateMessages = JSON.parse(
+      await context.fs.readText(messagesTemplate),
+    ) as Record<string, unknown>;
+    const locales = (await context.fs.list(messagesRoot))
+      .filter((entry) => entry.isDirectory)
+      .map((entry) => entry.name)
+      .sort();
+    if (locales.length === 0) {
+      throw new CliError("No locale directories were found.", {
+        code: "CONFIG_NOT_FOUND",
+        scope: "project",
+        path: "messages",
+      });
+    }
+    for (const locale of locales) {
+      const messageFile = pageScope ? pageSegments[0] : "_global_ui";
+      const target = join(messagesRoot, locale, `${messageFile}.json`);
+      let data: Record<string, unknown> = {};
+      if (context.fs.exists(target)) {
+        try {
+          data = JSON.parse(await context.fs.readText(target)) as Record<
+            string,
+            unknown
+          >;
+        } catch {
+          throw new CliError(
+            `Invalid JSON in messages/${locale}/${messageFile}.json.`,
+            {
+              code: "FILESYSTEM_ERROR",
+              scope: "project",
+              path: `messages/${locale}/${messageFile}.json`,
+            },
+          );
+        }
+      }
+      let container = data;
+      if (pageSegments.length > 1) {
+        const child = pageSegments[1];
+        const current = data[child];
+        if (
+          current !== undefined &&
+          (!current || typeof current !== "object" || Array.isArray(current))
+        ) {
+          throw new CliError(
+            `Translation namespace ${pageScope} is not an object in ${locale}.`,
+            {
+              code: "INVALID_ARGUMENT",
+              scope: "project",
+              path: `messages/${locale}/${messageFile}.json`,
+            },
+          );
+        }
+        if (!current) data[child] = {};
+        container = data[child] as Record<string, unknown>;
+      }
+      const exists = Object.hasOwn(container, componentNameUpper);
+      if (!exists) container[componentNameUpper] = templateMessages;
+      preparedMessages.push({
+        locale,
+        target,
+        exists,
+        content: exists ? undefined : `${JSON.stringify(data, null, 2)}\n`,
+      });
     }
   }
 
-  // Determine target path for the component
-  let componentTargetPath;
-  let translationKey;
-  if (pageScope) {
-    if (nestedPath) {
-      componentTargetPath = join(cwd, "src", "ui", nestedPath);
-      translationKey = pageScope;
+  const gateway = new MutationGateway(context, context.cwd);
+  await gateway.mkdir(targetDirectory, {
+    role: "component-directory",
+    resource: "directory",
+  });
+  await gateway.write(componentFile, componentContent, {
+    role: "ui-component",
+    preserveExisting: true,
+  });
+  for (const item of preparedMessages) {
+    if (item.exists) {
+      gateway.unchanged(item.target, {
+        role: "translation-messages",
+        detail: {
+          locale: item.locale,
+          key: `${translationNamespace}.${componentNameUpper}`,
+        },
+      });
     } else {
-      componentTargetPath = join(cwd, "src", "ui", pageScope);
-      translationKey = pageScope;
+      await gateway.write(item.target, item.content!, {
+        role: "translation-messages",
+        detail: {
+          locale: item.locale,
+          key: `${translationNamespace}.${componentNameUpper}`,
+        },
+      });
     }
-  } else {
-    componentTargetPath = join(cwd, "src", "ui", "_global");
-    translationKey = "_global_ui";
-  }
-  await assertSafeTarget(cwd, componentTargetPath);
-  if (!existsSync(componentTargetPath)) {
-    await mkdir(componentTargetPath, { recursive: true });
-  }
-  const componentFile = join(componentTargetPath, `${componentNameUpper}.tsx`);
-
-  // Read and adapt the TSX template
-  const templateComponentPath = join(templatePath, "Component.tsx");
-  if (existsSync(templateComponentPath)) {
-    let content = await readFile(templateComponentPath, "utf-8");
-    // Remplacement du nom du component et de la clé de traduction
-    content = content
-      .replace(/Component/g, componentNameUpper)
-      .replace(/componentPage/g, translationKey);
-    await writeFile(componentFile, content);
-    console.log(`📄 File created: ${componentFile}`);
-  } else {
-    console.error(
-      "❌ Template Component.tsx introuvable :",
-      templateComponentPath,
-    );
   }
 
-  if (useI18n && messagesPath) {
-    const entries = await readdir(messagesPath, { withFileTypes: true });
-    const langDirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
-    const jsonTemplate = join(templatePath, "component.json");
-    if (!existsSync(jsonTemplate)) {
-      console.error("❌ Template component.json not found:", jsonTemplate);
-      return;
-    }
-    const jsonContent = await readFile(jsonTemplate, "utf-8");
-    const parsed = JSON.parse(jsonContent);
-
-    for (const locale of langDirs) {
-      // Only process if messages/<locale> is a directory
-      const localeDir = join(messagesPath, locale);
-      if (!existsSync(localeDir) || !statSync(localeDir).isDirectory())
-        continue;
-      let jsonTarget;
-      if (pageScope) {
-        const [messageFile] = pageScope.split(".");
-        jsonTarget = join(messagesPath, locale, `${messageFile}.json`);
-      } else {
-        jsonTarget = join(messagesPath, locale, `_global_ui.json`);
-      }
-
-      let current: Record<string, any> = {};
-      if (existsSync(jsonTarget)) {
-        const jsonFile = await readFile(jsonTarget, "utf-8");
-        current = JSON.parse(jsonFile) as Record<string, any>;
-      }
-      if (pageScope?.includes(".")) {
-        const child = pageScope.split(".")[1];
-        const childMessages =
-          current[child] && typeof current[child] === "object"
-            ? (current[child] as Record<string, unknown>)
-            : {};
-        childMessages[componentNameUpper] = parsed;
-        current[child] = childMessages;
-      } else {
-        current[componentNameUpper] = parsed;
-      }
-      await writeFile(jsonTarget, JSON.stringify(current, null, 2));
-      console.log(`📄 File updated: ${jsonTarget}`);
-    }
-  } else {
-    console.log("ℹ️ Skipping translation entries; next-intl not enabled.");
-  }
-
-  console.log(
-    `✅ Component "${componentNameUpper}" added ${
-      pageScope ? `to page ${pageScope}` : "globally"
-    }${useI18n ? " with localized messages" : ""}.`,
-  );
-}
+  const mutated = context.operations
+    .snapshot()
+    .some((event) => event.action === "created" || event.action === "updated");
+  return commandResult(context, {
+    command: "addcomponent",
+    summary: mutated
+      ? `Added component "${componentNameUpper}" ${pageScope ? `to page "${pageScope}"` : "globally"}.`
+      : `Component "${componentNameUpper}" already exists and was preserved.`,
+    projectRoot: context.cwd,
+    nextSteps: mutated
+      ? [
+          {
+            kind: "review",
+            required: true,
+            message:
+              "Review the generated component and its localized messages.",
+            paths: [
+              { scope: "project", path: gateway.path(componentFile) },
+              ...preparedMessages.map((item) => ({
+                scope: "project" as const,
+                path: gateway.path(item.target),
+              })),
+            ],
+          },
+          {
+            kind: "run-checks",
+            required: true,
+            message: "Run the project checks.",
+            paths: [],
+            commands: ["bun run check", "npm run check", "pnpm run check"],
+          },
+        ]
+      : [],
+  });
+};

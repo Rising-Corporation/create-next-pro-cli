@@ -1,5 +1,15 @@
 import { describe, expect, test } from "vitest";
-import { toFileName } from "./utils";
+import { toFileName, toIdentifier } from "./utils";
+
+describe("toIdentifier", () => {
+  test.each([
+    ["Sample", "Sample"],
+    ["my-page", "myPage"],
+    ["user_info", "userInfo"],
+  ])("maps %s to %s", (input, expected) => {
+    expect(toIdentifier(input)).toBe(expected);
+  });
+});
 
 describe("toFileName", () => {
   const cases: [string, string][] = [

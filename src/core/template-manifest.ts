@@ -1,14 +1,8 @@
-import {
-  lstat,
-  mkdir,
-  readdir,
-  readFile,
-  writeFile,
-  copyFile,
-} from "node:fs/promises";
 import path from "node:path";
 
 import { CliError } from "./contracts";
+import type { CliContext, CliFileSystem } from "./contracts";
+import { MutationGateway } from "./operations";
 
 export const TEMPLATE_DENY_NAMES = new Set([
   ".env",
@@ -33,86 +27,144 @@ export function isDistributableTemplatePath(relativePath: string): boolean {
   );
 }
 
-export async function templateManifest(root: string): Promise<string[]> {
+export async function templateManifest(
+  root: string,
+  fs: CliFileSystem,
+): Promise<string[]> {
   const files: string[] = [];
   async function visit(directory: string, relativeDirectory = "") {
-    const entries = await readdir(directory, { withFileTypes: true });
-    entries.sort((left, right) => left.name.localeCompare(right.name));
+    const entries = await fs.list(directory);
     for (const entry of entries) {
       const relative = path.join(relativeDirectory, entry.name);
       if (!isDistributableTemplatePath(relative)) continue;
       const source = path.join(directory, entry.name);
-      const stats = await lstat(source);
-      if (stats.isSymbolicLink()) {
+      if (entry.isSymbolicLink) {
         throw new CliError(
           `Symbolic links are forbidden in templates: ${relative}`,
+          { code: "UNSAFE_PATH", scope: "package", path: relative },
         );
       }
-      if (stats.isDirectory()) await visit(source, relative);
-      else if (stats.isFile()) files.push(relative);
-      else throw new CliError(`Unsupported template entry: ${relative}`);
+      if (entry.isDirectory) await visit(source, relative);
+      else if (entry.isFile) files.push(relative);
+      else
+        throw new CliError(`Unsupported template entry: ${relative}`, {
+          code: "TEMPLATE_MISSING",
+          scope: "package",
+          path: relative,
+        });
     }
   }
   await visit(root);
   return files;
 }
 
+export async function validateScaffoldTemplate(
+  root: string,
+  fs: CliFileSystem,
+): Promise<string[]> {
+  const manifest = await templateManifest(root, fs);
+  for (const required of ["package.json", "tsconfig.json"]) {
+    if (!manifest.includes(required)) {
+      throw new CliError(`Required template file was not found: ${required}.`, {
+        code: "TEMPLATE_MISSING",
+        scope: "package",
+        path: `templates/Projects/default/${required}`,
+      });
+    }
+  }
+  try {
+    JSON.parse(await fs.readText(path.join(root, "package.json")));
+    const tsconfig = JSON.parse(
+      await fs.readText(path.join(root, "tsconfig.json")),
+    ) as { compilerOptions?: { paths?: Record<string, string[]> } };
+    if (!tsconfig.compilerOptions?.paths?.["@/*"]) throw new Error("alias");
+  } catch {
+    throw new CliError(
+      'The template manifests must be valid JSON and define the default "@/*" alias.',
+      {
+        code: "TEMPLATE_MISSING",
+        scope: "package",
+        path: "templates/Projects/default",
+      },
+    );
+  }
+  return manifest;
+}
+
 export async function copyTemplate(
   root: string,
   target: string,
+  context: CliContext,
+  gateway: MutationGateway,
+  manifest?: string[],
 ): Promise<string[]> {
-  const manifest = await templateManifest(root);
-  await mkdir(target, { recursive: true });
-  for (const relative of manifest) {
+  const files = manifest ?? (await templateManifest(root, context.fs));
+  for (const relative of files) {
     const destination = path.join(
       target,
       relative === ".gitignore.template" ? ".gitignore" : relative,
     );
-    await mkdir(path.dirname(destination), { recursive: true });
-    await copyFile(path.join(root, relative), destination);
+    const source = path.join(root, relative);
+    await gateway.copy(source, destination, {
+      role: "template-file",
+      source: { template: `Projects/default/${relative}` },
+    });
   }
-  return manifest;
+  return files;
 }
 
 export async function customizeGeneratedProject(
   target: string,
   projectName: string,
   importAlias: string,
+  context: CliContext,
+  gateway: MutationGateway,
 ): Promise<void> {
   const packagePath = path.join(target, "package.json");
-  const packageJson = JSON.parse(await readFile(packagePath, "utf8")) as Record<
-    string,
-    unknown
-  >;
+  const packageJson = JSON.parse(
+    await context.fs.readText(packagePath),
+  ) as Record<string, unknown>;
   packageJson.name = projectName.toLowerCase();
   delete packageJson.packageManager;
-  await writeFile(packagePath, `${JSON.stringify(packageJson, null, 2)}\n`);
+  await gateway.write(
+    packagePath,
+    `${JSON.stringify(packageJson, null, 2)}\n`,
+    { role: "package-manifest" },
+  );
 
   const tsconfigPath = path.join(target, "tsconfig.json");
-  const tsconfigContent = await readFile(tsconfigPath, "utf8");
+  const tsconfigContent = await context.fs.readText(tsconfigPath);
   const tsconfig = JSON.parse(tsconfigContent) as {
     compilerOptions?: { paths?: Record<string, string[]> };
   };
   if (!tsconfig.compilerOptions?.paths?.["@/*"]) {
     throw new CliError(
       'The template tsconfig must define the default "@/*" alias.',
+      {
+        code: "TEMPLATE_MISSING",
+        scope: "package",
+        path: "templates/Projects/default/tsconfig.json",
+      },
     );
   }
-  await writeFile(
+  await gateway.write(
     tsconfigPath,
     tsconfigContent.replace('"@/*"', `"${importAlias}"`),
+    { role: "typescript-configuration" },
   );
 
   if (importAlias !== "@/*") {
     const prefix = importAlias.slice(0, -2);
-    for (const relative of await templateManifest(target)) {
+    for (const relative of await templateManifest(target, context.fs)) {
       if (!/\.[cm]?[jt]sx?$/.test(relative)) continue;
       const file = path.join(target, relative);
-      const content = await readFile(file, "utf8");
+      const content = await context.fs.readText(file);
       const next = content
         .replaceAll('from "@/', `from "${prefix}/`)
         .replaceAll("from '@/", `from '${prefix}/`);
-      if (next !== content) await writeFile(file, next);
+      if (next !== content) {
+        await gateway.write(file, next, { role: "import-alias-reference" });
+      }
     }
   }
 }

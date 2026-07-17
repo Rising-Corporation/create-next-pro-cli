@@ -1,4 +1,3 @@
-import { readdir } from "node:fs/promises";
 import path from "node:path";
 
 import type { CliContext } from "../core/contracts";
@@ -14,6 +13,7 @@ export const PUBLIC_COMMANDS = [
   "rmpage",
   "--help",
   "--version",
+  "--json",
   "--reconfigure",
 ] as const;
 
@@ -32,10 +32,13 @@ const OPTIONS: Record<string, string[]> = {
   addcomponent: ["--page", "-P"],
 };
 
-async function directories(root: string): Promise<string[]> {
+async function directories(
+  root: string,
+  context: CliContext,
+): Promise<string[]> {
   try {
-    return (await readdir(root, { withFileTypes: true }))
-      .filter((entry) => entry.isDirectory() && !entry.name.startsWith("_"))
+    return (await context.fs.list(root))
+      .filter((entry) => entry.isDirectory && !entry.name.startsWith("_"))
       .map((entry) => entry.name)
       .sort();
   } catch {
@@ -49,14 +52,14 @@ export async function completionCandidates(
 ): Promise<string[]> {
   if (!command) return [...PUBLIC_COMMANDS];
   if (command === "rmpage") {
-    return (await discoverPages(context.cwd)).map(
+    return (await discoverPages(context.cwd, context.fs)).map(
       (candidate) => candidate.logicalName,
     );
   }
   if (command === "addcomponent" || command === "addpage") {
     return [
       ...(OPTIONS[command] ?? []),
-      ...(await directories(path.join(context.cwd, "src", "ui"))),
+      ...(await directories(path.join(context.cwd, "src", "ui"), context)),
     ];
   }
   if (command === "addlanguage")

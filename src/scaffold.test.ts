@@ -8,10 +8,12 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { CliError } from "./core/contracts";
+import { CliError, type PromptRunner } from "./core/contracts";
+import { createNodeContext } from "./runtime/node-context";
 import { scaffoldProject } from "./scaffold";
+import { createProjectWithPrompt } from "./lib/createProjectWithPrompt";
 
 const temporaryDirectories: string[] = [];
 const options = {
@@ -64,10 +66,40 @@ async function fixture() {
   return { root, template, target: path.join(root, options.projectName) };
 }
 
+function runtime(cwd: string, templatePath: string) {
+  return {
+    context: createNodeContext({ cwd }),
+    templatePath,
+  };
+}
+
 describe("project scaffolding", () => {
+  test("creates a project through the injected interactive assistant", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "cnp-interactive-"));
+    temporaryDirectories.push(root);
+    const context = createNodeContext({
+      cwd: root,
+      prompt: vi.fn(async () => options) as unknown as PromptRunner,
+    });
+    const result = await createProjectWithPrompt(context);
+    expect(result).toMatchObject({
+      command: "create",
+      status: "success",
+      exitCode: 0,
+    });
+    expect(
+      JSON.parse(
+        await readFile(
+          path.join(root, options.projectName, "cnp.config.json"),
+          "utf8",
+        ),
+      ),
+    ).toMatchObject(options);
+  });
+
   test("creates a project from an injected template", async () => {
     const { root, template, target } = await fixture();
-    await scaffoldProject(options, { cwd: root, templatePath: template });
+    await scaffoldProject(options, runtime(root, template));
     expect(await readFile(path.join(target, "preserved.txt"), "utf8")).toBe(
       "template content",
     );
@@ -93,7 +125,7 @@ describe("project scaffolding", () => {
     const { root, template, target } = await fixture();
     await mkdir(target);
     await expect(
-      scaffoldProject(options, { cwd: root, templatePath: template }),
+      scaffoldProject(options, runtime(root, template)),
     ).rejects.toBeInstanceOf(CliError);
   });
 
@@ -101,10 +133,7 @@ describe("project scaffolding", () => {
     const { root, template, target } = await fixture();
     await mkdir(target);
     await writeFile(path.join(target, "old.txt"), "old");
-    await scaffoldProject(
-      { ...options, force: true },
-      { cwd: root, templatePath: template },
-    );
+    await scaffoldProject({ ...options, force: true }, runtime(root, template));
     await expect(
       readFile(path.join(target, "old.txt"), "utf8"),
     ).rejects.toThrow();
@@ -118,10 +147,7 @@ describe("project scaffolding", () => {
     async (projectName) => {
       const { root, template } = await fixture();
       await expect(
-        scaffoldProject(
-          { ...options, projectName },
-          { cwd: root, templatePath: template },
-        ),
+        scaffoldProject({ ...options, projectName }, runtime(root, template)),
       ).rejects.toBeInstanceOf(CliError);
     },
   );
@@ -130,7 +156,7 @@ describe("project scaffolding", () => {
     const { root, template, target } = await fixture();
     await scaffoldProject(
       { ...options, importAlias: "@core/*" },
-      { cwd: root, templatePath: template },
+      runtime(root, template),
     );
     expect(
       await readFile(path.join(target, "src", "example.ts"), "utf8"),
@@ -148,7 +174,7 @@ describe("project scaffolding", () => {
       path.join(template, "linked.txt"),
     );
     await expect(
-      scaffoldProject(options, { cwd: root, templatePath: template }),
+      scaffoldProject(options, runtime(root, template)),
     ).rejects.toBeInstanceOf(CliError);
   });
 
@@ -157,7 +183,7 @@ describe("project scaffolding", () => {
     await expect(
       scaffoldProject(
         { ...options, useTailwind: false },
-        { cwd: root, templatePath: template },
+        runtime(root, template),
       ),
     ).rejects.toThrow("requires: useTailwind");
     await expect(

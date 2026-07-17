@@ -117,6 +117,8 @@ create-next-pro rmpage account.security
 create-next-pro rmpage
 ```
 
+`addlanguage` copies every message file from the configured default locale. The command reports each copied path and emits a required `translate` next step: the copied source-language text must be translated before the locale is ready to ship.
+
 `addpage` creates `layout`, `page`, and `loading` files by default. Available long options are `--layout`, `--page`, `--loading`, `--not-found`, `--error`, `--global-error`, `--route`, `--template`, and `--default`. The historical short forms remain available.
 
 `rmpage` only lists routes that contain an actual `page.tsx`. Next.js route groups and technical directories are hidden. Removal is confined to the project and preserves shared parent directories and unrelated files.
@@ -200,9 +202,11 @@ create-next-pro-cli/
 │   ├── cli/
 │   │   ├── completion.ts
 │   │   ├── onboarding.ts
+│   │   ├── output.ts
 │   │   └── registry.ts
 │   ├── core/
 │   │   ├── contracts.ts
+│   │   ├── operations.ts
 │   │   ├── page-catalog.ts
 │   │   ├── project-paths.ts
 │   │   └── template-manifest.ts
@@ -222,10 +226,11 @@ create-next-pro-cli/
 │   ├── index.ts
 │   └── scaffold.ts
 ├── templates/
-│   ├── Components/
-│   ├── Pages/
+│   ├── Component/
+│   ├── Page/
 │   ├── Projects/default/
-│   └── Routes/
+│   ├── Api/
+│   └── Lib/
 ├── create-next-pro-completion.sh
 ├── create-next-pro-completion.zsh
 ├── package.json
@@ -239,9 +244,81 @@ The CLI registry resolves commands to a shared asynchronous interface. The core 
 ```text
 --help          Show help
 --version, -v   Show the version
+--json          Emit one deterministic JSON document
 --reconfigure   Run CLI configuration again
 --force         Replace an existing project destination
 ```
+
+`--json` can appear before or after a command. It disables prompts, colors, banners, and incidental logs. Standard output contains exactly one JSON document followed by a newline, while standard error remains empty even when the command fails. Internal shell completion continues to use its separate line-based protocol.
+
+## Human and agent output
+
+Human output names every created, copied, updated, deleted, unchanged, or skipped resource with an absolute path. It ends with a summary and only the next steps that are still required. For example, adding a locale clearly reports that its messages were copied from the source locale:
+
+```text
+COPIED translation-messages: /workspace/my-app/messages/de/dashboard.json from /workspace/my-app/messages/en/dashboard.json (locale="de", sourceLocale="en")
+UPDATED messages-registry: /workspace/my-app/src/lib/i18n/messages.ts
+SUCCESS: Added locale "de" by copying 7 files from "en".
+NEXT [translate]: Translate every copied message from en to de; the copied text is not ready for delivery.
+  /workspace/my-app/messages/de/dashboard.json
+```
+
+Agentic usage adds `--json`:
+
+```bash
+create-next-pro addapi health --json
+```
+
+The versioned document has stable status, event, next-step, and error fields:
+
+```json
+{
+  "schemaVersion": 1,
+  "command": "addapi",
+  "status": "success",
+  "exitCode": 0,
+  "summary": "Added API route \"health\".",
+  "projectRoot": "/workspace/my-app",
+  "events": [
+    {
+      "sequence": 1,
+      "action": "created",
+      "resource": "directory",
+      "role": "api-directory",
+      "scope": "project",
+      "path": "src/app/api/health"
+    },
+    {
+      "sequence": 2,
+      "action": "created",
+      "resource": "file",
+      "role": "api-route",
+      "scope": "project",
+      "path": "src/app/api/health/route.ts"
+    }
+  ],
+  "nextSteps": [
+    {
+      "kind": "review",
+      "required": true,
+      "message": "Replace the example response and review validation and authentication.",
+      "paths": [
+        {
+          "scope": "project",
+          "path": "src/app/api/health/route.ts"
+        }
+      ]
+    }
+  ],
+  "error": null
+}
+```
+
+Paths inside events and next steps are relative to their named scope. Applicable absolute roots are exposed as `projectRoot`, `configRoot`, and `homeRoot`. Events never contain file contents, environment values, credentials, or secrets.
+
+Command statuses are `success`, `unchanged`, `cancelled`, and `failed`. Successful mutations, idempotent no-op results, and user cancellations exit with code `0`; only `failed` exits with code `1`. Stable error codes include `INVALID_ARGUMENT`, `CONFIG_NOT_FOUND`, `I18N_DISABLED`, `TARGET_EXISTS`, `TARGET_NOT_FOUND`, `TEMPLATE_MISSING`, `UNSAFE_PATH`, `INCONSISTENT_LOCALE`, `FILESYSTEM_ERROR`, `INTERACTIVE_INPUT_REQUIRED`, and `ONBOARDING_REQUIRED`.
+
+Interactive input is never attempted in JSON mode. Pass every required argument explicitly. On a new machine, run the CLI once without `--json` to complete onboarding; `--reconfigure --json` is intentionally rejected.
 
 ## Environment and security
 

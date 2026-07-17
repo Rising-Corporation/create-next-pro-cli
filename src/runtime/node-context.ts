@@ -2,8 +2,11 @@ import { existsSync } from "node:fs";
 import {
   appendFile,
   copyFile,
+  lstat,
   mkdir,
+  readdir,
   readFile,
+  rm,
   writeFile,
 } from "node:fs/promises";
 import os from "node:os";
@@ -12,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import prompts from "prompts";
 
 import type { CliContext, PromptRunner } from "../core/contracts";
+import { OperationJournal } from "../core/operations";
 
 function findPackageRoot(start: string): string {
   let current = start;
@@ -41,6 +45,7 @@ type ContextOverrides = Partial<
     | "terminal"
     | "prompt"
     | "fs"
+    | "outputMode"
   >
 >;
 
@@ -70,7 +75,42 @@ export function createNodeContext(
       appendText: async (target, content) => {
         await appendFile(target, content);
       },
+      remove: async (target, options) => {
+        await rm(target, options);
+      },
+      inspect: async (target) => {
+        try {
+          const stats = await lstat(target);
+          return {
+            name: target,
+            isFile: stats.isFile(),
+            isDirectory: stats.isDirectory(),
+            isSymbolicLink: stats.isSymbolicLink(),
+          };
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+          throw error;
+        }
+      },
+      list: async (target) => {
+        const entries = await readdir(target, { withFileTypes: true });
+        return Promise.all(
+          entries
+            .sort((left, right) => left.name.localeCompare(right.name))
+            .map(async (entry) => {
+              const stats = await lstat(path.join(target, entry.name));
+              return {
+                name: entry.name,
+                isFile: stats.isFile(),
+                isDirectory: stats.isDirectory(),
+                isSymbolicLink: stats.isSymbolicLink(),
+              };
+            }),
+        );
+      },
     },
+    operations: new OperationJournal(),
+    outputMode: "human",
     ...overrides,
   };
 }
