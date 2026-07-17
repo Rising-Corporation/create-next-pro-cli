@@ -17,13 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
@@ -73,8 +73,8 @@ jobs:
       run:
         working-directory: templates/Projects/default
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
       - uses: oven-sh/setup-bun@v2
@@ -110,22 +110,23 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-      - name: Verify npm release identity and package access
+          package-manager-cache: false
+      - name: Verify public npm release prerequisites
         shell: bash
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm ping
-          identity=$(npm whoami)
-          test "$identity" = "mrrise"
+          node -e 'const [major, minor, patch] = process.argv[1].split(".").map(Number); if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) process.exit(1)' "$(npm --version)"
+          test "$GITHUB_REPOSITORY" = "Rising-Corporation/create-next-pro-cli"
           test "$(npm access get status create-next-pro-cli)" = "create-next-pro-cli: public"
           owners=$(npm owner ls create-next-pro-cli)
           grep -Eq '^mrrise[[:space:]]' <<< "$owners"
-          echo "Authenticated npm release owner: $identity"
+          repository=$(npm view create-next-pro-cli repository.url --json | jq -r .)
+          test "$repository" = "git+https://github.com/Rising-Corporation/create-next-pro-cli.git"
+          echo "Public npm metadata is valid; OIDC authentication will be minted only for npm publish"
 
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.RELEASE_ENABLED == 'true'
@@ -136,21 +137,23 @@ jobs:
       name: ENV
     permissions:
       contents: write
+      id-token: write
     concurrency:
       group: npm-release-master
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: master
           fetch-depth: 0
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
       - run: bun install --frozen-lockfile
       - name: Configure release identity
         run: |
@@ -206,8 +209,6 @@ jobs:
       - name: Publish exact archive
         if: steps.release.outputs.action == 'release' || steps.release.outputs.action == 'resume'
         shell: bash
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           version="${{ steps.release.outputs.version }}"
           existing=$(npm view "create-next-pro-cli@$version" version --json 2>/dev/null | jq -r '. // empty') || true
