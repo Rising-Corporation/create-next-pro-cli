@@ -81,6 +81,9 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 11
+      - name: Prepare package-manager-neutral consumer
+        if: matrix.manager != 'bun'
+        run: npm pkg delete packageManager
       - name: Install dependencies
         run: |
           if [ "${{ matrix.manager }}" = bun ]; then bun install --frozen-lockfile; else ${{ matrix.manager }} install; fi
