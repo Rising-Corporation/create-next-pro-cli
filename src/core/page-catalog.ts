@@ -1,5 +1,5 @@
-import { readdir } from "node:fs/promises";
 import path from "node:path";
+import type { CliFileSystem } from "./contracts";
 
 export type PageCandidate = {
   logicalName: string;
@@ -16,6 +16,7 @@ function isRouteGroup(segment: string): boolean {
 
 export async function discoverPages(
   projectRoot: string,
+  fs: CliFileSystem,
 ): Promise<PageCandidate[]> {
   const appRoot = path.join(projectRoot, "src", "app", "[locale]");
   const candidates: PageCandidate[] = [];
@@ -23,11 +24,11 @@ export async function discoverPages(
   async function visit(directory: string, relative: string[] = []) {
     let entries;
     try {
-      entries = await readdir(directory, { withFileTypes: true });
+      entries = await fs.list(directory);
     } catch {
       return;
     }
-    if (entries.some((entry) => entry.isFile() && entry.name === "page.tsx")) {
+    if (entries.some((entry) => entry.isFile && entry.name === "page.tsx")) {
       const routeSegments = relative.filter(
         (segment) => !isRouteGroup(segment),
       );
@@ -55,7 +56,7 @@ export async function discoverPages(
       }
     }
     for (const entry of entries) {
-      if (entry.isDirectory() && !entry.name.startsWith(".")) {
+      if (entry.isDirectory && !entry.name.startsWith(".")) {
         await visit(path.join(directory, entry.name), [
           ...relative,
           entry.name,

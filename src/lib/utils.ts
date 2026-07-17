@@ -1,12 +1,17 @@
-import { readFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
 import { join } from "node:path";
+import type { CliContext } from "../core/contracts";
 
 /**
  * Capitalize the first letter of a string.
  */
 export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+export function toIdentifier(value: string): string {
+  return value.replace(/[-_]+([A-Za-z0-9])/g, (_, character: string) =>
+    character.toUpperCase(),
+  );
 }
 
 export interface CNPConfig {
@@ -25,12 +30,12 @@ export function configuredAliasPrefix(config: CNPConfig): string {
  * Returns null if the configuration file is missing or invalid.
  */
 export async function loadConfig(
-  cwd = process.cwd(),
+  context: Pick<CliContext, "cwd" | "fs">,
 ): Promise<CNPConfig | null> {
-  const configPath = join(cwd, "cnp.config.json");
-  if (!existsSync(configPath)) return null;
+  const configPath = join(context.cwd, "cnp.config.json");
+  if (!context.fs.exists(configPath)) return null;
   try {
-    const raw = await readFile(configPath, "utf-8");
+    const raw = await context.fs.readText(configPath);
     return JSON.parse(raw) as CNPConfig;
   } catch {
     return null;

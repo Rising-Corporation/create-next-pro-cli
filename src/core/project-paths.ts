@@ -1,7 +1,6 @@
 import path from "node:path";
-import { lstat } from "node:fs/promises";
 
-import { CliError } from "./contracts";
+import { CliError, type CliFileSystem } from "./contracts";
 
 const SAFE_SEGMENT = /^[A-Za-z][A-Za-z0-9_-]*$/;
 
@@ -16,17 +15,20 @@ export function parseLogicalName(value: string, label = "name"): string[] {
   if (!value || hasControlCharacters(value)) {
     throw new CliError(
       `Invalid ${label}: a non-empty printable value is required.`,
+      { code: "INVALID_ARGUMENT" },
     );
   }
   if (path.isAbsolute(value) || value.includes("/") || value.includes("\\")) {
     throw new CliError(
       `Invalid ${label}: paths and separators are not allowed.`,
+      { code: "INVALID_ARGUMENT" },
     );
   }
   const segments = value.split(".");
   if (segments.some((segment) => !SAFE_SEGMENT.test(segment))) {
     throw new CliError(
       `Invalid ${label}: use dot-separated alphanumeric segments beginning with a letter.`,
+      { code: "INVALID_ARGUMENT" },
     );
   }
   return segments;
@@ -45,6 +47,7 @@ export function validateProjectName(value: string): string {
   ) {
     throw new CliError(
       "Invalid project name: use letters, numbers, dots, dashes or underscores without path separators.",
+      { code: "INVALID_ARGUMENT" },
     );
   }
   return value;
@@ -59,6 +62,7 @@ export function resolveInside(root: string, ...segments: string[]): string {
   ) {
     throw new CliError(
       `Refusing to access a path outside the project: ${target}`,
+      { code: "UNSAFE_PATH" },
     );
   }
   return target;
@@ -67,6 +71,7 @@ export function resolveInside(root: string, ...segments: string[]): string {
 export async function assertSafeTarget(
   root: string,
   target: string,
+  fs: CliFileSystem,
 ): Promise<string> {
   const safeTarget = resolveInside(root, path.relative(root, target));
   const relativeSegments = path
@@ -76,15 +81,12 @@ export async function assertSafeTarget(
   for (const segment of relativeSegments) {
     if (!segment) continue;
     current = path.join(current, segment);
-    try {
-      if ((await lstat(current)).isSymbolicLink()) {
-        throw new CliError(
-          `Symbolic links are forbidden in project paths: ${current}`,
-        );
-      }
-    } catch (error) {
-      if (error instanceof CliError) throw error;
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    const entry = await fs.inspect(current);
+    if (entry?.isSymbolicLink) {
+      throw new CliError(
+        `Symbolic links are forbidden in project paths: ${current}`,
+        { code: "UNSAFE_PATH" },
+      );
     }
   }
   return safeTarget;
@@ -94,6 +96,7 @@ export function normalizeImportAlias(value: string): string {
   if (!/^[A-Za-z@~][A-Za-z0-9@~_-]*\/\*$/.test(value)) {
     throw new CliError(
       'Invalid import alias: expected a prefix followed by "/*" (for example "@/*" or "@core/*").',
+      { code: "INVALID_ARGUMENT" },
     );
   }
   return value;

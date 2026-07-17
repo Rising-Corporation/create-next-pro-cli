@@ -31,9 +31,12 @@ describe("onboarding", () => {
       })) as PromptRunner,
     });
 
-    const config = await onboarding(context, "1.2.3");
-    expect(config.shell).toBe("bash");
-    expect(config.completionInstalled).toBe(false);
+    const result = await onboarding(context, "1.2.3");
+    const config = await readConfig(context);
+    expect(result.status).toBe("success");
+    expect(config).not.toBeNull();
+    expect(config?.shell).toBe("bash");
+    expect(config?.completionInstalled).toBe(false);
     expect(JSON.parse(await readFile(configFile(context), "utf8"))).toEqual(
       config,
     );
@@ -50,29 +53,35 @@ describe("onboarding", () => {
     await expect(readConfig(context)).resolves.toBeNull();
   });
 
-  test("installs the shell-specific completion idempotently", async () => {
-    const root = await mkdtemp(path.join(tmpdir(), "cnp-completion-"));
-    temporaryDirectories.push(root);
-    const context = createNodeContext({
-      env: { XDG_CONFIG_HOME: root, SHELL: "/bin/zsh" },
-      homeDir: root,
-      terminal: { log: vi.fn(), warn: vi.fn(), error: vi.fn() },
-      prompt: vi.fn(async () => ({
-        shell: "zsh",
-        completion: true,
-      })) as PromptRunner,
-    });
+  test.each([
+    ["zsh" as const, ".zshrc", "completion.zsh", "compdef _create_next_pro"],
+    ["bash" as const, ".bashrc", "completion.sh", "complete -F"],
+  ])(
+    "installs %s completion idempotently",
+    async (shell, rcName, completionName, marker) => {
+      const root = await mkdtemp(path.join(tmpdir(), "cnp-completion-"));
+      temporaryDirectories.push(root);
+      const context = createNodeContext({
+        env: { XDG_CONFIG_HOME: root, SHELL: `/bin/${shell}` },
+        homeDir: root,
+        terminal: { log: vi.fn(), warn: vi.fn(), error: vi.fn() },
+        prompt: vi.fn(async () => ({
+          shell,
+          completion: true,
+        })) as PromptRunner,
+      });
 
-    await onboarding(context, "1.2.3");
-    await onboarding(context, "1.2.3");
+      await onboarding(context, "1.2.3");
+      await onboarding(context, "1.2.3");
 
-    expect(
-      await readFile(
-        path.join(root, "create-next-pro", "completion.zsh"),
-        "utf8",
-      ),
-    ).toContain("compdef _create_next_pro create-next-pro");
-    const rc = await readFile(path.join(root, ".zshrc"), "utf8");
-    expect(rc.match(/source /g)).toHaveLength(1);
-  });
+      expect(
+        await readFile(
+          path.join(root, "create-next-pro", completionName),
+          "utf8",
+        ),
+      ).toContain(marker);
+      const rc = await readFile(path.join(root, rcName), "utf8");
+      expect(rc.match(/source /g)).toHaveLength(1);
+    },
+  );
 });

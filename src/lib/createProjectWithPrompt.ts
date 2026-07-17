@@ -1,8 +1,11 @@
-import { scaffoldProject } from "../scaffold";
 import type { ScaffoldOptions } from "../scaffold";
-import type { CliContext } from "../core/contracts";
+import type { CliContext, CommandResult } from "../core/contracts";
+import { commandResult } from "../core/operations";
+import { createProjectFromOptions } from "./createProject";
 
-export async function createProjectWithPrompt(context: CliContext) {
+export async function createProjectWithPrompt(
+  context: CliContext,
+): Promise<CommandResult> {
   const response = await context.prompt<keyof ScaffoldOptions>([
     {
       type: "text",
@@ -74,12 +77,22 @@ export async function createProjectWithPrompt(context: CliContext) {
     },
   ]);
 
-  const options = response as unknown as ScaffoldOptions;
-  context.terminal.log("\nYour choices:");
-  context.terminal.log(options);
+  if (!response.projectName) {
+    context.operations.record({
+      action: "cancelled",
+      resource: "command",
+      role: "project-creation",
+      scope: "project",
+      path: ".",
+    });
+    return commandResult(context, {
+      command: "create",
+      summary: "Project creation was cancelled.",
+      projectRoot: context.cwd,
+      status: "cancelled",
+    });
+  }
 
-  await scaffoldProject(options, {
-    cwd: context.cwd,
-    terminal: context.terminal,
-  });
+  const options = response as unknown as ScaffoldOptions;
+  return createProjectFromOptions(options, context);
 }
