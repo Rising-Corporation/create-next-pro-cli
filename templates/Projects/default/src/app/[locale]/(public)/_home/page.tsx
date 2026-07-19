@@ -1,6 +1,6 @@
 // src/app/[locale]/(public)/_home/page.tsx
-import HomePageUI from "@/ui/_home/page-ui";
+import HomePageShell from "@/ui/_home/page-shell";
 
 export default function HomePage() {
-  return <HomePageUI />;
+  return <HomePageShell />;
 }

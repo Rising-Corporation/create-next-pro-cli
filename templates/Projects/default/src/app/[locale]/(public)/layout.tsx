@@ -1,6 +1,5 @@
 import React from "react";
 import GlobalHeader from "@/ui/_global/GlobalHeader";
-import GlobalMain from "@/ui/_global/GlobalMain";
 
 export default function PublicLayout({
   children,
@@ -10,7 +9,7 @@ export default function PublicLayout({
   return (
     <>
       <GlobalHeader hasSessionInitial={false} />
-      <GlobalMain>{children}</GlobalMain>
+      {children}
     </>
   );
 }

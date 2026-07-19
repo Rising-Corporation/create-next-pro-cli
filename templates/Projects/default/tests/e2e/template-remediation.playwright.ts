@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 const captureByProject: Record<string, string> = {
-  desktop: "artifacts/captures/phase-2-template-integration-desktop.png",
-  mobile: "artifacts/captures/phase-2-template-integration-mobile.png",
+  desktop: "artifacts/captures/phase-2-11-template-reconciliation-desktop.png",
+  mobile: "artifacts/captures/phase-2-11-template-reconciliation-mobile.png",
 };
 
 test("public template routes render in both locales", async ({
@@ -16,13 +16,56 @@ test("public template routes render in both locales", async ({
   await expect(page.getByRole("banner")).toBeVisible();
   const homeHeading = page
     .getByRole("main")
-    .getByRole("heading", { name: "Home" });
+    .getByRole("heading", { name: "Welcome to your website" });
   await expect(homeHeading).toBeVisible();
+  await expect(page.getByText("Start developing right now.")).toBeVisible();
+  await expect(
+    page.getByText("This project was created with create-next-pro-cli"),
+  ).toBeVisible();
+  await expect(page.getByRole("contentinfo")).toContainText(
+    "Empowered by Rising Corporation",
+  );
+  const readmeLink = page.getByRole("link", {
+    name: "Read the Doc",
+  });
+  await expect(readmeLink).toHaveAttribute(
+    "href",
+    "https://github.com/Rising-Corporation/create-next-pro-cli#readme",
+  );
+  const githubActions = page.getByRole("main");
+  for (const action of ["Star", "Watch"]) {
+    const actionLink = githubActions.getByRole("link", {
+      name: new RegExp(`^${action}`),
+    });
+    await expect(actionLink).toHaveAttribute(
+      "href",
+      "https://github.com/Rising-Corporation/create-next-pro-cli",
+    );
+    await expect(actionLink).toHaveAttribute("target", "_blank");
+    await expect(actionLink).toHaveAttribute("rel", "noreferrer");
+  }
   await page.getByLabel("Toggle theme").click();
   await expect(page.locator("html")).toHaveClass(/dark/);
   await expect(homeHeading).toHaveCSS("color", "rgb(255, 255, 255)");
   await page.getByLabel("Toggle theme").click();
   await expect(page.locator("html")).toHaveClass(/light/);
+
+  await page.goto("/fr");
+  await expect(
+    page.getByRole("heading", { name: "Bienvenue sur votre site" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Commencez votre développement dès maintenant."),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Ce projet est créé avec create-next-pro-cli"),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Lire la documentation" }),
+  ).toHaveAttribute(
+    "href",
+    "https://github.com/Rising-Corporation/create-next-pro-cli#readme",
+  );
 
   await page.goto("/fr/login");
   await expect(page.getByRole("heading", { name: /connexion/i })).toBeVisible();
@@ -35,7 +78,7 @@ test("public template routes render in both locales", async ({
 
   const capturePath = captureByProject[testInfo.project.name];
   if (capturePath) {
-    await page.goto("/fr/login");
+    await page.goto("/fr");
     await page.mouse.move(0, 0);
     await page.screenshot({ path: capturePath, fullPage: true });
   }

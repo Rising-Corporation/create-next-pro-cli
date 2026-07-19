@@ -2,9 +2,9 @@ import React from "react";
 
 export default function StatsCard({ t }: { t: (key: string) => string }) {
   return (
-    <div className="rounded border bg-white p-6 shadow-sm">
+    <div className="rounded border bg-white p-6 shadow-sm dark:bg-black">
       <h2 className="text-lg font-semibold mb-2">{t("widgets.stats.title")}</h2>
-      <ul className="text-sm text-gray-600 space-y-1">
+      <ul className="text-sm text-gray-600 space-y-1 dark:text-gray-300">
         <li>{t("widgets.stats.views")}: 123</li>
         <li>{t("widgets.stats.likes")}: 45</li>
         <li>{t("widgets.stats.comments")}: 7</li>

@@ -1,4 +1,12 @@
 {
   "title": "User Settings",
-  "description": "View and edit your personal settings."
+  "description": "Manage your personal preferences.",
+  "language": {
+    "title": "Language",
+    "description": "Choose the language used by the application."
+  },
+  "theme": {
+    "title": "Theme",
+    "description": "Switch between the light and dark appearance."
+  }
 }
