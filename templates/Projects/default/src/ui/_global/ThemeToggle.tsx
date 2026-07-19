@@ -1,8 +1,8 @@
 "use client";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "./Button";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 const themeChangeEvent = "template-theme-change";
 
@@ -24,8 +24,16 @@ function subscribeToThemeChange(onStoreChange: () => void) {
   };
 }
 
+function applyTheme(dark: boolean) {
+  document.documentElement.classList.toggle("dark", dark);
+  document.documentElement.classList.toggle("light", !dark);
+  localStorage.setItem("theme", dark ? "dark" : "light");
+  window.dispatchEvent(new Event(themeChangeEvent));
+}
+
 export default function ThemeToggle() {
   const t = useTranslations("_global_ui");
+  const locale = useLocale();
   const theme = useSyncExternalStore(
     subscribeToThemeChange,
     getThemeSnapshot,
@@ -33,12 +41,14 @@ export default function ThemeToggle() {
   );
   const isDark = theme === "dark";
 
-  const applyTheme = (dark: boolean) => {
-    document.documentElement.classList.toggle("dark", dark);
-    document.documentElement.classList.toggle("light", !dark);
-    localStorage.setItem("theme", dark ? "dark" : "light");
-    window.dispatchEvent(new Event(themeChangeEvent));
-  };
+  useEffect(() => {
+    const storedTheme = localStorage.getItem("theme");
+    const shouldUseDark = storedTheme
+      ? storedTheme === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    applyTheme(shouldUseDark);
+  }, [locale]);
 
   return (
     <Button

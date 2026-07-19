@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { createContentSecurityPolicy } from "../../src/lib/security/csp";
+import { createContentSecurityPolicy } from "@/lib/security/csp";
 
 describe("Content Security Policy", () => {
   test("allows the stable inline scripts required by static Next.js pages", () => {

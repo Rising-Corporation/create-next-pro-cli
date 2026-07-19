@@ -1,4 +1,9 @@
 {
   "title": "Informations utilisateur",
-  "description": "Consultez et modifiez vos informations personnelles."
+  "description": "Informations fournies par votre compte Google.",
+  "name": "Nom",
+  "email": "Adresse e-mail",
+  "profile_image_alt": "Photo de profil Google",
+  "profile_image_unavailable": "Photo de profil Google indisponible",
+  "unavailable": "Non renseigné"
 }

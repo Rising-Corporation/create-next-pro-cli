@@ -1,4 +1,11 @@
 {
-  "title": "Home",
-  "description": "Welcome to your homepage"
+  "title": "Welcome to your website",
+  "description": "Start developing right now.",
+  "readme": "Read the Doc",
+  "github": {
+    "project_credit": "This project was created with create-next-pro-cli",
+    "star": "Star",
+    "watch": "Watch",
+    "action_with_count": "{label} on GitHub, {count} total"
+  }
 }

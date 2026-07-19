@@ -1,4 +1,9 @@
 {
   "title": "User Information",
-  "description": "View and edit your personal information."
+  "description": "Information provided by your Google account.",
+  "name": "Name",
+  "email": "Email address",
+  "profile_image_alt": "Google profile picture",
+  "profile_image_unavailable": "Google profile picture unavailable",
+  "unavailable": "Not provided"
 }

@@ -130,6 +130,9 @@ The Next.js route and its interface are separate: `src/app` owns routing while `
 ```text
 my-app/
 ├── .env.example
+├── .gitignore
+├── .prettierignore
+├── bun.lock
 ├── cnp.config.json
 ├── messages/
 │   ├── en/
@@ -183,11 +186,15 @@ my-app/
 │   ├── e2e/
 │   ├── rendering/
 │   └── unit/
+├── scripts/
+│   ├── audit.ts
+│   └── package-manager.ts
 ├── next.config.ts
 ├── package.json
 ├── playwright.config.ts
 ├── pnpm-workspace.yaml
-└── tsconfig.json
+├── tsconfig.json
+└── vitest.config.ts
 ```
 
 Template working files (`.env`, the nested Git repository, caches, screenshots, and test results) are not copied into generated projects. The CLI creates `cnp.config.json` with the project name and selected alias.
@@ -322,13 +329,13 @@ Interactive input is never attempted in JSON mode. Pass every required argument 
 
 ## Environment and security
 
-Generated projects contain `.env.example`, never the template's local `.env`. Copy it before configuring Auth.js:
+Generated projects contain only the canonical `.env.example`, never the template's local `.env` or other environment copies. Copy it before configuring Auth.js:
 
 ```bash
 cp .env.example .env.local
 ```
 
-OAuth credentials, nested Git repositories, caches, installed dependencies, Playwright artifacts, and agent context are excluded from generated projects and the npm package. For deployments without authentication, use `AUTH_DISABLED=true`.
+The Google and Auth.js values shipped in `.env.example` are intentionally public, limited development credentials. Replace all of them before production use. Nested Git repositories, caches, installed dependencies, Playwright artifacts, agent context, the local `.env`, and every non-canonical `.env*` file are excluded from generated projects and the npm package. For checks without authentication, use `AUTH_DISABLED=true`.
 
 ## Quality
 
@@ -348,6 +355,13 @@ pnpm run check
 ```
 
 Validation covers formatting, linting, TypeScript, Vitest, the Next.js build, and the rendering contract. Use `npm pack --dry-run --json` to inspect the CLI's distributable contents.
+
+The template source keeps one official `bun.lock`. npm and pnpm create their
+manager-specific lockfiles only in consumer worktrees; `.prettierignore` keeps
+those generated locks outside formatting checks. The generated GitHub Actions
+workflow validates all three managers independently and runs its npm job without
+Bun installed. Explicit npm `allowScripts` and pnpm `allowBuilds` policies limit
+native install scripts to the four dependencies required by the toolchain.
 
 ## Development
 

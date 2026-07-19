@@ -35,12 +35,26 @@ const forbiddenSegments = new Set([
   "playwright-report",
   "test-results",
 ]);
+const requiredTemplateFiles = new Set([
+  "templates/Projects/default/.env.example",
+  "templates/Projects/default/.gitignore.template",
+  "templates/Projects/default/.prettierignore",
+  "templates/Projects/default/.github/workflows/quality.yml",
+  "templates/Projects/default/bun.lock",
+  "templates/Projects/default/pnpm-workspace.yaml",
+  "templates/Projects/default/scripts/audit.ts",
+  "templates/Projects/default/scripts/package-manager.ts",
+  "templates/Projects/default/tests/consumer/validate-template.ts",
+  "templates/Projects/default/vitest.config.ts",
+]);
 
 export function inspectPackage(entries: PackEntry[]): string {
   if (entries.length !== 1)
     throw new Error("npm pack must produce exactly one archive");
+  const packagePaths = new Set<string>();
   for (const file of entries[0].files) {
     const path = file.path.replace(/^package\//, "");
+    packagePaths.add(path);
     const segments = path.split("/");
     if (
       forbiddenSegments.has(path) ||
@@ -48,10 +62,8 @@ export function inspectPackage(entries: PackEntry[]): string {
     ) {
       throw new Error(`forbidden package entry: ${path}`);
     }
-    if (
-      segments.at(-1) === ".env" ||
-      /\.env\.(?!example$)/.test(segments.at(-1) ?? "")
-    ) {
+    const basename = segments.at(-1) ?? "";
+    if (basename.startsWith(".env") && basename !== ".env.example") {
       throw new Error(`forbidden environment file: ${path}`);
     }
     if (
@@ -59,6 +71,11 @@ export function inspectPackage(entries: PackEntry[]): string {
       !allowedPrefixes.some((prefix) => path.startsWith(prefix))
     ) {
       throw new Error(`package entry is outside the allowlist: ${path}`);
+    }
+  }
+  for (const required of requiredTemplateFiles) {
+    if (!packagePaths.has(required)) {
+      throw new Error(`required package entry is missing: ${required}`);
     }
   }
   return entries[0].filename;

@@ -1,4 +1,11 @@
 {
-  "title": "Bienvenue sur notre site",
-  "description": "Commencez votre exploration dès maintenant."
+  "title": "Bienvenue sur votre site",
+  "description": "Commencez votre développement dès maintenant.",
+  "readme": "Lire la documentation",
+  "github": {
+    "project_credit": "Ce projet est créé avec create-next-pro-cli",
+    "star": "Star",
+    "watch": "Watch",
+    "action_with_count": "{label} sur GitHub, {count} au total"
+  }
 }

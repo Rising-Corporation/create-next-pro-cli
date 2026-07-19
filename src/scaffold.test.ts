@@ -50,9 +50,42 @@ async function fixture() {
     }),
   );
   await writeFile(path.join(template, ".env"), "SECRET=not-copied\n");
+  await writeFile(
+    path.join(template, ".env copy.example"),
+    "SECRET=also-not-copied\n",
+  );
   await mkdir(path.join(template, ".git"));
   await writeFile(path.join(template, ".git", "config"), "not copied");
   await writeFile(path.join(template, ".gitignore.template"), ".env*\n");
+  await writeFile(path.join(template, ".gitignore"), "local-only\n");
+  await writeFile(path.join(template, ".env.example"), "PUBLIC=true\n");
+  await writeFile(path.join(template, ".prettierignore"), "bun.lock\n");
+  await writeFile(path.join(template, "bun.lock"), "fixture-lock\n");
+  await writeFile(path.join(template, "pnpm-workspace.yaml"), "packages: []\n");
+  await writeFile(
+    path.join(template, "vitest.config.ts"),
+    "export default {};\n",
+  );
+  await mkdir(path.join(template, "scripts"));
+  await writeFile(path.join(template, "scripts", "audit.ts"), "export {};\n");
+  await writeFile(
+    path.join(template, "scripts", "package-manager.ts"),
+    "export {};\n",
+  );
+  await mkdir(path.join(template, "tests", "consumer"), {
+    recursive: true,
+  });
+  await writeFile(
+    path.join(template, "tests", "consumer", "validate-template.ts"),
+    "export {};\n",
+  );
+  await mkdir(path.join(template, ".github", "workflows"), {
+    recursive: true,
+  });
+  await writeFile(
+    path.join(template, ".github", "workflows", "quality.yml"),
+    "name: Quality\n",
+  );
   await writeFile(
     path.join(template, "tsconfig.json"),
     JSON.stringify({ compilerOptions: { paths: { "@/*": ["./src/*"] } } }),
@@ -113,6 +146,9 @@ describe("project scaffolding", () => {
       JSON.parse(await readFile(path.join(target, "package.json"), "utf8")),
     ).not.toHaveProperty("packageManager");
     await expect(readFile(path.join(target, ".env"), "utf8")).rejects.toThrow();
+    await expect(
+      readFile(path.join(target, ".env copy.example"), "utf8"),
+    ).rejects.toThrow();
     await expect(
       readFile(path.join(target, ".git", "config"), "utf8"),
     ).rejects.toThrow();

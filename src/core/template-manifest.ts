@@ -7,6 +7,7 @@ import { MutationGateway } from "./operations";
 export const TEMPLATE_DENY_NAMES = new Set([
   ".env",
   ".git",
+  ".gitignore",
   ".agent",
   ".cursor",
   ".next",
@@ -22,6 +23,7 @@ export function isDistributableTemplatePath(relativePath: string): boolean {
   return !segments.some(
     (segment) =>
       TEMPLATE_DENY_NAMES.has(segment) ||
+      (segment.startsWith(".env") && segment !== ".env.example") ||
       segment.endsWith(".tsbuildinfo") ||
       segment === ".DS_Store",
   );
@@ -63,7 +65,20 @@ export async function validateScaffoldTemplate(
   fs: CliFileSystem,
 ): Promise<string[]> {
   const manifest = await templateManifest(root, fs);
-  for (const required of ["package.json", "tsconfig.json"]) {
+  for (const required of [
+    "package.json",
+    "tsconfig.json",
+    ".env.example",
+    ".gitignore.template",
+    ".prettierignore",
+    "bun.lock",
+    "pnpm-workspace.yaml",
+    "vitest.config.ts",
+    path.join("scripts", "audit.ts"),
+    path.join("scripts", "package-manager.ts"),
+    path.join("tests", "consumer", "validate-template.ts"),
+    path.join(".github", "workflows", "quality.yml"),
+  ]) {
     if (!manifest.includes(required)) {
       throw new CliError(`Required template file was not found: ${required}.`, {
         code: "TEMPLATE_MISSING",

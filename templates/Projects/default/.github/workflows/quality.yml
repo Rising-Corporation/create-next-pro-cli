@@ -8,17 +8,48 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        manager: [bun, npm, pnpm]
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - run: bun install --frozen-lockfile
-      - run: bun run check
-      - run: bun run audit
-      - run: bun run test:consumer
-      - run: bunx playwright install --with-deps chromium
-      - run: bun run test:e2e
+      - uses: oven-sh/setup-bun@v2
+        if: matrix.manager == 'bun'
+        with:
+          bun-version: 1.3.14
+      - uses: pnpm/action-setup@v4
+        if: matrix.manager == 'pnpm'
+        with:
+          version: 11
+      - name: Verify runtime isolation
+        if: matrix.manager != 'bun'
+        run: test -z "$(command -v bun || true)"
+      - name: Prepare package-manager-neutral checkout
+        if: matrix.manager != 'bun'
+        run: npm pkg delete packageManager
+      - name: Install dependencies
+        run: |
+          if [ "${{ matrix.manager }}" = bun ]; then
+            bun install --frozen-lockfile
+          elif [ "${{ matrix.manager }}" = npm ]; then
+            npm install
+          else
+            pnpm install --no-frozen-lockfile
+          fi
+      - run: ${{ matrix.manager }} run check
+      - run: ${{ matrix.manager }} run audit
+      - name: Validate an isolated consumer
+        env:
+          CNP_PACKAGE_MANAGER: ${{ matrix.manager }}
+        run: ${{ matrix.manager }} run test:consumer
+      - name: Install Chromium
+        if: matrix.manager == 'npm'
+        run: npx playwright install --with-deps chromium
+      - name: Run visual integration tests without Bun
+        if: matrix.manager == 'npm'
+        run: npm run test:e2e

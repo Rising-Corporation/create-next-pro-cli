@@ -1,4 +1,12 @@
 {
   "title": "Paramètres utilisateur",
-  "description": "Consultez et modifiez vos paramètres personnels."
+  "description": "Gérez vos préférences personnelles.",
+  "language": {
+    "title": "Langue",
+    "description": "Choisissez la langue utilisée par l’application."
+  },
+  "theme": {
+    "title": "Thème",
+    "description": "Basculez entre les apparences claire et sombre."
+  }
 }

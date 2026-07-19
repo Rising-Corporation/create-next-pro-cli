@@ -19,7 +19,7 @@ const LogoutButton = () => {
       variant="ghost"
       size="sm"
       onClick={handleLogout}
-      className="text-gray-400 hover:text-black  glass-effect"
+      className="text-gray-400 hover:text-black dark:hover:text-white glass-effect"
     >
       <LogOut className="h-4 w-4 sm:mr-2" />
       <span className="hidden sm:inline">{t("logout")}</span>

@@ -21,7 +21,7 @@
     "verify:rendering": "node --experimental-strip-types tests/rendering/verify-rendering.ts",
     "check": "prettier --check . && eslint . && tsc --noEmit && vitest run && next build && node --experimental-strip-types tests/rendering/verify-rendering.ts",
     "test:consumer": "node --experimental-strip-types tests/consumer/validate-template.ts",
-    "audit": "bun audit"
+    "audit": "node --experimental-strip-types scripts/audit.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "1.3.0",
@@ -52,5 +52,11 @@
   },
   "overrides": {
     "postcss": "8.5.15"
+  },
+  "allowScripts": {
+    "@parcel/watcher": true,
+    "@swc/core": true,
+    "sharp": true,
+    "unrs-resolver": true
   }
 }
