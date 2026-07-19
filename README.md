@@ -71,12 +71,15 @@ cd my-app
 Then install dependencies with your preferred package manager:
 
 ```bash
-bun install && bun run dev
+bun install && cp .env.example .env && bun run dev
 # or
-npm install && npm run dev
+npm install && cp .env.example .env && npm run dev
 # or
-pnpm install && pnpm run dev
+pnpm install && cp .env.example .env && pnpm run dev
 ```
+
+The creation result reports `.env.example` explicitly and provides the same
+local-development commands in both human and JSON output.
 
 An existing destination is rejected by default. `--force` only permits replacement of the requested child destination:
 
@@ -332,7 +335,7 @@ Interactive input is never attempted in JSON mode. Pass every required argument 
 Generated projects contain only the canonical `.env.example`, never the template's local `.env` or other environment copies. Copy it before configuring Auth.js:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
 The Google and Auth.js values shipped in `.env.example` are intentionally public, limited development credentials. Replace all of them before production use. Nested Git repositories, caches, installed dependencies, Playwright artifacts, agent context, the local `.env`, and every non-canonical `.env*` file are excluded from generated projects and the npm package. For checks without authentication, use `AUTH_DISABLED=true`.
