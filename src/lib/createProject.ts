@@ -36,6 +36,18 @@ export async function createProjectFromOptions(
         paths: [{ scope: "project", path: "package.json" }],
         commands: ["bun run check", "npm run check", "pnpm run check"],
       },
+      {
+        kind: "run",
+        required: false,
+        message:
+          "To run the project locally, copy the development environment example and start the development server.",
+        paths: [{ scope: "project", path: ".env.example" }],
+        commands: [
+          `cd ${options.projectName} && cp .env.example .env && bun run dev`,
+          `cd ${options.projectName} && cp .env.example .env && npm run dev`,
+          `cd ${options.projectName} && cp .env.example .env && pnpm run dev`,
+        ],
+      },
     ],
     data: {
       projectName: options.projectName,

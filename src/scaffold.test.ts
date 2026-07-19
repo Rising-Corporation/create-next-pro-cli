@@ -120,6 +120,18 @@ describe("project scaffolding", () => {
       status: "success",
       exitCode: 0,
     });
+    expect(result.nextSteps).toContainEqual({
+      kind: "run",
+      required: false,
+      message:
+        "To run the project locally, copy the development environment example and start the development server.",
+      paths: [{ scope: "project", path: ".env.example" }],
+      commands: [
+        "cd generated-app && cp .env.example .env && bun run dev",
+        "cd generated-app && cp .env.example .env && npm run dev",
+        "cd generated-app && cp .env.example .env && pnpm run dev",
+      ],
+    });
     expect(
       JSON.parse(
         await readFile(
@@ -145,6 +157,9 @@ describe("project scaffolding", () => {
     expect(
       JSON.parse(await readFile(path.join(target, "package.json"), "utf8")),
     ).not.toHaveProperty("packageManager");
+    expect(await readFile(path.join(target, ".env.example"), "utf8")).toBe(
+      "PUBLIC=true\n",
+    );
     await expect(readFile(path.join(target, ".env"), "utf8")).rejects.toThrow();
     await expect(
       readFile(path.join(target, ".env copy.example"), "utf8"),

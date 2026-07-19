@@ -37,7 +37,7 @@ export type OperationEvent = ResourcePath & {
 };
 
 export type NextStep = {
-  kind: "translate" | "review" | "install" | "run-checks" | "rerun";
+  kind: "translate" | "review" | "install" | "run-checks" | "run" | "rerun";
   required: boolean;
   message: string;
   paths: ResourcePath[];
