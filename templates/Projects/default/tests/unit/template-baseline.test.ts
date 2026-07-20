@@ -11,6 +11,15 @@ async function source(relativePath: string) {
 
 describe("updated template baseline", () => {
   test.each([
+    ["AGENTS.md", "$create-next-pro-addlanguage"],
+    [
+      ".agents/skills/create-next-pro-addlanguage/SKILL.md",
+      "translate every listed JSON file",
+    ],
+    [
+      ".agents/skills/create-next-pro-rmpage/SKILL.md",
+      "project-confined page deletion",
+    ],
     ["src/lib/github/repository.ts", "getGitHubRepositoryStats"],
     ["src/ui/_home/GitHubActions.tsx", "GITHUB_REPOSITORY_URL"],
     ["src/ui/_home/page-shell.tsx", "Empowered by Rising Corporation"],

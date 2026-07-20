@@ -1,5 +1,6 @@
 import path from "node:path";
 
+import { PROJECT_AGENT_GUIDANCE_FILES } from "./agent-guidance";
 import { CliError } from "./contracts";
 import type { CliContext, CliFileSystem } from "./contracts";
 import { MutationGateway } from "./operations";
@@ -66,6 +67,9 @@ export async function validateScaffoldTemplate(
 ): Promise<string[]> {
   const manifest = await templateManifest(root, fs);
   for (const required of [
+    ...PROJECT_AGENT_GUIDANCE_FILES.map((relative) =>
+      relative.split("/").join(path.sep),
+    ),
     "package.json",
     "tsconfig.json",
     ".env.example",

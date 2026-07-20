@@ -7,20 +7,27 @@ const PUBLIC_FILES = [
   "README.md",
   "create-next-pro-completion.sh",
   "create-next-pro-completion.zsh",
+  "templates/Projects/default/AGENTS.md",
+  "templates/Projects/default/README.md",
 ];
+const MARKDOWN_EXTENSIONS = new Set([".md"]);
 const FRENCH =
   /[àâæçéèêëîïôœùûüÿ]|\b(?:ajouter|annule|annulé|commande|créé|créer|dans|erreur|fichier|inchangé|langue|modifier|modifié|projet|répertoire|supprimer|traduction|utilisez)\b/iu;
 
-async function collect(directory: string): Promise<string[]> {
+async function collect(
+  directory: string,
+  extensions = EXTENSIONS,
+): Promise<string[]> {
   const files: string[] = [];
   for (const entry of await readdir(path.join(ROOT, directory), {
     withFileTypes: true,
   })) {
     const relative = path.join(directory, entry.name);
-    if (entry.isDirectory()) files.push(...(await collect(relative)));
+    if (entry.isDirectory())
+      files.push(...(await collect(relative, extensions)));
     else if (
       relative !== "scripts/check-public-language.ts" &&
-      EXTENSIONS.has(path.extname(entry.name))
+      extensions.has(path.extname(entry.name))
     )
       files.push(relative);
   }
@@ -29,6 +36,10 @@ async function collect(directory: string): Promise<string[]> {
 
 const files = [
   ...PUBLIC_FILES,
+  ...(await collect(
+    "templates/Projects/default/.agents/skills",
+    MARKDOWN_EXTENSIONS,
+  )),
   ...(await collect("src")),
   ...(await collect("scripts")),
 ].sort();

@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import process from "node:process";
 
+import { PROJECT_AGENT_GUIDANCE_FILES } from "../src/core/agent-guidance";
+
 type PackEntry = {
   filename: string;
   files: Array<{ path: string }>;
@@ -35,7 +37,10 @@ const forbiddenSegments = new Set([
   "playwright-report",
   "test-results",
 ]);
-const requiredTemplateFiles = new Set([
+export const requiredTemplateFiles = [
+  ...PROJECT_AGENT_GUIDANCE_FILES.map(
+    (path) => `templates/Projects/default/${path}`,
+  ),
   "templates/Projects/default/.env.example",
   "templates/Projects/default/.gitignore.template",
   "templates/Projects/default/.prettierignore",
@@ -46,7 +51,7 @@ const requiredTemplateFiles = new Set([
   "templates/Projects/default/scripts/package-manager.ts",
   "templates/Projects/default/tests/consumer/validate-template.ts",
   "templates/Projects/default/vitest.config.ts",
-]);
+] as const;
 
 export function inspectPackage(entries: PackEntry[]): string {
   if (entries.length !== 1)

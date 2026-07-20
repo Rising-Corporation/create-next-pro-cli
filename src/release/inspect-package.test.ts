@@ -1,21 +1,11 @@
 import { describe, expect, test } from "vitest";
 
-import { inspectPackage } from "../../scripts/inspect-package";
+import {
+  inspectPackage,
+  requiredTemplateFiles,
+} from "../../scripts/inspect-package";
 
 describe("package allowlist", () => {
-  const requiredTemplateFiles = [
-    "templates/Projects/default/.env.example",
-    "templates/Projects/default/.gitignore.template",
-    "templates/Projects/default/.prettierignore",
-    "templates/Projects/default/.github/workflows/quality.yml",
-    "templates/Projects/default/bun.lock",
-    "templates/Projects/default/pnpm-workspace.yaml",
-    "templates/Projects/default/scripts/audit.ts",
-    "templates/Projects/default/scripts/package-manager.ts",
-    "templates/Projects/default/tests/consumer/validate-template.ts",
-    "templates/Projects/default/vitest.config.ts",
-  ];
-
   test("accepts the expected published surface", () => {
     expect(
       inspectPackage([

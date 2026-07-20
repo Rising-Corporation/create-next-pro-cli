@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
+import { PROJECT_AGENT_GUIDANCE_FILES } from "./core/agent-guidance";
 import { CliError, type PromptRunner } from "./core/contracts";
 import { createNodeContext } from "./runtime/node-context";
 import { scaffoldProject } from "./scaffold";
@@ -41,6 +42,11 @@ async function fixture() {
   temporaryDirectories.push(root);
   const template = path.join(root, "template");
   await mkdir(template);
+  for (const relative of PROJECT_AGENT_GUIDANCE_FILES) {
+    const target = path.join(template, relative);
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, `Fixture guidance for ${relative}.\n`);
+  }
   await writeFile(
     path.join(template, "package.json"),
     JSON.stringify({

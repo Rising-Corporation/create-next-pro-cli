@@ -132,9 +132,15 @@ The Next.js route and its interface are separate: `src/app` owns routing while `
 
 ```text
 my-app/
+├── .agents/
+│   └── skills/
+│       ├── create-next-pro-create-project/
+│       ├── create-next-pro-addpage/
+│       └── ...
 ├── .env.example
 ├── .gitignore
 ├── .prettierignore
+├── AGENTS.md
 ├── bun.lock
 ├── cnp.config.json
 ├── messages/
@@ -201,6 +207,8 @@ my-app/
 ```
 
 Template working files (`.env`, the nested Git repository, caches, screenshots, and test results) are not copied into generated projects. The CLI creates `cnp.config.json` with the project name and selected alias.
+
+Generated projects also include concise root guidance in `AGENTS.md` and eight instruction-only command skills under `.agents/skills`. Agents should prefer the deterministic `--json` contract and read the matching skill before invoking a project mutation.
 
 ## CLI architecture
 

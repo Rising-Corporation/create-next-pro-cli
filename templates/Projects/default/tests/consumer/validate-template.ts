@@ -17,9 +17,11 @@ const gitignoreSource = await stat(path.join(root, ".gitignore.template")).then(
   () => ".gitignore",
 );
 const entries = [
+  [".agents", ".agents"],
   [".env.example", ".env.example"],
   [gitignoreSource, ".gitignore"],
   [".prettierignore", ".prettierignore"],
+  ["AGENTS.md", "AGENTS.md"],
   ["README.md", "README.md"],
   ["bun.lock", "bun.lock"],
   ["eslint.config.mjs", "eslint.config.mjs"],
