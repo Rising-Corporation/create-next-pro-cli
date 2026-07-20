@@ -4,21 +4,27 @@ Next.js App Router template for `create-next-pro-cli`.
 
 ## Runtime
 
-Choose Bun, npm, or pnpm for dependency installation and project scripts. The
-repository keeps `bun.lock` as its reproducible source lockfile, while npm and
-pnpm consumers create their own lockfiles in their working copies.
+Choose one runtime and package-manager path for dependency installation and
+project scripts. The repository keeps `bun.lock` as its reproducible source
+lockfile, while npm and pnpm consumers create their own lockfiles in their
+working copies.
 
-Required:
+Bun-only path:
+
+```bash
+bun --version
+```
+
+Node.js path:
 
 ```bash
 node --version
-bun --version # optional
-npm --version # optional
-pnpm --version # optional
+npm --version # or: pnpm --version
 ```
 
-Node must satisfy `>=24.0.0`. Bun must satisfy `>=1.3.14` when selected, and
-pnpm 11 or later is supported.
+Bun must satisfy `>=1.3.14` when selected and does not require a separate
+Node.js installation. The Node.js path requires Node.js `>=24.0.0`; pnpm 11 or
+later is supported.
 
 The npm `allowScripts` policy and pnpm `allowBuilds` policy approve only the
 native build steps required by Next.js and the file-watcher toolchain. Security
@@ -86,6 +92,14 @@ bun run check
 Replace `bun run` with `npm run` or `pnpm run` for the selected manager. The
 `audit` and `test:consumer` scripts detect the invoking manager without shell
 commands, including on Windows.
+
+## Agent workflows
+
+Codex-compatible project guidance is available in `AGENTS.md`. Focused command
+skills under `.agents/skills` document project creation and every public
+`add*`/`rmpage` operation. Agents should read the matching skill, invoke the CLI
+with `--json`, inspect all reported events and complete every required next
+step before running the project checks.
 
 ## Template Features
 
