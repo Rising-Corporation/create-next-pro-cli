@@ -51,21 +51,22 @@ Do not commit an additional lockfile unless the project has intentionally change
 - Use `.env.example` as the public development contract. Create a local file with `cp .env.example .env`, then replace credentials for production.
 - Use `--force` only after resolving and inspecting the exact destination. It deletes the existing child destination before scaffolding.
 - Pass logical names, not filesystem paths. Names use safe dot-separated segments such as `account.security`; never pass absolute paths, slashes, empty segments, or `..`.
+- Select `--area public` or `--area user` explicitly for page creation, direct page removal, and page-scoped components. A route area controls the layout and authorization boundary without changing the public URL.
 - Preserve existing source files. The add commands report existing resources as `unchanged` instead of overwriting them.
-- Use `rmpage` only for a page returned by the CLI page catalog, and inspect deletion events before making follow-up edits.
+- Use `rmpage` only for a page returned by the area-aware CLI page catalog, and inspect deletion events before making follow-up edits.
 
 ## CLI operations
 
 | Operation        | Purpose                                                         | Skill                                                                                       |
 | ---------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Create a project | Scaffold the complete Next.js project in a new child directory. | [`$create-next-pro-create-project`](.agents/skills/create-next-pro-create-project/SKILL.md) |
-| `addpage`        | Add a route, page UI, and localized message resources.          | [`$create-next-pro-addpage`](.agents/skills/create-next-pro-addpage/SKILL.md)               |
-| `addcomponent`   | Add a global or page-scoped UI component and messages.          | [`$create-next-pro-addcomponent`](.agents/skills/create-next-pro-addcomponent/SKILL.md)     |
+| `addpage`        | Add an explicitly zoned route, page UI, and localized messages. | [`$create-next-pro-addpage`](.agents/skills/create-next-pro-addpage/SKILL.md)               |
+| `addcomponent`   | Add a global or area-qualified page component and messages.     | [`$create-next-pro-addcomponent`](.agents/skills/create-next-pro-addcomponent/SKILL.md)     |
 | `addlib`         | Add a library directory or a library module and export.         | [`$create-next-pro-addlib`](.agents/skills/create-next-pro-addlib/SKILL.md)                 |
 | `addapi`         | Add an App Router API route handler.                            | [`$create-next-pro-addapi`](.agents/skills/create-next-pro-addapi/SKILL.md)                 |
 | `addlanguage`    | Copy and register a new locale that must then be translated.    | [`$create-next-pro-addlanguage`](.agents/skills/create-next-pro-addlanguage/SKILL.md)       |
 | `addtext`        | Set one translation path across all configured locales.         | [`$create-next-pro-addtext`](.agents/skills/create-next-pro-addtext/SKILL.md)               |
-| `rmpage`         | Remove a catalogued page and its associated resources safely.   | [`$create-next-pro-rmpage`](.agents/skills/create-next-pro-rmpage/SKILL.md)                 |
+| `rmpage`         | Remove one area-qualified page and its resources safely.        | [`$create-next-pro-rmpage`](.agents/skills/create-next-pro-rmpage/SKILL.md)                 |
 
 ## Global options
 
@@ -74,6 +75,13 @@ Do not commit an additional lockfile unless the project has intentionally change
 - `--reconfigure`: rerun the interactive CLI configuration assistant.
 - `--help`: display public command help.
 - `--version` or `-v`: display the CLI version.
+
+## Page-area option
+
+- `--area public`: target the public route group and layout.
+- `--area user`: target the authenticated user route group and layout.
+- The option is required for direct `addpage`, direct `rmpage`, and `addcomponent --page` commands. It is rejected for global components.
+- Do not infer an area from a page name or persist one as a project-wide default.
 
 ## Finish every mutation
 

@@ -83,6 +83,23 @@ describe("generated project agent guidance", () => {
     expect(document).not.toContain("__complete");
   });
 
+  test("documents explicit page areas in every page-related skill", async () => {
+    const documents = await Promise.all(
+      [
+        "create-next-pro-addpage",
+        "create-next-pro-addcomponent",
+        "create-next-pro-rmpage",
+      ].map((name) => source(`.agents/skills/${name}/SKILL.md`)),
+    );
+
+    for (const document of documents) {
+      expect(document).toContain("--area");
+      expect(document).toContain("public");
+      expect(document).toContain("user");
+      expect(document).not.toContain("--route-group");
+    }
+  });
+
   test("keeps repository skills visible to generated projects", async () => {
     const ignored = (await source(".gitignore.template"))
       .split(/\r?\n/)

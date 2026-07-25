@@ -1,12 +1,12 @@
 #compdef create-next-pro
 
 _create_next_pro() {
-  local command
-  command="${words[2]}"
+  local -a prior
   if (( CURRENT == 2 )); then
     compadd -- ${(f)"$(create-next-pro __complete 2>/dev/null)"}
   else
-    compadd -- ${(f)"$(create-next-pro __complete "${command}" 2>/dev/null)"}
+    prior=("${(@)words[2,$((CURRENT - 1))]}")
+    compadd -- ${(f)"$(create-next-pro __complete "${prior[@]}" 2>/dev/null)"}
   fi
 }
 

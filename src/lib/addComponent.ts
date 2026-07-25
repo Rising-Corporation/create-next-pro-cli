@@ -2,6 +2,15 @@ import { join } from "node:path";
 
 import { CliError, type CommandHandler } from "../core/contracts";
 import { commandResult, MutationGateway } from "../core/operations";
+import {
+  discoverPageCatalog,
+  resolvePageCandidate,
+} from "../core/page-catalog";
+import {
+  parseAreaOption,
+  requirePageArea,
+  type PageArea,
+} from "../core/page-area";
 import { assertSafeTarget, parseLogicalName } from "../core/project-paths";
 import { capitalize, loadConfig, toIdentifier } from "./utils";
 
@@ -12,18 +21,75 @@ type PreparedMessages = {
   exists: boolean;
 };
 
-export const addComponent: CommandHandler = async (args, context) => {
-  let componentName = args[1];
-  const pageIndex = args.findIndex(
-    (argument) => argument === "-P" || argument === "--page",
+type ParsedAddComponentArguments = {
+  area?: PageArea;
+  componentName?: string;
+  pageScope?: string;
+};
+
+function formatGeneratedTranslations(content: string): string {
+  return content.replace(
+    /^(\s*)(<(?:h2|p)\b[^>]*>)\{t\("([^"]+)"\)\}(<\/(?:h2|p)>)$/gm,
+    (line, indent: string, opening: string, key: string, closing: string) =>
+      line.length <= 80
+        ? line
+        : `${indent}${opening}\n${indent}  {t("${key}")}\n${indent}${closing}`,
   );
-  const pageScope = pageIndex >= 0 ? args[pageIndex + 1] : undefined;
-  if (pageIndex >= 0 && !pageScope) {
-    throw new CliError("The --page option requires a page name.", {
-      code: "INVALID_ARGUMENT",
-    });
+}
+
+function parseAddComponentArguments(
+  args: string[],
+): ParsedAddComponentArguments {
+  const parsedArea = parseAreaOption(args);
+  let componentName: string | undefined;
+  let pageScope: string | undefined;
+  for (let index = 1; index < parsedArea.args.length; index += 1) {
+    const argument = parsedArea.args[index];
+    if (argument === "-P" || argument === "--page") {
+      if (pageScope) {
+        throw new CliError("The --page option can only be provided once.", {
+          code: "INVALID_ARGUMENT",
+        });
+      }
+      const value = parsedArea.args[index + 1];
+      if (!value || value.startsWith("-")) {
+        throw new CliError("The --page option requires a page name.", {
+          code: "INVALID_ARGUMENT",
+        });
+      }
+      pageScope = value;
+      index += 1;
+      continue;
+    }
+    if (argument.startsWith("-")) {
+      throw new CliError(`Unknown addcomponent option: ${argument}.`, {
+        code: "INVALID_ARGUMENT",
+      });
+    }
+    if (componentName) {
+      throw new CliError(`Unexpected addcomponent argument: ${argument}.`, {
+        code: "INVALID_ARGUMENT",
+      });
+    }
+    componentName = argument;
   }
-  if (!componentName || componentName.startsWith("-")) {
+  if (pageScope && !parsedArea.area) {
+    requirePageArea(parsedArea.area, "addcomponent --page");
+  }
+  if (!pageScope && parsedArea.area) {
+    throw new CliError(
+      "The --area option is only valid with addcomponent --page.",
+      { code: "INVALID_ARGUMENT" },
+    );
+  }
+  return { area: parsedArea.area, componentName, pageScope };
+}
+
+export const addComponent: CommandHandler = async (args, context) => {
+  const parsed = parseAddComponentArguments(args);
+  let { componentName } = parsed;
+  const { area, pageScope } = parsed;
+  if (!componentName) {
     if (context.outputMode === "json") {
       throw new CliError("Component name is required in JSON mode.", {
         code: "INTERACTIVE_INPUT_REQUIRED",
@@ -69,6 +135,10 @@ export const addComponent: CommandHandler = async (args, context) => {
       hint: "Run this command from the generated project root.",
     });
   }
+  if (pageScope) {
+    const catalog = await discoverPageCatalog(context.cwd, context.fs);
+    resolvePageCandidate(catalog, pageScope, area!);
+  }
 
   const componentNameUpper = capitalize(toIdentifier(componentName));
   const templateRoot = join(context.packageRoot, "templates", "Component");
@@ -91,9 +161,11 @@ export const addComponent: CommandHandler = async (args, context) => {
   await assertSafeTarget(context.cwd, targetDirectory, context.fs);
   const componentFile = join(targetDirectory, `${componentNameUpper}.tsx`);
   const translationNamespace = pageScope ?? "_global_ui";
-  const componentContent = (await context.fs.readText(componentTemplate))
-    .replace(/Component/g, componentNameUpper)
-    .replace(/componentPage/g, translationNamespace);
+  const componentContent = formatGeneratedTranslations(
+    (await context.fs.readText(componentTemplate))
+      .replace(/Component/g, componentNameUpper)
+      .replace(/componentPage/g, translationNamespace),
+  );
 
   const preparedMessages: PreparedMessages[] = [];
   if (config.useI18n) {
@@ -105,6 +177,7 @@ export const addComponent: CommandHandler = async (args, context) => {
         path: "messages",
       });
     }
+    await assertSafeTarget(context.cwd, messagesRoot, context.fs);
     const templateMessages = JSON.parse(
       await context.fs.readText(messagesTemplate),
     ) as Record<string, unknown>;
@@ -122,6 +195,7 @@ export const addComponent: CommandHandler = async (args, context) => {
     for (const locale of locales) {
       const messageFile = pageScope ? pageSegments[0] : "_global_ui";
       const target = join(messagesRoot, locale, `${messageFile}.json`);
+      await assertSafeTarget(context.cwd, target, context.fs);
       let data: Record<string, unknown> = {};
       if (context.fs.exists(target)) {
         try {
@@ -175,16 +249,19 @@ export const addComponent: CommandHandler = async (args, context) => {
   await gateway.mkdir(targetDirectory, {
     role: "component-directory",
     resource: "directory",
+    detail: area ? { area } : undefined,
   });
   await gateway.write(componentFile, componentContent, {
     role: "ui-component",
     preserveExisting: true,
+    detail: area ? { area } : undefined,
   });
   for (const item of preparedMessages) {
     if (item.exists) {
       gateway.unchanged(item.target, {
         role: "translation-messages",
         detail: {
+          ...(area ? { area } : {}),
           locale: item.locale,
           key: `${translationNamespace}.${componentNameUpper}`,
         },
@@ -193,6 +270,7 @@ export const addComponent: CommandHandler = async (args, context) => {
       await gateway.write(item.target, item.content!, {
         role: "translation-messages",
         detail: {
+          ...(area ? { area } : {}),
           locale: item.locale,
           key: `${translationNamespace}.${componentNameUpper}`,
         },
@@ -206,9 +284,14 @@ export const addComponent: CommandHandler = async (args, context) => {
   return commandResult(context, {
     command: "addcomponent",
     summary: mutated
-      ? `Added component "${componentNameUpper}" ${pageScope ? `to page "${pageScope}"` : "globally"}.`
-      : `Component "${componentNameUpper}" already exists and was preserved.`,
+      ? `Added component "${componentNameUpper}" ${pageScope ? `to ${area} page "${pageScope}"` : "globally"}.`
+      : pageScope
+        ? `Component "${componentNameUpper}" already exists on ${area} page "${pageScope}" and was preserved.`
+        : `Component "${componentNameUpper}" already exists and was preserved.`,
     projectRoot: context.cwd,
+    data: pageScope
+      ? { area, componentName: componentNameUpper, page: pageScope }
+      : { componentName: componentNameUpper },
     nextSteps: mutated
       ? [
           {

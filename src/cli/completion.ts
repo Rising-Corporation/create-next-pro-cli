@@ -1,7 +1,8 @@
 import path from "node:path";
 
 import type { CliContext } from "../core/contracts";
-import { discoverPages } from "../core/page-catalog";
+import { PAGE_AREAS, isPageArea, type PageArea } from "../core/page-area";
+import { discoverPageCatalog } from "../core/page-catalog";
 
 export const PUBLIC_COMMANDS = [
   "addpage",
@@ -19,6 +20,7 @@ export const PUBLIC_COMMANDS = [
 
 const OPTIONS: Record<string, string[]> = {
   addpage: [
+    "--area",
     "--layout",
     "--page",
     "--loading",
@@ -46,32 +48,77 @@ async function directories(
   }
 }
 
+function selectedArea(args: string[]): PageArea | undefined {
+  const index = args.lastIndexOf("--area");
+  if (index < 0) return undefined;
+  const value = args[index + 1];
+  return value && isPageArea(value) ? value : undefined;
+}
+
+function uniqueSorted(candidates: string[]): string[] {
+  return [...new Set(candidates)].sort((left, right) =>
+    left.localeCompare(right),
+  );
+}
+
 export async function completionCandidates(
-  command: string | undefined,
+  words: string[],
   context: CliContext,
 ): Promise<string[]> {
-  if (!command) return [...PUBLIC_COMMANDS];
+  if (words.length === 0) return [...PUBLIC_COMMANDS];
+  const [command, ...args] = words;
+  const previous = args.at(-1);
+  if (previous === "--area") return [...PAGE_AREAS];
+
+  const area = selectedArea(args);
+  const hasArea = args.includes("--area");
   if (command === "rmpage") {
-    return (await discoverPages(context.cwd, context.fs)).map(
-      (candidate) => candidate.logicalName,
+    if (!area) return hasArea ? [] : ["--area"];
+    const catalog = await discoverPageCatalog(context.cwd, context.fs);
+    return uniqueSorted(
+      catalog.candidates
+        .filter((candidate) => candidate.area === area)
+        .map((candidate) => candidate.logicalName),
     );
   }
-  if (command === "addcomponent" || command === "addpage") {
-    return [
-      ...(OPTIONS[command] ?? []),
-      ...(await directories(path.join(context.cwd, "src", "ui"), context)),
-    ];
+
+  if (command === "addcomponent") {
+    const pageOptionIndex = args.findIndex(
+      (argument) => argument === "--page" || argument === "-P",
+    );
+    if (previous === "--page" || previous === "-P") {
+      const catalog = await discoverPageCatalog(context.cwd, context.fs);
+      return uniqueSorted(
+        catalog.candidates
+          .filter((candidate) => !area || candidate.area === area)
+          .map((candidate) => candidate.logicalName),
+      );
+    }
+    return uniqueSorted([
+      ...(OPTIONS.addcomponent ?? []),
+      ...(pageOptionIndex >= 0 && !hasArea ? ["--area"] : []),
+    ]);
   }
+
+  if (command === "addpage") {
+    return uniqueSorted([
+      ...(OPTIONS.addpage ?? []).filter(
+        (candidate) => candidate !== "--area" || !hasArea,
+      ),
+      ...(await directories(path.join(context.cwd, "src", "ui"), context)),
+    ]);
+  }
+
   if (command === "addlanguage")
     return ["de", "en", "es", "fr", "it", "ja", "pt"];
-  return OPTIONS[command] ?? [];
+  return uniqueSorted(OPTIONS[command] ?? []);
 }
 
 export async function printCompletions(
   args: string[],
   context: CliContext,
 ): Promise<void> {
-  for (const candidate of await completionCandidates(args[1], context)) {
+  for (const candidate of await completionCandidates(args.slice(1), context)) {
     context.terminal.log(candidate);
   }
 }

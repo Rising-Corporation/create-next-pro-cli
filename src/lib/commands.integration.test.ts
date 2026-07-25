@@ -34,7 +34,12 @@ afterEach(async () => {
 async function projectFixture(): Promise<string> {
   const root = await mkdtemp(path.join(tmpdir(), "cnp-commands-"));
   temporaryDirectories.push(root);
-  await mkdir(path.join(root, "src", "app", "[locale]"), { recursive: true });
+  await mkdir(path.join(root, "src", "app", "[locale]", "(public)"), {
+    recursive: true,
+  });
+  await mkdir(path.join(root, "src", "app", "[locale]", "(user)"), {
+    recursive: true,
+  });
   await mkdir(path.join(root, "src", "lib", "i18n"), { recursive: true });
   await mkdir(path.join(root, "messages", "en"), { recursive: true });
   await mkdir(path.join(root, "messages", "fr"), { recursive: true });
@@ -90,13 +95,217 @@ async function runCommand(
 }
 
 describe("project evolution commands", () => {
+  test("requires an explicit area for direct page operations", async () => {
+    const root = await projectFixture();
+
+    for (const args of [
+      ["addpage", "Sample", "-P"],
+      ["addpage", "Sample", "--area=public", "-P"],
+      ["addpage", "Sample", "--area", "Public", "-P"],
+      ["addpage", "Sample", "--area", "public", "--area", "public", "-P"],
+    ]) {
+      await expect(runCommand(addPage, args, root)).rejects.toMatchObject({
+        code: "INVALID_ARGUMENT",
+      });
+    }
+    expect(existsSync(path.join(root, "src", "ui", "Sample"))).toBe(false);
+
+    await expect(
+      runCommand(
+        addComponent,
+        ["addcomponent", "GlobalWidget", "--area", "public"],
+        root,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
+
+    await runCommand(
+      addPage,
+      ["addpage", "Sample", "--area", "public", "-P"],
+      root,
+    );
+    await expect(
+      runCommand(
+        addComponent,
+        ["addcomponent", "Widget", "--page", "Sample"],
+        root,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
+    await expect(
+      runCommand(
+        addComponent,
+        [
+          "addcomponent",
+          "WrongAreaWidget",
+          "--page",
+          "Sample",
+          "--area",
+          "user",
+        ],
+        root,
+      ),
+    ).rejects.toMatchObject({ code: "TARGET_NOT_FOUND" });
+    expect(
+      existsSync(path.join(root, "src", "ui", "Sample", "WrongAreaWidget.tsx")),
+    ).toBe(false);
+    await expect(
+      runCommand(rmPage, ["rmpage", "Sample"], root),
+    ).rejects.toMatchObject({ code: "INVALID_ARGUMENT" });
+    expect(
+      existsSync(
+        path.join(root, "src", "app", "[locale]", "(public)", "Sample"),
+      ),
+    ).toBe(true);
+  });
+
+  test("generates area-aware routes and structured results", async () => {
+    const root = await projectFixture();
+    const publicResult = await runCommand(
+      addPage,
+      ["addpage", "--area", "public", "PublicPage", "-P"],
+      root,
+    );
+    const userResult = await runCommand(
+      addPage,
+      ["addpage", "UserPage", "-P", "--area", "user"],
+      root,
+    );
+
+    expect(publicResult.data).toEqual({
+      area: "public",
+      logicalName: "PublicPage",
+    });
+    expect(userResult.data).toEqual({
+      area: "user",
+      logicalName: "UserPage",
+    });
+    expect(
+      publicResult.events.every((event) => event.detail?.area === "public"),
+    ).toBe(true);
+    expect(
+      userResult.events.every((event) => event.detail?.area === "user"),
+    ).toBe(true);
+    expect(
+      await readFile(
+        path.join(root, "src", "ui", "PublicPage", "page-ui.tsx"),
+        "utf8",
+      ),
+    ).toContain('<main className="px-4 pb-8 pt-24');
+    expect(
+      await readFile(
+        path.join(root, "src", "ui", "UserPage", "page-ui.tsx"),
+        "utf8",
+      ),
+    ).not.toContain("<main");
+    expect(
+      await readFile(
+        path.join(root, "src", "ui", "UserPage", "page-ui.tsx"),
+        "utf8",
+      ),
+    ).toContain('<section className="px-4 pb-8 pt-24');
+
+    for (const [area, logicalName] of [
+      ["public", "PublicParent.Child"],
+      ["user", "UserParent.Child"],
+    ] as const) {
+      const result = await runCommand(
+        addPage,
+        ["addpage", logicalName, "--area", area, "-P"],
+        root,
+      );
+      expect(result.data).toEqual({ area, logicalName });
+      expect(
+        existsSync(
+          path.join(
+            root,
+            "src",
+            "app",
+            "[locale]",
+            `(${area})`,
+            ...logicalName.split("."),
+            "page.tsx",
+          ),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  test("prompts for a page name and area without selecting a default", async () => {
+    const root = await projectFixture();
+    let questions: Array<Record<string, unknown>> = [];
+    const prompt = (async (input: unknown) => {
+      questions = input as Array<Record<string, unknown>>;
+      return { pageName: "Interactive", area: "user" };
+    }) as PromptRunner;
+
+    const result = await runCommand(addPage, ["addpage", "-P"], root, prompt);
+
+    expect(questions.map((question) => question.name)).toEqual([
+      "pageName",
+      "area",
+    ]);
+    expect(questions[1]).not.toHaveProperty("initial");
+    expect(result.data).toEqual({ area: "user", logicalName: "Interactive" });
+  });
+
+  test("rejects cross-area, legacy and duplicate logical routes", async () => {
+    const root = await projectFixture();
+    await runCommand(
+      addPage,
+      ["addpage", "Shared", "--area", "public", "-P"],
+      root,
+    );
+    await expect(
+      runCommand(addPage, ["addpage", "Shared", "--area", "user", "-P"], root),
+    ).rejects.toMatchObject({ code: "TARGET_EXISTS" });
+    expect(
+      existsSync(path.join(root, "src", "app", "[locale]", "(user)", "Shared")),
+    ).toBe(false);
+
+    const legacy = path.join(root, "src", "app", "[locale]", "Legacy");
+    await mkdir(legacy, { recursive: true });
+    await writeFile(path.join(legacy, "page.tsx"), "export default 1;\n");
+    await expect(
+      runCommand(
+        addPage,
+        ["addpage", "Legacy", "--area", "public", "-P"],
+        root,
+      ),
+    ).rejects.toMatchObject({ code: "INCONSISTENT_ROUTE" });
+
+    const duplicateUser = path.join(
+      root,
+      "src",
+      "app",
+      "[locale]",
+      "(user)",
+      "Shared",
+    );
+    await mkdir(duplicateUser, { recursive: true });
+    await writeFile(
+      path.join(duplicateUser, "page.tsx"),
+      "export default 1;\n",
+    );
+    await expect(
+      runCommand(rmPage, ["rmpage", "Shared", "--area", "public"], root),
+    ).rejects.toMatchObject({ code: "INCONSISTENT_ROUTE" });
+    expect(
+      existsSync(
+        path.join(root, "src", "app", "[locale]", "(public)", "Shared"),
+      ),
+    ).toBe(true);
+    expect(existsSync(duplicateUser)).toBe(true);
+  });
+
   test("reports idempotent repetitions without overwriting generated code", async () => {
     const root = await projectFixture();
     const scenarios: Array<[CommandHandler, string[]]> = [
       [addApi, ["addapi", "health"]],
       [addLib, ["addlib", "sample.feature"]],
-      [addPage, ["addpage", "Sample", "-Pl"]],
-      [addComponent, ["addcomponent", "Widget", "--page", "Sample"]],
+      [addPage, ["addpage", "Sample", "--area", "public", "-Pl"]],
+      [
+        addComponent,
+        ["addcomponent", "Widget", "--page", "Sample", "--area", "public"],
+      ],
       [addText, ["addtext", "Sample.extra", "Extra text"]],
       [addLanguage, ["addlanguage", "de"]],
     ];
@@ -109,6 +318,40 @@ describe("project evolution commands", () => {
     }
   });
 
+  test("adds a missing route file on a later call without replacing page code", async () => {
+    const root = await projectFixture();
+    await runCommand(
+      addPage,
+      ["addpage", "Incremental", "--area", "public", "-P"],
+      root,
+    );
+    const pageFile = path.join(
+      root,
+      "src",
+      "app",
+      "[locale]",
+      "(public)",
+      "Incremental",
+      "page.tsx",
+    );
+    await writeFile(
+      pageFile,
+      "export default function Preserved() { return null; }\n",
+    );
+
+    const result = await runCommand(
+      addPage,
+      ["addpage", "Incremental", "--area", "public", "-L"],
+      root,
+    );
+
+    expect(result.status).toBe("success");
+    expect(await readFile(pageFile, "utf8")).toContain("Preserved");
+    expect(existsSync(path.join(path.dirname(pageFile), "layout.tsx"))).toBe(
+      true,
+    );
+  });
+
   test("treats interactive cancellations as successful non-mutations", async () => {
     const root = await projectFixture();
     const scenarios: Array<[CommandHandler, string[]]> = [
@@ -117,7 +360,6 @@ describe("project evolution commands", () => {
       [addPage, ["addpage"]],
       [addComponent, ["addcomponent"]],
       [addLanguage, ["addlanguage"]],
-      [rmPage, ["rmpage"]],
     ];
     const cancelledPrompt = (async () => ({})) as PromptRunner;
     for (const [handler, args] of scenarios) {
@@ -144,10 +386,22 @@ describe("project evolution commands", () => {
       ),
     ).toContain("feature");
 
-    await runCommand(addPage, ["addpage", "Sample", "-Pl"], root);
+    await runCommand(
+      addPage,
+      ["addpage", "Sample", "--area", "public", "-Pl"],
+      root,
+    );
     expect(
       existsSync(
-        path.join(root, "src", "app", "[locale]", "Sample", "page.tsx"),
+        path.join(
+          root,
+          "src",
+          "app",
+          "[locale]",
+          "(public)",
+          "Sample",
+          "page.tsx",
+        ),
       ),
     ).toBe(true);
     expect(
@@ -156,12 +410,18 @@ describe("project evolution commands", () => {
 
     await runCommand(
       addComponent,
-      ["addcomponent", "Widget", "-P", "Sample"],
+      ["addcomponent", "Widget", "-P", "Sample", "--area", "public"],
       root,
     );
     expect(
       existsSync(path.join(root, "src", "ui", "Sample", "Widget.tsx")),
     ).toBe(true);
+    expect(
+      await readFile(
+        path.join(root, "src", "ui", "Sample", "Widget.tsx"),
+        "utf8",
+      ),
+    ).toContain('{t("Widget.title")}</h2>');
 
     await runCommand(addText, ["addtext", "Sample.extra", "Extra text"], root);
     const messages = JSON.parse(
@@ -172,10 +432,12 @@ describe("project evolution commands", () => {
     await runCommand(addLanguage, ["addlanguage", "de"], root);
     expect(existsSync(path.join(root, "messages", "de"))).toBe(true);
 
-    await runCommand(rmPage, ["rmpage", "Sample"], root);
+    await runCommand(rmPage, ["rmpage", "Sample", "--area", "public"], root);
     expect(existsSync(path.join(root, "src", "ui", "Sample"))).toBe(false);
     expect(
-      existsSync(path.join(root, "src", "app", "[locale]", "Sample")),
+      existsSync(
+        path.join(root, "src", "app", "[locale]", "(public)", "Sample"),
+      ),
     ).toBe(false);
     expect(
       await readFile(path.join(root, "messages", "en.ts"), "utf8"),
@@ -190,10 +452,18 @@ describe("project evolution commands", () => {
 
   test("removes a nested page without deleting its shared parent", async () => {
     const root = await projectFixture();
-    await runCommand(addPage, ["addpage", "Parent.Child", "-Pl"], root);
+    await runCommand(
+      addPage,
+      ["addpage", "Parent.Child", "--area", "user", "-Pl"],
+      root,
+    );
     await writeFile(path.join(root, "src", "ui", "Parent", "keep.txt"), "keep");
 
-    await runCommand(rmPage, ["rmpage", "Parent.Child"], root);
+    await runCommand(
+      rmPage,
+      ["rmpage", "Parent.Child", "--area", "user"],
+      root,
+    );
 
     expect(existsSync(path.join(root, "src", "ui", "Parent", "Child"))).toBe(
       false,
@@ -212,9 +482,13 @@ describe("project evolution commands", () => {
 
   test("cancels an interactive page deletion without mutation", async () => {
     const root = await projectFixture();
-    await runCommand(addPage, ["addpage", "Sample", "-Pl"], root);
+    await runCommand(
+      addPage,
+      ["addpage", "Sample", "--area", "public", "-Pl"],
+      root,
+    );
     const prompt = (async () => ({
-      page: "Sample",
+      page: "public:Sample",
       confirm: false,
     })) as PromptRunner;
 
@@ -223,15 +497,60 @@ describe("project evolution commands", () => {
 
     expect(existsSync(path.join(root, "src", "ui", "Sample"))).toBe(true);
     expect(
-      existsSync(path.join(root, "src", "app", "[locale]", "Sample")),
+      existsSync(
+        path.join(root, "src", "app", "[locale]", "(public)", "Sample"),
+      ),
     ).toBe(true);
+  });
+
+  test("filters the interactive removal catalog by area", async () => {
+    const root = await projectFixture();
+    await runCommand(
+      addPage,
+      ["addpage", "PublicOnly", "--area", "public", "-P"],
+      root,
+    );
+    await runCommand(
+      addPage,
+      ["addpage", "UserOnly", "--area", "user", "-P"],
+      root,
+    );
+    let questions: Array<Record<string, unknown>> = [];
+    const prompt = (async (input: unknown) => {
+      questions = input as Array<Record<string, unknown>>;
+      return { page: "user:UserOnly", confirm: false };
+    }) as PromptRunner;
+
+    const result = await runCommand(
+      rmPage,
+      ["rmpage", "--area", "user"],
+      root,
+      prompt,
+    );
+    const choices = questions[0].choices as Array<{
+      title: string;
+      value: string;
+    }>;
+
+    expect(choices).toEqual([
+      { title: "User > UserOnly", value: "user:UserOnly" },
+    ]);
+    expect(result).toMatchObject({
+      status: "cancelled",
+      data: { area: "user", logicalName: "UserOnly" },
+    });
+    expect(result.events[0].detail).toEqual({ area: "user" });
   });
 
   test("removes the selected page after interactive confirmation", async () => {
     const root = await projectFixture();
-    await runCommand(addPage, ["addpage", "Sample", "-Pl"], root);
+    await runCommand(
+      addPage,
+      ["addpage", "Sample", "--area", "public", "-Pl"],
+      root,
+    );
     const prompt = (async () => ({
-      page: "Sample",
+      page: "public:Sample",
       confirm: true,
     })) as PromptRunner;
 
@@ -243,10 +562,14 @@ describe("project evolution commands", () => {
   test("generates a nested page with matching UI imports and messages", async () => {
     const root = await projectFixture();
 
-    await runCommand(addPage, ["addpage", "Parent.Child", "-Pl"], root);
+    await runCommand(
+      addPage,
+      ["addpage", "Parent.Child", "--area", "user", "-Pl"],
+      root,
+    );
     await runCommand(
       addComponent,
-      ["addcomponent", "Widget", "--page", "Parent.Child"],
+      ["addcomponent", "Widget", "--page", "Parent.Child", "--area", "user"],
       root,
     );
 
@@ -257,6 +580,7 @@ describe("project evolution commands", () => {
           "src",
           "app",
           "[locale]",
+          "(user)",
           "Parent",
           "Child",
           "page.tsx",
@@ -285,10 +609,21 @@ describe("project evolution commands", () => {
 
   test("uses valid TypeScript identifiers for kebab-case resources", async () => {
     const root = await projectFixture();
-    await runCommand(addPage, ["addpage", "account-settings", "-P"], root);
+    await runCommand(
+      addPage,
+      ["addpage", "account-settings", "--area", "public", "-P"],
+      root,
+    );
     await runCommand(
       addComponent,
-      ["addcomponent", "status-card", "--page", "account-settings"],
+      [
+        "addcomponent",
+        "status-card",
+        "--page",
+        "account-settings",
+        "--area",
+        "public",
+      ],
       root,
     );
     await runCommand(addLib, ["addlib", "analytics.track-event"], root);
@@ -300,6 +635,7 @@ describe("project evolution commands", () => {
           "src",
           "app",
           "[locale]",
+          "(public)",
           "account-settings",
           "page.tsx",
         ),
@@ -321,6 +657,81 @@ describe("project evolution commands", () => {
     expect(
       await readFile(path.join(root, "messages", "en.ts"), "utf8"),
     ).toContain('import accountSettings from "./en/account-settings.json";');
+    expect(
+      await readFile(path.join(root, "messages", "en.ts"), "utf8"),
+    ).toContain('"account-settings": accountSettings,');
+
+    await runCommand(
+      rmPage,
+      ["rmpage", "account-settings", "--area", "public"],
+      root,
+    );
+    expect(
+      await readFile(path.join(root, "messages", "en.ts"), "utf8"),
+    ).not.toContain("accountSettings");
+  });
+
+  test("uses the configured import alias for an area-aware page", async () => {
+    const root = await projectFixture();
+    await writeFile(
+      path.join(root, "cnp.config.json"),
+      JSON.stringify({ useI18n: true, importAlias: "@core/*" }),
+    );
+
+    await runCommand(
+      addPage,
+      ["addpage", "Aliased", "--area", "public", "-P"],
+      root,
+    );
+
+    expect(
+      await readFile(
+        path.join(
+          root,
+          "src",
+          "app",
+          "[locale]",
+          "(public)",
+          "Aliased",
+          "page.tsx",
+        ),
+        "utf8",
+      ),
+    ).toContain('from "@core/ui/Aliased/page-ui"');
+  });
+
+  test("keeps long generated component translations Prettier-compatible", async () => {
+    const root = await projectFixture();
+    await runCommand(
+      addPage,
+      ["addpage", "Formatting", "--area", "public", "-P"],
+      root,
+    );
+    await runCommand(
+      addComponent,
+      [
+        "addcomponent",
+        "VeryLongGeneratedComponentCard",
+        "--page",
+        "Formatting",
+        "--area",
+        "public",
+      ],
+      root,
+    );
+
+    expect(
+      await readFile(
+        path.join(
+          root,
+          "src",
+          "ui",
+          "Formatting",
+          "VeryLongGeneratedComponentCard.tsx",
+        ),
+        "utf8",
+      ),
+    ).toContain('{t("VeryLongGeneratedComponentCard.title")}\n      </h2>');
   });
 
   test("registers a copied locale in every typed i18n entrypoint", async () => {
@@ -416,20 +827,26 @@ describe("project evolution commands", () => {
 
   test("prevents partial page removal when a locale aggregator is inconsistent", async () => {
     const root = await projectFixture();
-    await runCommand(addPage, ["addpage", "Sample", "-Pl"], root);
+    await runCommand(
+      addPage,
+      ["addpage", "Sample", "--area", "public", "-Pl"],
+      root,
+    );
     const aggregator = path.join(root, "messages", "en.ts");
     const current = await readFile(aggregator, "utf8");
     await writeFile(aggregator, current.replace(/^\s*Sample,\s*$/m, ""));
 
     await expect(
-      runCommand(rmPage, ["rmpage", "Sample"], root),
+      runCommand(rmPage, ["rmpage", "Sample", "--area", "public"], root),
     ).rejects.toMatchObject({ code: "INCONSISTENT_LOCALE" });
     expect(existsSync(path.join(root, "messages", "en", "Sample.json"))).toBe(
       true,
     );
     expect(existsSync(path.join(root, "src", "ui", "Sample"))).toBe(true);
     expect(
-      existsSync(path.join(root, "src", "app", "[locale]", "Sample")),
+      existsSync(
+        path.join(root, "src", "app", "[locale]", "(public)", "Sample"),
+      ),
     ).toBe(true);
   });
 
@@ -443,5 +860,62 @@ describe("project evolution commands", () => {
       runCommand(addLib, ["addlib", "escape.module"], root),
     ).rejects.toThrow("Symbolic links are forbidden");
     expect(existsSync(path.join(sentinel, "module.ts"))).toBe(false);
+  });
+
+  test("rejects page message symlinks before any route mutation", async () => {
+    const root = await projectFixture();
+    const outside = await mkdtemp(path.join(tmpdir(), "cnp-outside-"));
+    temporaryDirectories.push(outside);
+    const outsideMessage = path.join(outside, "Outside.json");
+    await writeFile(outsideMessage, '{"preserved":true}\n');
+    await symlink(
+      outsideMessage,
+      path.join(root, "messages", "en", "Unsafe.json"),
+    );
+
+    await expect(
+      runCommand(
+        addPage,
+        ["addpage", "Unsafe", "--area", "public", "-P"],
+        root,
+      ),
+    ).rejects.toMatchObject({ code: "UNSAFE_PATH" });
+    expect(existsSync(path.join(root, "src", "ui", "Unsafe"))).toBe(false);
+    expect(await readFile(outsideMessage, "utf8")).toBe('{"preserved":true}\n');
+  });
+
+  test("refuses to remove a page through a symbolic UI directory", async () => {
+    const root = await projectFixture();
+    await runCommand(
+      addPage,
+      ["addpage", "Linked", "--area", "user", "-P"],
+      root,
+    );
+    const outside = await mkdtemp(path.join(tmpdir(), "cnp-outside-ui-"));
+    temporaryDirectories.push(outside);
+    await writeFile(path.join(outside, "sentinel.txt"), "keep");
+    const uiDirectory = path.join(root, "src", "ui", "Linked");
+    await rm(uiDirectory, { recursive: true });
+    await symlink(outside, uiDirectory);
+
+    await expect(
+      runCommand(rmPage, ["rmpage", "Linked", "--area", "user"], root),
+    ).rejects.toMatchObject({ code: "UNSAFE_PATH" });
+    expect(await readFile(path.join(outside, "sentinel.txt"), "utf8")).toBe(
+      "keep",
+    );
+    expect(
+      existsSync(
+        path.join(
+          root,
+          "src",
+          "app",
+          "[locale]",
+          "(user)",
+          "Linked",
+          "page.tsx",
+        ),
+      ),
+    ).toBe(true);
   });
 });

@@ -101,6 +101,12 @@ skills under `.agents/skills` document project creation and every public
 with `--json`, inspect all reported events and complete every required next
 step before running the project checks.
 
+Page operations use explicit route areas. Pass `--area public` or `--area user`
+to direct `addpage` and `rmpage` commands and to `addcomponent --page`. The
+interactive page flows expose the same area-aware catalog. Areas select a route
+layout without changing the public URL; see the linked command skills for the
+complete contract.
+
 ## Template Features
 
 - Next.js 16 App Router

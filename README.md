@@ -95,12 +95,12 @@ Run the following commands from the root of a generated project.
 
 ```bash
 # Simple or nested pages
-create-next-pro addpage profile
-create-next-pro addpage account.security
+create-next-pro addpage profile --area public
+create-next-pro addpage account.security --area user
 
 # Global components or components attached to a page
 create-next-pro addcomponent Alert
-create-next-pro addcomponent PasswordForm --page account.security
+create-next-pro addcomponent PasswordForm --page account.security --area user
 
 # Libraries and modules
 create-next-pro addlib analytics
@@ -114,17 +114,19 @@ create-next-pro addlanguage de
 create-next-pro addtext dashboard.welcome "Welcome"
 
 # Direct removal
-create-next-pro rmpage account.security
+create-next-pro rmpage account.security --area user
 
 # Tree-based autocomplete menu with confirmation
 create-next-pro rmpage
 ```
 
+Every page belongs to an explicit route area. Use `--area public` for routes rendered by the public layout and `--area user` for authenticated routes rendered by the user layout. There is no default area. Direct `addpage` and `rmpage` commands require it, as does `addcomponent --page`; interactive `addpage` asks for it and the `rmpage` menu groups pages by area. Route groups do not alter the public URL.
+
 `addlanguage` copies every message file from the configured default locale. The command reports each copied path and emits a required `translate` next step: the copied source-language text must be translated before the locale is ready to ship.
 
 `addpage` creates `layout`, `page`, and `loading` files by default. Available long options are `--layout`, `--page`, `--loading`, `--not-found`, `--error`, `--global-error`, `--route`, `--template`, and `--default`. The historical short forms remain available.
 
-`rmpage` only lists routes that contain an actual `page.tsx`. Next.js route groups and technical directories are hidden. Removal is confined to the project and preserves shared parent directories and unrelated files.
+`rmpage` only lists routes that contain an actual `page.tsx` in the `(public)` or `(user)` route group. Technical directories remain hidden. Removal is confined to the selected area and project, and it preserves shared parent directories and unrelated files.
 
 ## Generated project architecture
 
@@ -334,7 +336,7 @@ The versioned document has stable status, event, next-step, and error fields:
 
 Paths inside events and next steps are relative to their named scope. Applicable absolute roots are exposed as `projectRoot`, `configRoot`, and `homeRoot`. Events never contain file contents, environment values, credentials, or secrets.
 
-Command statuses are `success`, `unchanged`, `cancelled`, and `failed`. Successful mutations, idempotent no-op results, and user cancellations exit with code `0`; only `failed` exits with code `1`. Stable error codes include `INVALID_ARGUMENT`, `CONFIG_NOT_FOUND`, `I18N_DISABLED`, `TARGET_EXISTS`, `TARGET_NOT_FOUND`, `TEMPLATE_MISSING`, `UNSAFE_PATH`, `INCONSISTENT_LOCALE`, `FILESYSTEM_ERROR`, `INTERACTIVE_INPUT_REQUIRED`, and `ONBOARDING_REQUIRED`.
+Command statuses are `success`, `unchanged`, `cancelled`, and `failed`. Successful mutations, idempotent no-op results, and user cancellations exit with code `0`; only `failed` exits with code `1`. Stable error codes include `INVALID_ARGUMENT`, `CONFIG_NOT_FOUND`, `I18N_DISABLED`, `TARGET_EXISTS`, `TARGET_NOT_FOUND`, `TEMPLATE_MISSING`, `UNSAFE_PATH`, `INCONSISTENT_ROUTE`, `INCONSISTENT_LOCALE`, `FILESYSTEM_ERROR`, `INTERACTIVE_INPUT_REQUIRED`, and `ONBOARDING_REQUIRED`.
 
 Interactive input is never attempted in JSON mode. Pass every required argument explicitly. On a new machine, run the CLI once without `--json` to complete onboarding; `--reconfigure --json` is intentionally rejected.
 

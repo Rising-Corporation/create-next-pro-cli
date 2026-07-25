@@ -9,13 +9,16 @@ description: Add a simple or Parent.Child page to a generated create-next-pro pr
 
 - Work from the generated project root containing `cnp.config.json`.
 - Use a safe logical page name with one segment or exactly `Parent.Child`.
-- Inspect the requested route and UI scope before generating files.
+- Choose the route area explicitly: `public` uses the public layout, while `user` uses the authenticated user layout.
+- Inspect the requested route and UI scope before generating files. A logical page name can belong to only one area.
 
 ## Command
 
 ```bash
-create-next-pro addpage <Page|Parent.Child> [options] [--json]
+create-next-pro addpage <Page|Parent.Child> --area <public|user> [options] [--json]
 ```
+
+`--area` accepts only the exact lowercase values `public` and `user`. It may appear before or after the page name, but it cannot be repeated or written as `--area=value`. With no page name, human mode asks for both the name and area; JSON mode requires both explicitly.
 
 With no file options, the command selects `layout`, `page`, and `loading`.
 
@@ -35,18 +38,20 @@ Short options can be combined, for example `-PLl`. Unknown options fail with `IN
 
 ## Effects
 
-For `Account.Security`, expect resources under:
+For `Account.Security --area user`, expect resources under:
 
-- `src/app/[locale]/Account/Security/`
+- `src/app/[locale]/(user)/Account/Security/`
 - `src/ui/Account/Security/page-ui.tsx`
 - `messages/<locale>/Account.json` at the `Security` namespace
 - `messages/<locale>.ts` when the message file needs registration
 
-The command creates only missing code files and preserves existing ones as `unchanged`. It prepares all required templates and locale updates before writing.
+The route area affects only the App Router path and layout. UI and message paths remain area-independent. Public page UI uses its own `<main>` landmark; user page UI uses `<section>` because the user layout already provides `<main>`.
+
+The command creates only missing code files and preserves existing ones as `unchanged`. Repeating the command in the same area is idempotent and can add requested missing route files. Requesting the same logical page in the other area fails with `TARGET_EXISTS`. Flat historical routes or ambiguous route definitions fail with `INCONSISTENT_ROUTE` before any write.
 
 ## Workflow
 
-1. Select the logical page name and only the required route file options.
+1. Select the logical page name, area, and only the required route file options.
 2. Run the command with `--json`.
 3. Inspect route, UI, translation, and aggregator events separately.
 4. Review every generated UI and route file.
@@ -58,19 +63,19 @@ The command creates only missing code files and preserves existing ones as `unch
 Create the default page resources:
 
 ```bash
-create-next-pro addpage Profile
+create-next-pro addpage Profile --area public
 ```
 
 Create only `page.tsx`, `layout.tsx`, and the page UI for a nested page:
 
 ```bash
-create-next-pro addpage Account.Security -PL --json
+create-next-pro addpage Account.Security --area user -PL --json
 ```
 
 Create an error and not-found boundary:
 
 ```bash
-create-next-pro addpage Checkout --error --not-found --json
+create-next-pro addpage Checkout --area public --error --not-found --json
 ```
 
 ## Validate

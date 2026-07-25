@@ -9,16 +9,17 @@ description: Remove a catalogued page and its associated route, UI, and message 
 
 - Work from the generated project root containing `cnp.config.json`.
 - Confirm the target is a page that contains an actual `page.tsx` and appears in the CLI page catalog.
+- Confirm whether the page belongs to the `public` or `user` route area.
 - Review uncommitted work and references to the route before deletion.
 - Use a simple logical name or `Parent.Child`, never a filesystem path.
 
 ## Command
 
 ```bash
-create-next-pro rmpage [Page|Parent.Child] [--json]
+create-next-pro rmpage [Page|Parent.Child] [--area <public|user>] [--json]
 ```
 
-Without a name, human mode displays an autocomplete tree and asks for confirmation. JSON mode requires the explicit page name and never prompts.
+With a page name, `--area` is required. Without a name, human mode displays an autocomplete tree grouped as `Public > ...` and `User > ...`, then asks for confirmation. Passing only `--area` filters that menu. JSON mode requires the explicit page name and area and never prompts. Area values are exact lowercase values and `--area=value` is not supported.
 
 ## Effects
 
@@ -29,11 +30,11 @@ The command can remove:
 - a top-level locale JSON file and its aggregator registration; or
 - only the nested message key for `Parent.Child`.
 
-The page catalog excludes technical directories and routes without `page.tsx`. Resolution and deletion remain confined to the project. Shared parents and unrelated files are preserved.
+The page catalog excludes technical directories and routes without `page.tsx`. Resolution uses the exact `{area, logicalName}` pair and deletion remains confined to the project. Shared parents and unrelated files are preserved. Flat historical routes, unknown route groups, and ambiguous route definitions fail with `INCONSISTENT_ROUTE` and are never deleted automatically.
 
 ## Workflow
 
-1. Discover the target with human autocomplete or confirm its logical name from the project structure.
+1. Discover the target with the area-aware human autocomplete or confirm its logical name and area from the project structure.
 2. Inspect references, navigation entries, tests, and uncommitted changes that may depend on the page.
 3. Prefer an explicit name with `--json` for agentic deletion.
 4. Require a successful result and inspect every `deleted`, `updated`, and `unchanged` event.
@@ -52,7 +53,7 @@ create-next-pro rmpage
 Remove a nested page non-interactively:
 
 ```bash
-create-next-pro rmpage Account.Security --json
+create-next-pro rmpage Account.Security --area user --json
 ```
 
 ## Validate
@@ -63,4 +64,4 @@ bun run check
 # or: pnpm run check
 ```
 
-Treat `TARGET_NOT_FOUND` as a request or state mismatch. Do not substitute a filesystem deletion command, and do not infer deletion from exit code alone.
+Treat `TARGET_NOT_FOUND` as a request or state mismatch. Treat `INCONSISTENT_ROUTE` as a request for manual route inspection, not permission to remove a flat or ambiguous route. Do not substitute a filesystem deletion command, and do not infer deletion from exit code alone.

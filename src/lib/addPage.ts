@@ -2,6 +2,16 @@ import { join } from "node:path";
 
 import { CliError, type CommandHandler } from "../core/contracts";
 import { commandResult, MutationGateway } from "../core/operations";
+import {
+  assertConsistentLogicalRoute,
+  discoverPageCatalog,
+} from "../core/page-catalog";
+import {
+  areaRouteGroup,
+  parseAreaOption,
+  requirePageArea,
+  type PageArea,
+} from "../core/page-area";
 import { assertSafeTarget, parseLogicalName } from "../core/project-paths";
 import {
   capitalize,
@@ -41,7 +51,6 @@ function registerMessagesFile(
   fileName: string,
 ): string {
   const importPath = `./${locale}/${fileName}.json`;
-  if (content.includes(importPath)) return content;
   const declarationIndex = content.indexOf("const messages =");
   const registryMatch = content.match(/const messages = \{([\s\S]*?)\n\};/);
   if (declarationIndex < 0 || !registryMatch) {
@@ -55,11 +64,24 @@ function registerMessagesFile(
     );
   }
   const identifier = toIdentifier(fileName);
+  const property =
+    identifier === fileName
+      ? `  ${identifier},`
+      : `  ${JSON.stringify(fileName)}: ${identifier},`;
+  if (content.includes(importPath)) {
+    if (registryMatch[1].split(/\r?\n/).includes(property)) return content;
+    const legacyProperty = new RegExp(`^\\s*${identifier},\\s*$`, "m");
+    if (legacyProperty.test(registryMatch[1])) {
+      return content.replace(legacyProperty, property);
+    }
+    const nextRegistry = registryMatch[0].replace(
+      /\n\};$/,
+      `\n${property}\n};`,
+    );
+    return content.replace(registryMatch[0], nextRegistry);
+  }
   const importStatement = `import ${identifier} from "${importPath}";\n`;
-  const nextRegistry = registryMatch[0].replace(
-    /\n\};$/,
-    `\n  ${identifier},\n};`,
-  );
+  const nextRegistry = registryMatch[0].replace(/\n\};$/, `\n${property}\n};`);
   return (
     content.slice(0, declarationIndex) +
     importStatement +
@@ -67,11 +89,8 @@ function registerMessagesFile(
   );
 }
 
-function selectedFlags(args: string[]): Set<string> {
+function selectedFlags(optionArguments: string[]): Set<string> {
   const selected = new Set<string>();
-  const optionArguments = args
-    .slice(2)
-    .filter((argument) => argument.startsWith("-"));
   if (optionArguments.length === 0)
     return new Set(["layout", "page", "loading"]);
   for (const argument of optionArguments) {
@@ -98,6 +117,35 @@ function selectedFlags(args: string[]): Set<string> {
   return selected;
 }
 
+type ParsedAddPageArguments = {
+  area?: PageArea;
+  logicalName?: string;
+  flags: Set<string>;
+};
+
+function parseAddPageArguments(args: string[]): ParsedAddPageArguments {
+  const parsedArea = parseAreaOption(args);
+  let logicalName: string | undefined;
+  const optionArguments: string[] = [];
+  for (const argument of parsedArea.args.slice(1)) {
+    if (argument.startsWith("-")) {
+      optionArguments.push(argument);
+      continue;
+    }
+    if (logicalName) {
+      throw new CliError(`Unexpected addpage argument: ${argument}.`, {
+        code: "INVALID_ARGUMENT",
+      });
+    }
+    logicalName = argument;
+  }
+  return {
+    area: parsedArea.area,
+    logicalName,
+    flags: selectedFlags(optionArguments),
+  };
+}
+
 type PreparedLocale = {
   locale: string;
   target: string;
@@ -108,22 +156,40 @@ type PreparedLocale = {
 };
 
 export const addPage: CommandHandler = async (args, context) => {
-  let logicalName = args[1];
-  if (!logicalName || logicalName.startsWith("-")) {
+  const parsed = parseAddPageArguments(args);
+  let { area, logicalName } = parsed;
+  if (!logicalName) {
     if (context.outputMode === "json") {
       throw new CliError("Page name is required in JSON mode.", {
         code: "INTERACTIVE_INPUT_REQUIRED",
         hint: "Pass a simple or Parent.Child page name after addpage.",
       });
     }
-    const response = await context.prompt<"pageName">({
-      type: "text",
-      name: "pageName",
-      message: "Page name to add:",
-      validate: (name: string) => (name ? true : "Page name is required"),
-    });
+    const questions = [
+      {
+        type: "text",
+        name: "pageName" as const,
+        message: "Page name to add:",
+        validate: (name: string) => (name ? true : "Page name is required"),
+      },
+      ...(!area
+        ? [
+            {
+              type: "select",
+              name: "area" as const,
+              message: "Page area:",
+              choices: [
+                { title: "public", value: "public" },
+                { title: "user", value: "user" },
+              ],
+            },
+          ]
+        : []),
+    ];
+    const response = await context.prompt<"pageName" | "area">(questions);
     logicalName = String(response.pageName ?? "");
-    if (!logicalName) {
+    area = area ?? (response.area as PageArea | undefined);
+    if (!logicalName || !area) {
       context.operations.record({
         action: "cancelled",
         resource: "command",
@@ -138,14 +204,17 @@ export const addPage: CommandHandler = async (args, context) => {
         status: "cancelled",
       });
     }
+  } else {
+    area = requirePageArea(area, "addpage");
   }
+  area = requirePageArea(area, "addpage");
   const pageSegments = parseLogicalName(logicalName, "page name");
   if (pageSegments.length > 2) {
     throw new CliError("Nested pages support exactly Parent.Child.", {
       code: "INVALID_ARGUMENT",
     });
   }
-  const flags = selectedFlags(args);
+  const flags = parsed.flags;
   const config = await loadConfig(context);
   if (!config) {
     throw new CliError("Configuration file cnp.config.json was not found.", {
@@ -169,6 +238,17 @@ export const addPage: CommandHandler = async (args, context) => {
       path: useI18n ? "src/app/[locale]" : "src/app",
     });
   }
+  const areaRoot = join(appRoot, areaRouteGroup(area));
+  if (!context.fs.exists(areaRoot)) {
+    throw new CliError(`The ${area} page area was not found.`, {
+      code: "CONFIG_NOT_FOUND",
+      scope: "project",
+      path: join(
+        useI18n ? "src/app/[locale]" : "src/app",
+        areaRouteGroup(area),
+      ),
+    });
+  }
 
   const [parentName, childName] =
     pageSegments.length === 2 ? pageSegments : [undefined, undefined];
@@ -176,12 +256,50 @@ export const addPage: CommandHandler = async (args, context) => {
   const pageIdentifier = capitalize(toIdentifier(leafName));
   const jsonFileName = parentName ?? leafName;
   const uiDirectory = join(context.cwd, "src", "ui", ...pageSegments);
-  const routeDirectory = join(appRoot, ...pageSegments);
+  const routeDirectory = join(areaRoot, ...pageSegments);
+  const catalog = await discoverPageCatalog(context.cwd, context.fs);
+  assertConsistentLogicalRoute(catalog, logicalName);
+  const existingOtherArea = catalog.candidates.find(
+    (candidate) =>
+      candidate.logicalName === logicalName && candidate.area !== area,
+  );
+  const otherArea: PageArea = area === "public" ? "user" : "public";
+  const otherAreaDirectory = join(
+    appRoot,
+    areaRouteGroup(otherArea),
+    ...pageSegments,
+  );
+  if (existingOtherArea || context.fs.exists(otherAreaDirectory)) {
+    throw new CliError(
+      `Page "${logicalName}" already belongs to the ${otherArea} area.`,
+      {
+        code: "TARGET_EXISTS",
+        scope: "project",
+        path: join(
+          useI18n ? "src/app/[locale]" : "src/app",
+          areaRouteGroup(otherArea),
+          ...pageSegments,
+        ),
+      },
+    );
+  }
+  const legacyDirectory = join(appRoot, ...pageSegments);
+  if (context.fs.exists(legacyDirectory)) {
+    throw new CliError(`Page route "${logicalName}" is ungrouped.`, {
+      code: "INCONSISTENT_ROUTE",
+      scope: "project",
+      path: join(useI18n ? "src/app/[locale]" : "src/app", ...pageSegments),
+      hint: "Move the route into exactly one of the (public) or (user) areas before retrying.",
+    });
+  }
   await assertSafeTarget(context.cwd, uiDirectory, context.fs);
   await assertSafeTarget(context.cwd, routeDirectory, context.fs);
 
   const templateRoot = join(context.packageRoot, "templates", "Page");
-  const uiTemplate = join(templateRoot, "page-ui.tsx");
+  const uiTemplate = join(
+    templateRoot,
+    area === "user" ? "page-ui.user.tsx" : "page-ui.tsx",
+  );
   const routeTemplates = [...flags].map((flag) => ({
     flag,
     source: join(templateRoot, toFileName(flag)),
@@ -223,6 +341,7 @@ export const addPage: CommandHandler = async (args, context) => {
         path: "messages",
       });
     }
+    await assertSafeTarget(context.cwd, messagesRoot, context.fs);
     const locales = (await context.fs.list(messagesRoot))
       .filter((entry) => entry.isDirectory)
       .map((entry) => entry.name)
@@ -237,6 +356,8 @@ export const addPage: CommandHandler = async (args, context) => {
     for (const locale of locales) {
       const target = join(messagesRoot, locale, `${jsonFileName}.json`);
       const aggregator = join(messagesRoot, `${locale}.ts`);
+      await assertSafeTarget(context.cwd, target, context.fs);
+      await assertSafeTarget(context.cwd, aggregator, context.fs);
       if (!context.fs.exists(aggregator)) {
         throw new CliError(
           `Locale aggregator messages/${locale}.ts was not found.`,
@@ -295,6 +416,7 @@ export const addPage: CommandHandler = async (args, context) => {
   await gateway.mkdir(uiDirectory, {
     role: "page-ui-directory",
     resource: "directory",
+    detail: { area },
   });
   const uiFile = join(uiDirectory, "page-ui.tsx");
   const uiContent = (await context.fs.readText(uiTemplate))
@@ -308,11 +430,13 @@ export const addPage: CommandHandler = async (args, context) => {
   await gateway.write(uiFile, uiContent, {
     role: "page-ui",
     preserveExisting: true,
+    detail: { area },
   });
 
   await gateway.mkdir(routeDirectory, {
     role: "page-route-directory",
     resource: "directory",
+    detail: { area },
   });
   for (const template of routeTemplates) {
     const filename = toFileName(template.flag);
@@ -326,6 +450,7 @@ export const addPage: CommandHandler = async (args, context) => {
     await gateway.write(target, content, {
       role: `page-${template.flag}`,
       preserveExisting: true,
+      detail: { area },
     });
   }
 
@@ -334,23 +459,32 @@ export const addPage: CommandHandler = async (args, context) => {
       if (item.messageExists) {
         gateway.unchanged(item.target, {
           role: "translation-messages",
-          detail: { locale: item.locale, namespace: translationNamespace },
+          detail: {
+            area,
+            locale: item.locale,
+            namespace: translationNamespace,
+          },
         });
       } else {
         await gateway.write(item.target, item.targetContent!, {
           role: "translation-messages",
-          detail: { locale: item.locale, namespace: translationNamespace },
+          detail: {
+            area,
+            locale: item.locale,
+            namespace: translationNamespace,
+          },
         });
       }
       await gateway.write(item.aggregator, item.aggregatorContent, {
         role: "locale-aggregator",
+        detail: { area },
       });
     }
   } else {
     gateway.skipped(join(context.cwd, "messages"), {
       role: "translation-messages",
       resource: "directory",
-      detail: { reason: "Internationalization is disabled." },
+      detail: { area, reason: "Internationalization is disabled." },
     });
   }
 
@@ -373,9 +507,10 @@ export const addPage: CommandHandler = async (args, context) => {
   return commandResult(context, {
     command: "addpage",
     summary: mutated
-      ? `Added page "${logicalName}" and its missing resources.`
-      : `Page "${logicalName}" already exists and was preserved.`,
+      ? `Added ${area} page "${logicalName}" and its missing resources.`
+      : `${area[0].toUpperCase()}${area.slice(1)} page "${logicalName}" already exists and was preserved.`,
     projectRoot: context.cwd,
+    data: { area, logicalName },
     nextSteps: mutated
       ? [
           {
