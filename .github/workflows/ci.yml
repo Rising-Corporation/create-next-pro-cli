@@ -39,6 +39,7 @@ jobs:
             bun run commitlint:range -- --from HEAD^ --to HEAD
           fi
       - run: bun run check
+      - run: bun run audit
       - name: Smoke test Node.js bundle
         run: |
           node dist/bin.node.js --help
@@ -101,7 +102,6 @@ jobs:
             pnpm install --no-frozen-lockfile
           fi
       - run: ${{ matrix.manager }} run check
-      - run: ${{ matrix.manager }} run audit
       - name: Validate isolated template consumer
         env:
           CNP_PACKAGE_MANAGER: ${{ matrix.manager }}
@@ -112,6 +112,8 @@ jobs:
       - name: Run visual integration tests
         if: matrix.manager == 'npm'
         run: npm run test:e2e
+      - name: Run blocking security audit
+        run: ${{ matrix.manager }} run audit
 
   release-preflight:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'

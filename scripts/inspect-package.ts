@@ -48,6 +48,7 @@ export const requiredTemplateFiles = [
   "templates/Projects/default/.github/workflows/quality.yml",
   "templates/Projects/default/bun.lock",
   "templates/Projects/default/pnpm-workspace.yaml",
+  "templates/Projects/default/scripts/audit-policy.ts",
   "templates/Projects/default/scripts/audit.ts",
   "templates/Projects/default/scripts/package-manager.ts",
   "templates/Projects/default/tests/consumer/validate-template.ts",

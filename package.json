@@ -40,6 +40,7 @@
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "language:check": "bun scripts/check-public-language.ts",
     "test": "bun test",
+    "audit": "bun templates/Projects/default/scripts/audit.ts",
     "clean": "rm -rf dist",
     "build": "bun run clean && bun run build:node && bun run build:bun && cp scripts/create-next-pro dist/create-next-pro && chmod +x dist/create-next-pro",
     "build:node": "tsup",
@@ -61,13 +62,13 @@
     ]
   },
   "overrides": {
-    "brace-expansion": "2.0.3",
+    "brace-expansion": "2.1.2",
     "esbuild": "0.28.1",
-    "fast-uri": "3.1.2",
+    "fast-uri": "3.1.4",
     "glob": "10.5.0",
-    "js-yaml": "5.2.1",
+    "js-yaml": "5.2.2",
     "picomatch": "4.0.5",
-    "postcss": "8.5.17",
+    "postcss": "8.5.23",
     "rollup": "4.62.2",
     "vite": "8.1.5"
   },

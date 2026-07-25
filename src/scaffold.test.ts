@@ -75,6 +75,10 @@ async function fixture() {
   await mkdir(path.join(template, "scripts"));
   await writeFile(path.join(template, "scripts", "audit.ts"), "export {};\n");
   await writeFile(
+    path.join(template, "scripts", "audit-policy.ts"),
+    "export {};\n",
+  );
+  await writeFile(
     path.join(template, "scripts", "package-manager.ts"),
     "export {};\n",
   );

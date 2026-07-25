@@ -42,7 +42,6 @@ jobs:
             pnpm install --no-frozen-lockfile
           fi
       - run: ${{ matrix.manager }} run check
-      - run: ${{ matrix.manager }} run audit
       - name: Validate an isolated consumer
         env:
           CNP_PACKAGE_MANAGER: ${{ matrix.manager }}
@@ -53,3 +52,5 @@ jobs:
       - name: Run visual integration tests without Bun
         if: matrix.manager == 'npm'
         run: npm run test:e2e
+      - name: Run blocking security audit
+        run: ${{ matrix.manager }} run audit

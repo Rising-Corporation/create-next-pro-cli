@@ -78,6 +78,7 @@ export async function validateScaffoldTemplate(
     "bun.lock",
     "pnpm-workspace.yaml",
     "vitest.config.ts",
+    path.join("scripts", "audit-policy.ts"),
     path.join("scripts", "audit.ts"),
     path.join("scripts", "package-manager.ts"),
     path.join("tests", "consumer", "validate-template.ts"),
