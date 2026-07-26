@@ -58,4 +58,23 @@ describe("updated template baseline", () => {
     ].filter(Boolean);
     expect(configuredAuthValues).toHaveLength(3);
   });
+
+  test("delegates theme initialization to ThemeToggle without inline scripts", async () => {
+    const [layout, themeToggle] = await Promise.all([
+      source("src/app/[locale]/layout.tsx"),
+      source("src/ui/_global/ThemeToggle.tsx"),
+    ]);
+
+    expect(layout).toContain('className="light"');
+    expect(layout).not.toContain("next/script");
+    expect(layout).not.toContain("theme-initializer");
+    expect(layout).not.toContain("dangerouslySetInnerHTML");
+    expect(layout).not.toContain("suppressHydrationWarning");
+
+    expect(themeToggle).toContain('localStorage.getItem("theme")');
+    expect(themeToggle).toContain('localStorage.setItem("theme", theme)');
+    expect(themeToggle).toContain("prefers-color-scheme: dark");
+    expect(themeToggle).toContain('classList.toggle("dark", isDark)');
+    expect(themeToggle).toContain('classList.toggle("light", !isDark)');
+  });
 });

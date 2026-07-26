@@ -1,9 +1,13 @@
 import { expect, test } from "@playwright/test";
+import path from "node:path";
 
 const captureByProject: Record<string, string> = {
   desktop: "artifacts/captures/phase-2-11-template-reconciliation-desktop.png",
   mobile: "artifacts/captures/phase-2-11-template-reconciliation-mobile.png",
 };
+
+const themeCaptureDirectory =
+  process.env.CNP_CAPTURE_DIRECTORY ?? "artifacts/captures";
 
 test("public template routes render in both locales", async ({
   page,
@@ -107,32 +111,108 @@ test("security headers and disabled auth are explicit", async ({ request }) => {
   });
 });
 
-test("theme is initialized before hydration without a React warning", async ({
+test("ThemeToggle restores and persists the active theme without scripts", async ({
   page,
-}) => {
-  const hydrationWarnings: string[] = [];
+}, testInfo) => {
+  const themeConsoleIssues: string[] = [];
   page.on("console", (message) => {
     if (
-      message.type() === "warning" &&
-      (message.text().includes("hydrated") ||
+      (message.type() === "warning" || message.type() === "error") &&
+      (message.text().toLowerCase().includes("hydrat") ||
         message.text().includes("Encountered a script tag"))
     ) {
-      hydrationWarnings.push(message.text());
+      themeConsoleIssues.push(message.text());
     }
   });
 
-  await page.addInitScript(() => localStorage.setItem("theme", "dark"));
+  await page.addInitScript(() => {
+    if (localStorage.getItem("theme") === null) {
+      localStorage.setItem("theme", "dark");
+    }
+  });
   await page.goto("/en", { waitUntil: "domcontentloaded" });
-  await expect(page.locator("#theme-initializer")).toHaveCount(1);
+  await expect(page.locator("#theme-initializer")).toHaveCount(0);
   await expect(page.locator("html")).toHaveClass(/dark/);
-  expect(hydrationWarnings).toEqual([]);
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("theme")))
+    .toBe("dark");
+
+  if (testInfo.project.name === "desktop") {
+    await page.screenshot({
+      path: path.join(
+        themeCaptureDirectory,
+        "phase-2-16-theme-dark-desktop.png",
+      ),
+      fullPage: true,
+    });
+  }
+
+  await page.getByLabel("Select language").selectOption("fr");
+  await expect(page).toHaveURL(/\/fr$/);
+  await expect(page.locator("html")).toHaveClass(/dark/);
+
+  await page.getByLabel("Changer de thème").click();
+  await expect(page.locator("html")).toHaveClass(/light/);
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("theme")))
+    .toBe("light");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator("html")).toHaveClass(/light/);
+
+  await page.goto("/fr/dashboard", { waitUntil: "domcontentloaded" });
+  await expect(page).toHaveURL(/\/fr\/login/);
+  await expect(page.locator("html")).toHaveClass(/light/);
+
+  if (testInfo.project.name === "desktop") {
+    await page.screenshot({
+      path: path.join(
+        themeCaptureDirectory,
+        "phase-2-16-theme-light-desktop.png",
+      ),
+      fullPage: true,
+    });
+  }
+
+  expect(themeConsoleIssues).toEqual([]);
 });
 
-test("theme falls back to the system preference", async ({ page }) => {
+test("ThemeToggle follows the system preference without persisting it", async ({
+  page,
+}) => {
   await page.emulateMedia({ colorScheme: "dark" });
+  await page.addInitScript(() => localStorage.removeItem("theme"));
   await page.goto("/en", { waitUntil: "domcontentloaded" });
 
   await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("theme")))
+    .toBeNull();
+
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("html")).toHaveClass(/light/);
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("theme")))
+    .toBeNull();
+});
+
+test("ThemeToggle remains usable when browser storage is unavailable", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() {
+        throw new DOMException("Storage is unavailable", "SecurityError");
+      },
+    });
+  });
+  await page.goto("/en", { waitUntil: "domcontentloaded" });
+
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await page.getByLabel("Toggle theme").click();
+  await expect(page.locator("html")).toHaveClass(/light/);
 });
 
 test("mobile navigation supports keyboard dismissal", async ({
