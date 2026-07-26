@@ -352,6 +352,61 @@ describe("project evolution commands", () => {
     );
   });
 
+  test("generates Next.js 16-compatible layouts and preserves existing layout code", async () => {
+    const root = await projectFixture();
+    await runCommand(addPage, ["addpage", "Profile", "--area", "public"], root);
+    const publicRoute = path.join(
+      root,
+      "src",
+      "app",
+      "[locale]",
+      "(public)",
+      "Profile",
+    );
+    const publicLayout = await readFile(
+      path.join(publicRoute, "layout.tsx"),
+      "utf8",
+    );
+
+    expect(publicLayout).toContain('import type { ReactNode } from "react";');
+    expect(publicLayout).toContain("function ProfileLayout");
+    expect(publicLayout).toContain("children: ReactNode");
+    expect(publicLayout).not.toContain("params");
+    expect(existsSync(path.join(publicRoute, "page.tsx"))).toBe(true);
+    expect(existsSync(path.join(publicRoute, "loading.tsx"))).toBe(true);
+
+    await runCommand(
+      addPage,
+      ["addpage", "Account.Security", "--area", "user", "-L"],
+      root,
+    );
+    const userLayoutFile = path.join(
+      root,
+      "src",
+      "app",
+      "[locale]",
+      "(user)",
+      "Account",
+      "Security",
+      "layout.tsx",
+    );
+    const userLayout = await readFile(userLayoutFile, "utf8");
+    expect(userLayout).toContain("function SecurityLayout");
+    expect(userLayout).toContain("children: ReactNode");
+    expect(userLayout).not.toContain("params");
+
+    const customLayout =
+      "export default function PreservedLayout({ children }: { children: React.ReactNode }) { return children; }\n";
+    await writeFile(userLayoutFile, customLayout);
+    const repeated = await runCommand(
+      addPage,
+      ["addpage", "Account.Security", "--area", "user", "-L"],
+      root,
+    );
+    expect(repeated.status).toBe("unchanged");
+    expect(await readFile(userLayoutFile, "utf8")).toBe(customLayout);
+  });
+
   test("treats interactive cancellations as successful non-mutations", async () => {
     const root = await projectFixture();
     const scenarios: Array<[CommandHandler, string[]]> = [

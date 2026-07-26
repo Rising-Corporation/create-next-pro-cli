@@ -126,6 +126,8 @@ Every page belongs to an explicit route area. Use `--area public` for routes ren
 
 `addpage` creates `layout`, `page`, and `loading` files by default. Available long options are `--layout`, `--page`, `--loading`, `--not-found`, `--error`, `--global-error`, `--route`, `--template`, and `--default`. The historical short forms remain available.
 
+Generated page-level layouts accept only `children` because they do not read route parameters. If a customized Next.js 16 layout needs the locale, make the component asynchronous, type `params` as `Promise<{ locale: string }>` and await it before use. Projects generated with `create-next-pro-cli@0.1.32` may contain the obsolete synchronous `params: { locale: string }` signature: remove that property when it is unused, or migrate it to the asynchronous contract.
+
 `rmpage` only lists routes that contain an actual `page.tsx` in the `(public)` or `(user)` route group. Technical directories remain hidden. Removal is confined to the selected area and project, and it preserves shared parent directories and unrelated files.
 
 ## Generated project architecture

@@ -47,6 +47,8 @@ For `Account.Security --area user`, expect resources under:
 
 The route area affects only the App Router path and layout. UI and message paths remain area-independent. Public page UI uses its own `<main>` landmark; user page UI uses `<section>` because the user layout already provides `<main>`.
 
+The generated page-level `layout.tsx` accepts only `children` because it does not read route parameters. If you customize it to read the locale under Next.js 16, make the component asynchronous, type `params` as `Promise<{ locale: string }>` and await it before use.
+
 The command creates only missing code files and preserves existing ones as `unchanged`. Repeating the command in the same area is idempotent and can add requested missing route files. Requesting the same logical page in the other area fails with `TARGET_EXISTS`. Flat historical routes or ambiguous route definitions fail with `INCONSISTENT_ROUTE` before any write.
 
 ## Workflow
@@ -87,3 +89,5 @@ bun run check
 ```
 
 Confirm every `created` or `updated` event path exists. A repeated command should preserve existing code and normally report those resources as `unchanged`.
+
+When a generated or customized layout reads route parameters, include `next build` in validation so Next.js checks the inferred `LayoutProps` contract.

@@ -1,11 +1,5 @@
-import React from "react";
+import type { ReactNode } from "react";
 
-export default function templateLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { locale: string };
-}) {
+export default function templateLayout({ children }: { children: ReactNode }) {
   return children;
 }

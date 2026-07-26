@@ -38,6 +38,7 @@ const forbiddenSegments = new Set([
   "test-results",
 ]);
 export const requiredTemplateFiles = [
+  "templates/Page/layout.tsx",
   "templates/Page/page-ui.user.tsx",
   ...PROJECT_AGENT_GUIDANCE_FILES.map(
     (path) => `templates/Projects/default/${path}`,
