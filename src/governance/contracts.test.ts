@@ -42,6 +42,23 @@ describe("public governance contracts", () => {
     );
   });
 
+  test("documents a restricted public contribution workflow", async () => {
+    const contributing = await readFile("CONTRIBUTING.md", "utf8");
+    expect(contributing).toContain(
+      "Public visibility does not grant write access.",
+    );
+    expect(contributing).toContain(
+      "Only repository administrators may push directly to `master`",
+    );
+    expect(contributing).toContain(
+      "Workflows from every external fork require maintainer approval",
+    );
+    expect(contributing).toContain(
+      "Pull request workflows are read-only and cannot publish a package or update `master`.",
+    );
+    expect(contributing).not.toContain(".agent/");
+  });
+
   test("keeps functionality documentation aligned with public operations", async () => {
     const functionality = await readFile("FUNCTIONALITY.md", "utf8");
     expect(functionality).toContain("create-next-pro <project>");

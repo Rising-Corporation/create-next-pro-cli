@@ -30,6 +30,10 @@ export type GovernancePolicy = {
     shaPinningRequired: boolean;
     defaultWorkflowPermissions: "read" | "write";
     canApprovePullRequestReviews: boolean;
+    forkPullRequestApprovalPolicy:
+      | "first_time_contributors"
+      | "first_time_contributors_new_to_github"
+      | "all_external_contributors";
   };
   environment: { name: string; branch: string };
   security: {
@@ -50,7 +54,12 @@ export type GovernancePolicy = {
     forbiddenSecrets: string[];
     releaseEnabled: boolean;
   };
-  rulesets: { branch: string; tag: string };
+  rulesets: {
+    branch: string;
+    contributions: string;
+    tag: string;
+    allowAdminDirectPush: boolean;
+  };
   requiredChecks: string[];
   cleanup: {
     pullRequests: number[];
@@ -245,7 +254,11 @@ export function compareGovernance(
   containsAll(
     findings,
     "rulesets",
-    [policy.rulesets.branch, policy.rulesets.tag],
+    [
+      policy.rulesets.branch,
+      policy.rulesets.contributions,
+      policy.rulesets.tag,
+    ],
     snapshot.rulesets
       .filter((ruleset) => ruleset.enforcement === "active")
       .map((ruleset) => ruleset.name),

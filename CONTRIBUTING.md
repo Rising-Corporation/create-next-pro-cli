@@ -1,6 +1,8 @@
 # Contributing to create-next-pro-cli
 
-Thank you for improving `create-next-pro-cli`. Contributions use a trunk-based workflow: `master` is the single source of truth and every human change reaches it through a pull request.
+Thank you for improving `create-next-pro-cli`. Contributions use a trunk-based workflow with `master` as the single source of truth. External contributors and non-admin maintainers use pull requests. Repository administrators may also push directly to `master` when an immediate maintained change is appropriate.
+
+Public visibility does not grant write access. External contributors propose changes from a fork. Explicitly authorized maintainers may push short-lived branches to the canonical repository and open pull requests. Only repository administrators may push directly to `master`; pull request merges remain restricted to repository administrators and explicitly authorized maintainers.
 
 ## Requirements
 
@@ -11,16 +13,16 @@ Thank you for improving `create-next-pro-cli`. Contributions use a trunk-based w
 
 ## Branches and commits
 
-Create a short-lived branch from the latest `master`:
+Fork the repository, then create a short-lived branch from the latest upstream `master`:
 
 ```bash
-git fetch origin
-git switch master
-git pull --ff-only origin master
-git switch -c fix/describe-the-change
+git remote add upstream https://github.com/Rising-Corporation/create-next-pro-cli.git
+git fetch upstream
+git switch -c fix/describe-the-change upstream/master
+git push --set-upstream origin fix/describe-the-change
 ```
 
-Use `feature/*`, `fix/*`, `docs/*`, or `chore/*` as appropriate. The historical `dev` branch is not part of the contribution flow.
+Use `feat/*`, `fix/*`, `docs/*`, `chore/*`, or `ci/*` as appropriate. An authorized non-admin maintainer may create the same short-lived branch directly in the canonical repository, but must still use a pull request. The historical `dev` branch is not part of the contribution flow.
 
 Commits and pull request titles must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), for example:
 
@@ -59,15 +61,15 @@ bun run test:e2e
 bun run audit
 ```
 
-Do not weaken an audit, remove a consumer, or update a snapshot merely to make a check pass. Document a repeated blocker in `.agent/TROUBLESHOOTING.md` without including secrets.
+Do not weaken an audit, remove a consumer, or update a snapshot merely to make a check pass. If a check fails repeatedly, describe the failure, reproduction steps, and redacted logs in the pull request without including secrets.
 
 ## Pull requests
 
-Open pull requests against `master`. Complete the template, link relevant issues, describe public behavior changes, and list the exact checks executed. All required checks and conversations must be resolved before merging.
+Open pull requests against `master`. Complete the template, link relevant issues, describe public behavior changes, and list the exact checks executed. All required checks and conversations must be resolved before merging. Only repository administrators and explicitly authorized maintainers may perform the squash merge.
 
-Workflows from first-time forks may require maintainer approval before they run. Maintainers review the workflow diff before approving it.
+Pull request workflows are read-only and cannot publish a package or update `master`. Workflows from every external fork require maintainer approval before they run. Maintainers review the workflow diff before approving it.
 
-Do not publish npm packages, create release tags, or edit versions manually. A validated merge to `master` triggers the protected patch release workflow.
+Do not publish npm packages, create release tags, or edit versions manually. An authorized merge or direct administrator push to `master` is eligible to trigger the protected patch release workflow when release automation is enabled.
 
 ## Security and sensitive data
 

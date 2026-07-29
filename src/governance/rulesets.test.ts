@@ -1,17 +1,26 @@
 import { describe, expect, test } from "vitest";
 
 import type { GovernancePolicy } from "./model";
-import { buildBranchRuleset, buildTagRuleset } from "./rulesets";
+import {
+  buildBranchContributionRuleset,
+  buildBranchSafetyRuleset,
+  buildTagRuleset,
+} from "./rulesets";
 
 const policy = {
-  rulesets: { branch: "protect-master", tag: "protect-release-tags" },
+  rulesets: {
+    branch: "protect-master",
+    contributions: "govern-master-contributions",
+    tag: "protect-release-tags",
+    allowAdminDirectPush: true,
+  },
   requiredChecks: ["validate-cli", "validate-template (bun)"],
   cleanup: { pullRequests: [], branches: [] },
 } as unknown as GovernancePolicy;
 
 describe("governance rulesets", () => {
-  test("builds a reversible minimal branch protection", () => {
-    const ruleset = buildBranchRuleset(policy, undefined, "minimal");
+  test("keeps destructive protections separate without bypass", () => {
+    const ruleset = buildBranchSafetyRuleset(policy);
     expect(ruleset.conditions.ref_name.include).toEqual(["~DEFAULT_BRANCH"]);
     expect(ruleset.rules.map((rule) => rule.type)).toEqual([
       "deletion",
@@ -20,14 +29,42 @@ describe("governance rulesets", () => {
     expect(ruleset.bypass_actors).toEqual([]);
   });
 
+  test("allows repository admins to bypass only contribution gates", () => {
+    const ruleset = buildBranchContributionRuleset(policy);
+    expect(ruleset.name).toBe("govern-master-contributions");
+    expect(ruleset.bypass_actors).toEqual([
+      {
+        actor_id: 5,
+        actor_type: "RepositoryRole",
+        bypass_mode: "always",
+      },
+    ]);
+    expect(ruleset.rules.map((rule) => rule.type)).not.toContain("deletion");
+    expect(ruleset.rules.map((rule) => rule.type)).not.toContain(
+      "non_fast_forward",
+    );
+  });
+
   test("requires pull requests and exact GitHub Actions checks", () => {
-    const ruleset = buildBranchRuleset(policy, 123, "full");
+    const ruleset = buildBranchContributionRuleset(policy, 123);
     const checks = ruleset.rules.find(
       (rule) => rule.type === "required_status_checks",
     );
     expect(checks?.parameters?.required_status_checks).toEqual([
       { context: "validate-cli", integration_id: 15368 },
       { context: "validate-template (bun)", integration_id: 15368 },
+    ]);
+    expect(ruleset.bypass_actors).toEqual([
+      {
+        actor_id: 5,
+        actor_type: "RepositoryRole",
+        bypass_mode: "always",
+      },
+      {
+        actor_id: 123,
+        actor_type: "Integration",
+        bypass_mode: "always",
+      },
     ]);
     expect(ruleset.rules).toContainEqual({
       type: "code_scanning",
@@ -46,6 +83,13 @@ describe("governance rulesets", () => {
   test("reserves v-prefixed tags for the release App", () => {
     const ruleset = buildTagRuleset(policy, 123);
     expect(ruleset.conditions.ref_name.include).toEqual(["refs/tags/v*"]);
+    expect(ruleset.bypass_actors).toEqual([
+      {
+        actor_id: 123,
+        actor_type: "Integration",
+        bypass_mode: "always",
+      },
+    ]);
     expect(ruleset.rules.map((rule) => rule.type)).toEqual([
       "creation",
       "update",
@@ -55,14 +99,9 @@ describe("governance rulesets", () => {
   });
 
   test("rejects invalid App identifiers", () => {
-    expect(() => buildBranchRuleset(policy, 0, "full")).toThrow(
+    expect(() => buildBranchContributionRuleset(policy, 0)).toThrow(
       "positive integer",
     );
-  });
-
-  test("refuses full protection without the dedicated release App", () => {
-    expect(() => buildBranchRuleset(policy, undefined, "full")).toThrow(
-      "requires the release App ID",
-    );
+    expect(() => buildTagRuleset(policy, 0)).toThrow("positive integer");
   });
 });
