@@ -18,7 +18,8 @@
     "allowedActions": "selected",
     "shaPinningRequired": true,
     "defaultWorkflowPermissions": "read",
-    "canApprovePullRequestReviews": false
+    "canApprovePullRequestReviews": false,
+    "forkPullRequestApprovalPolicy": "all_external_contributors"
   },
   "environment": {
     "name": "ENV",

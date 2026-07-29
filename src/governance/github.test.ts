@@ -50,6 +50,9 @@ describe("GitHub governance adapter", () => {
         if (endpoint.endsWith("/actions/variables?per_page=100")) {
           return { variables: [{ name: "RELEASE_ENABLED", value: "true" }] };
         }
+        if (endpoint.endsWith("/fork-pr-contributor-approval")) {
+          return { approval_policy: "all_external_contributors" };
+        }
         if (endpoint.includes("/installations")) {
           return { installations: [{ app_slug: "release-app" }] };
         }
@@ -73,12 +76,18 @@ describe("GitHub governance adapter", () => {
     expect(snapshot.release.secretNames).toEqual(["APP_KEY"]);
     expect(snapshot.release.variableNames).toEqual(["APP_ID"]);
     expect(snapshot.release.releaseEnabled).toBe(true);
+    expect(snapshot.actions.forkPullRequestApprovalPolicy).toBe(
+      "all_external_contributors",
+    );
     expect(JSON.stringify(snapshot)).not.toContain("must-not-be-read");
     expect(requested).toContain(
       "repos/owner/repository/environments/ENV/secrets?per_page=100",
     );
     expect(requested).toContain(
       "repos/owner/repository/environments/ENV/variables?per_page=100",
+    );
+    expect(requested).toContain(
+      "repos/owner/repository/actions/permissions/fork-pr-contributor-approval",
     );
   });
 

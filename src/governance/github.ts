@@ -63,6 +63,13 @@ export async function collectGithubSnapshot(
       ),
     ),
   );
+  const forkApproval = record(
+    await optional(unavailable, "actions.forkPullRequestApprovalPolicy", () =>
+      transport.request(
+        `repos/${policy.repository}/actions/permissions/fork-pr-contributor-approval`,
+      ),
+    ),
+  );
   const environment = record(
     await optional(unavailable, "environment", () =>
       transport.request(
@@ -200,6 +207,13 @@ export async function collectGithubSnapshot(
       canApprovePullRequestReviews: boolean(
         workflow.can_approve_pull_request_reviews,
       ),
+      forkPullRequestApprovalPolicy:
+        string(forkApproval.approval_policy) === "all_external_contributors"
+          ? "all_external_contributors"
+          : string(forkApproval.approval_policy) ===
+              "first_time_contributors_new_to_github"
+            ? "first_time_contributors_new_to_github"
+            : "first_time_contributors",
     },
     environment: {
       exists: Boolean(environment.name),

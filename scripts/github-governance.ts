@@ -134,6 +134,13 @@ function applyRepositorySettings(policy: GovernancePolicy): void {
     default_workflow_permissions: "read",
     can_approve_pull_request_reviews: false,
   });
+  mutate(
+    "PUT",
+    `repos/${policy.repository}/actions/permissions/fork-pr-contributor-approval`,
+    {
+      approval_policy: policy.actions.forkPullRequestApprovalPolicy,
+    },
+  );
 }
 
 function applySecurity(policy: GovernancePolicy): void {

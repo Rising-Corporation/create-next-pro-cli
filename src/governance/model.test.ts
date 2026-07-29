@@ -28,6 +28,7 @@ const policy: GovernancePolicy = {
     shaPinningRequired: true,
     defaultWorkflowPermissions: "read",
     canApprovePullRequestReviews: false,
+    forkPullRequestApprovalPolicy: "all_external_contributors",
   },
   environment: { name: "ENV", branch: "master" },
   security: {

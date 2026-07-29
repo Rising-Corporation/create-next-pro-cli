@@ -30,6 +30,10 @@ export type GovernancePolicy = {
     shaPinningRequired: boolean;
     defaultWorkflowPermissions: "read" | "write";
     canApprovePullRequestReviews: boolean;
+    forkPullRequestApprovalPolicy:
+      | "first_time_contributors"
+      | "first_time_contributors_new_to_github"
+      | "all_external_contributors";
   };
   environment: { name: string; branch: string };
   security: {
