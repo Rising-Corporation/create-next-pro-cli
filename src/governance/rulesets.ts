@@ -37,9 +37,12 @@ function bypass(appId: number): RepositoryRuleset["bypass_actors"] {
 
 export function buildBranchRuleset(
   policy: GovernancePolicy,
-  appId: number,
+  appId: number | undefined,
   stage: RulesetStage,
 ): RepositoryRuleset {
+  if (stage === "full" && appId === undefined) {
+    throw new Error("Full branch protection requires the release App ID");
+  }
   const rules: RulesetRule[] = [
     { type: "deletion" },
     { type: "non_fast_forward" },
@@ -85,7 +88,7 @@ export function buildBranchRuleset(
     name: policy.rulesets.branch,
     target: "branch",
     enforcement: "active",
-    bypass_actors: bypass(appId),
+    bypass_actors: appId === undefined ? [] : bypass(appId),
     conditions: {
       ref_name: { include: ["~DEFAULT_BRANCH"], exclude: [] },
     },

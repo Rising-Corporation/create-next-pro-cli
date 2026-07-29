@@ -236,14 +236,18 @@ function applyRulesets(policy: GovernancePolicy, stage: RulesetStage): void {
   const rawAppId = variables.variables?.find(
     (variable) => variable.name === policy.release.appIdVariable,
   )?.value;
-  const appId = Number(rawAppId);
-  if (!rawAppId || !Number.isSafeInteger(appId) || appId <= 0) {
+  const appId = rawAppId ? Number(rawAppId) : undefined;
+  if (
+    stage === "full" &&
+    (!appId || !Number.isSafeInteger(appId) || appId <= 0)
+  ) {
     throw new Error(
       `${policy.release.appIdVariable} must identify the installed release App before rulesets are applied`,
     );
   }
   upsertRuleset(policy, buildBranchRuleset(policy, appId, stage));
   if (stage === "full") {
+    if (!appId) throw new Error("Full rulesets require the release App ID");
     upsertRuleset(policy, buildTagRuleset(policy, appId));
   }
 }

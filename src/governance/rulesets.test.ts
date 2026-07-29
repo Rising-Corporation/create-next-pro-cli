@@ -11,15 +11,13 @@ const policy = {
 
 describe("governance rulesets", () => {
   test("builds a reversible minimal branch protection", () => {
-    const ruleset = buildBranchRuleset(policy, 123, "minimal");
+    const ruleset = buildBranchRuleset(policy, undefined, "minimal");
     expect(ruleset.conditions.ref_name.include).toEqual(["~DEFAULT_BRANCH"]);
     expect(ruleset.rules.map((rule) => rule.type)).toEqual([
       "deletion",
       "non_fast_forward",
     ]);
-    expect(ruleset.bypass_actors).toEqual([
-      expect.objectContaining({ actor_id: 123, actor_type: "Integration" }),
-    ]);
+    expect(ruleset.bypass_actors).toEqual([]);
   });
 
   test("requires pull requests and exact GitHub Actions checks", () => {
@@ -59,6 +57,12 @@ describe("governance rulesets", () => {
   test("rejects invalid App identifiers", () => {
     expect(() => buildBranchRuleset(policy, 0, "full")).toThrow(
       "positive integer",
+    );
+  });
+
+  test("refuses full protection without the dedicated release App", () => {
+    expect(() => buildBranchRuleset(policy, undefined, "full")).toThrow(
+      "requires the release App ID",
     );
   });
 });
