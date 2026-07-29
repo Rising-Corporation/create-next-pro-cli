@@ -119,6 +119,7 @@ function applyRepositorySettings(policy: GovernancePolicy): void {
   mutate("PUT", `repos/${policy.repository}/actions/permissions`, {
     enabled: true,
     allowed_actions: "selected",
+    sha_pinning_required: true,
   });
   mutate(
     "PUT",
@@ -181,7 +182,6 @@ function applyEnvironment(policy: GovernancePolicy): void {
     "PUT",
     `repos/${policy.repository}/environments/${policy.environment.name}`,
     {
-      prevent_self_review: false,
       can_admins_bypass: true,
       deployment_branch_policy: {
         protected_branches: false,
