@@ -32,6 +32,16 @@ describe("public governance contracts", () => {
     }
   });
 
+  test("validates human commits and every pull request title", async () => {
+    const workflow = await readFile(".github/workflows/ci.yml", "utf8");
+    expect(workflow).toMatch(
+      /- name: Validate commit messages\n\s+if: github\.actor != 'dependabot\[bot\]'/,
+    );
+    expect(workflow).toMatch(
+      /- name: Validate pull request title\n\s+if: github\.event_name == 'pull_request'/,
+    );
+  });
+
   test("keeps functionality documentation aligned with public operations", async () => {
     const functionality = await readFile("FUNCTIONALITY.md", "utf8");
     expect(functionality).toContain("create-next-pro <project>");

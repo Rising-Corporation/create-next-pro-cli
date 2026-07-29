@@ -31,6 +31,8 @@ docs(security): document private reporting
 
 Pull requests are squash-merged. The pull request title becomes the public commit on `master`, so keep it accurate and conventional.
 
+Dependabot pull request titles follow the same convention. Its generated commit body is exempt from the human body-style rules, but dependency changes remain blocked until the official `bun.lock` has been regenerated and every normal check passes.
+
 ## Local validation
 
 Install exactly the locked dependencies and run the complete root checks:
