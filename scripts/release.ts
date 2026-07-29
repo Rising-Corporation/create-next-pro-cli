@@ -61,6 +61,10 @@ function inspectState(): { state: ReleaseState; decision: ReleaseDecision } {
     sourceSha,
     tagSha: resolveTag(manifest.version),
     headMessage: git(["log", "-1", "--pretty=%s"]),
+    githubReleaseExists:
+      process.env.CNP_GITHUB_RELEASE_EXISTS === undefined
+        ? undefined
+        : process.env.CNP_GITHUB_RELEASE_EXISTS === "true",
   };
   return { state, decision: decideRelease(state) };
 }

@@ -5,7 +5,11 @@ const ROOT = process.cwd();
 const EXTENSIONS = new Set([".js", ".mjs", ".ts", ".tsx"]);
 const PUBLIC_FILES = [
   "CHANGELOG.md",
+  "CODE_OF_CONDUCT.md",
+  "CONTRIBUTING.md",
+  "FUNCTIONALITY.md",
   "README.md",
+  "SECURITY.md",
   "create-next-pro-completion.sh",
   "create-next-pro-completion.zsh",
   "templates/Projects/default/AGENTS.md",
@@ -37,6 +41,7 @@ async function collect(
 
 const files = [
   ...PUBLIC_FILES,
+  ...(await collect(".github", new Set([".json", ".md", ".yaml", ".yml"]))),
   ...(await collect(
     "templates/Projects/default/.agents/skills",
     MARKDOWN_EXTENSIONS,

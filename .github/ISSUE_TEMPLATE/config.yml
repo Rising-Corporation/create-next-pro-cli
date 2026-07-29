@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Rising-Corporation/create-next-pro-cli/security/advisories/new
+    about: Report exploitable vulnerabilities privately.
+  - name: Questions and ideas
+    url: https://github.com/Rising-Corporation/create-next-pro-cli/discussions
+    about: Ask for help or discuss an idea before filing an actionable issue.

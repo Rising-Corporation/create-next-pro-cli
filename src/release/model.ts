@@ -1,4 +1,5 @@
-export type ReleaseAction = "release" | "resume" | "skip" | "error";
+export type ReleaseAction =
+  "release" | "resume" | "finalize" | "skip" | "error";
 
 export type ReleaseState = {
   currentVersion: string;
@@ -7,6 +8,7 @@ export type ReleaseState = {
   sourceSha: string;
   tagSha?: string;
   headMessage?: string;
+  githubReleaseExists?: boolean;
 };
 
 export type ReleaseDecision = {
@@ -87,6 +89,27 @@ export function decideRelease(state: ReleaseState): ReleaseDecision {
     };
   }
 
+  const hasReleaseCommitMessage =
+    state.headMessage !== undefined &&
+    RELEASE_COMMIT_PATTERN.test(state.headMessage);
+  if (hasReleaseCommitMessage && state.tagSha !== state.headSha) {
+    return {
+      ...base,
+      action: "error",
+      reason: "The published release commit is missing its matching tag",
+    };
+  }
+  const isPublishedReleaseCommit =
+    hasReleaseCommitMessage && state.tagSha === state.headSha;
+
+  if (isPublishedReleaseCommit && state.githubReleaseExists === false) {
+    return {
+      ...base,
+      action: "finalize",
+      reason: "Git and npm converge but the GitHub Release is missing",
+    };
+  }
+
   if (state.headSha !== state.sourceSha) {
     return {
       ...base,
@@ -95,7 +118,7 @@ export function decideRelease(state: ReleaseState): ReleaseDecision {
     };
   }
 
-  if (state.headMessage && RELEASE_COMMIT_PATTERN.test(state.headMessage)) {
+  if (isPublishedReleaseCommit) {
     return {
       ...base,
       action: "skip",

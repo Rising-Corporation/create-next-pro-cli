@@ -35,8 +35,8 @@
   "scripts": {
     "dev": "bun run bin.bun.ts",
     "scaffold-dev": "bun run src/scaffold-dev.ts",
-    "format": "prettier --write --ignore-unknown .github/workflows/ci.yml .husky scripts bunfig.toml bin.bun.ts bin.node.ts src tsup.config.ts eslint.config.mjs package.json tsconfig.base.json tsconfig.json tsconfig.node.json",
-    "format:check": "prettier --check --ignore-unknown .github/workflows/ci.yml .husky scripts bunfig.toml bin.bun.ts bin.node.ts src tsup.config.ts eslint.config.mjs package.json tsconfig.base.json tsconfig.json tsconfig.node.json",
+    "format": "prettier --write --ignore-unknown .github .husky scripts bunfig.toml bin.bun.ts bin.node.ts src tsup.config.ts eslint.config.mjs package.json tsconfig.base.json tsconfig.json tsconfig.node.json README.md CONTRIBUTING.md FUNCTIONALITY.md SECURITY.md CODE_OF_CONDUCT.md",
+    "format:check": "prettier --check --ignore-unknown .github .husky scripts bunfig.toml bin.bun.ts bin.node.ts src tsup.config.ts eslint.config.mjs package.json tsconfig.base.json tsconfig.json tsconfig.node.json README.md CONTRIBUTING.md FUNCTIONALITY.md SECURITY.md CODE_OF_CONDUCT.md",
     "lint": "eslint bin.bun.ts bin.node.ts scripts src tsup.config.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "language:check": "bun scripts/check-public-language.ts",
@@ -54,6 +54,9 @@
     "release:prepare": "bun scripts/release.ts prepare",
     "release:resume": "bun scripts/release.ts resume",
     "release:commit": "bun scripts/release.ts commit",
+    "github:check": "bun scripts/github-governance.ts check",
+    "github:plan": "bun scripts/github-governance.ts plan",
+    "github:apply": "bun scripts/github-governance.ts apply",
     "package:pack": "bun scripts/pack.ts",
     "package:inspect": "bun scripts/inspect-package.ts"
   },

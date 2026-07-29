@@ -392,3 +392,4 @@ create-next-pro --help
 ```
 
 MIT licensed. Contribution guidelines are available in [CONTRIBUTING.md](./CONTRIBUTING.md).
+The complete public capability contract is maintained in [FUNCTIONALITY.md](./FUNCTIONALITY.md), and vulnerabilities must follow the private process in [SECURITY.md](./SECURITY.md).

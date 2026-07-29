@@ -37,9 +37,33 @@ describe("release state machine", () => {
     expect(
       decideRelease({
         ...base,
+        tagSha: "head",
         headMessage: "chore(release): v0.1.26",
+        githubReleaseExists: true,
       }).action,
     ).toBe("skip");
+  });
+
+  test("finalizes a published release missing from GitHub", () => {
+    expect(
+      decideRelease({
+        ...base,
+        tagSha: "head",
+        headMessage: "chore(release): v0.1.26",
+        githubReleaseExists: false,
+      }),
+    ).toMatchObject({ action: "finalize", targetVersion: "0.1.26" });
+  });
+
+  test("does not finalize a release with a conflicting tag", () => {
+    expect(
+      decideRelease({
+        ...base,
+        tagSha: "other",
+        headMessage: "chore(release): v0.1.26",
+        githubReleaseExists: false,
+      }).action,
+    ).toBe("error");
   });
 
   test("rejects npm ahead of Git", () => {

@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a reproducible create-next-pro-cli defect.
+title: "fix: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not report security vulnerabilities here. Use private vulnerability reporting from SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: CLI version
+      placeholder: 0.1.35
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime
+      options: [Bun, Node.js]
+    validations:
+      required: true
+  - type: dropdown
+    id: package-manager
+    attributes:
+      label: Package manager
+      options: [Bun, npm, pnpm, Not applicable]
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include commands and sanitized output. Prefer --json when applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I removed secrets, private environment values, and personal data.
+          required: true
+        - label: This is not an undisclosed security vulnerability.
+          required: true

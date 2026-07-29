@@ -1,0 +1,31 @@
+name: Documentation issue
+description: Report unclear, missing, or inaccurate public documentation.
+title: "docs: "
+labels: ["documentation", "needs-triage"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Documentation location
+      placeholder: README section, command help, or URL
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is inaccurate or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I checked the current master branch.
+          required: true
+        - label: This report contains no secret or private environment value.
+          required: true

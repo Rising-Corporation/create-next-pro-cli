@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "repository": "Rising-Corporation/create-next-pro-cli",
+  "repositorySettings": {
+    "defaultBranch": "master",
+    "visibility": "public",
+    "allowMergeCommit": false,
+    "allowSquashMerge": true,
+    "allowRebaseMerge": false,
+    "allowAutoMerge": true,
+    "deleteBranchOnMerge": true,
+    "hasIssues": true,
+    "hasDiscussions": true,
+    "hasWiki": false
+  },
+  "actions": {
+    "enabled": true,
+    "allowedActions": "selected",
+    "shaPinningRequired": true,
+    "defaultWorkflowPermissions": "read",
+    "canApprovePullRequestReviews": false
+  },
+  "environment": {
+    "name": "ENV",
+    "branch": "master"
+  },
+  "security": {
+    "privateVulnerabilityReporting": true,
+    "automatedSecurityFixes": true,
+    "secretScanning": true,
+    "pushProtection": true,
+    "codeqlState": "configured"
+  },
+  "community": {
+    "requiredLabels": [
+      "breaking-change",
+      "bug",
+      "ci",
+      "dependencies",
+      "documentation",
+      "enhancement",
+      "github-actions",
+      "good first issue",
+      "needs-triage",
+      "release",
+      "security"
+    ],
+    "requiredDiscussionCategories": [
+      "Announcements",
+      "Ideas",
+      "Q&A",
+      "Show and tell"
+    ]
+  },
+  "release": {
+    "appSlug": "create-next-pro-release",
+    "appIdVariable": "RELEASE_APP_ID",
+    "privateKeySecret": "RELEASE_APP_PRIVATE_KEY",
+    "forbiddenSecrets": ["NPM_TOKEN"],
+    "releaseEnabled": true
+  },
+  "rulesets": {
+    "branch": "protect-master",
+    "tag": "protect-release-tags"
+  },
+  "requiredChecks": [
+    "validate-cli",
+    "validate-template (bun)",
+    "validate-template (npm)",
+    "validate-template (pnpm)",
+    "governance-check"
+  ],
+  "projectsPolicy": "disable-if-empty"
+}

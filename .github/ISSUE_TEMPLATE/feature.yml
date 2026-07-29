@@ -1,0 +1,45 @@
+name: Feature request
+description: Propose an improvement to the CLI or generated project.
+title: "feat: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Explain the user or agent workflow that is currently difficult.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        [
+          CLI,
+          Generated template,
+          Agentic contract,
+          Documentation,
+          CI or release,
+        ]
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and discussions.
+          required: true
+        - label: This request contains no secret or private environment value.
+          required: true
