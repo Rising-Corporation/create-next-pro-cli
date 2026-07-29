@@ -1,8 +1,8 @@
 # Contributing to create-next-pro-cli
 
-Thank you for improving `create-next-pro-cli`. Contributions use a trunk-based workflow: `master` is the single source of truth and every human change reaches it through a pull request.
+Thank you for improving `create-next-pro-cli`. Contributions use a trunk-based workflow with `master` as the single source of truth. External contributors and non-admin maintainers use pull requests. Repository administrators may also push directly to `master` when an immediate maintained change is appropriate.
 
-Public visibility does not grant write access. External contributors propose changes from a fork. Only repository administrators and explicitly authorized maintainers may push branches to the canonical repository or merge pull requests. Contributors must never push directly to `master`.
+Public visibility does not grant write access. External contributors propose changes from a fork. Explicitly authorized maintainers may push short-lived branches to the canonical repository and open pull requests. Only repository administrators may push directly to `master`; pull request merges remain restricted to repository administrators and explicitly authorized maintainers.
 
 ## Requirements
 
@@ -22,7 +22,7 @@ git switch -c fix/describe-the-change upstream/master
 git push --set-upstream origin fix/describe-the-change
 ```
 
-Use `feat/*`, `fix/*`, `docs/*`, `chore/*`, or `ci/*` as appropriate. An authorized maintainer may create the same short-lived branch directly in the canonical repository, but must still use a pull request. The historical `dev` branch is not part of the contribution flow.
+Use `feat/*`, `fix/*`, `docs/*`, `chore/*`, or `ci/*` as appropriate. An authorized non-admin maintainer may create the same short-lived branch directly in the canonical repository, but must still use a pull request. The historical `dev` branch is not part of the contribution flow.
 
 Commits and pull request titles must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), for example:
 
@@ -67,9 +67,9 @@ Do not weaken an audit, remove a consumer, or update a snapshot merely to make a
 
 Open pull requests against `master`. Complete the template, link relevant issues, describe public behavior changes, and list the exact checks executed. All required checks and conversations must be resolved before merging. Only repository administrators and explicitly authorized maintainers may perform the squash merge.
 
-Pull request workflows are read-only and cannot publish a package or update `master`. Workflows from first-time forks may require maintainer approval before they run. Maintainers review the workflow diff before approving it.
+Pull request workflows are read-only and cannot publish a package or update `master`. Workflows from every external fork require maintainer approval before they run. Maintainers review the workflow diff before approving it.
 
-Do not publish npm packages, create release tags, or edit versions manually. Only the resulting authorized merge to `master` is eligible to trigger the protected patch release workflow, when release automation is enabled.
+Do not publish npm packages, create release tags, or edit versions manually. An authorized merge or direct administrator push to `master` is eligible to trigger the protected patch release workflow when release automation is enabled.
 
 ## Security and sensitive data
 

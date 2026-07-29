@@ -1,6 +1,6 @@
 import type { GovernancePolicy } from "./model";
 
-export type RulesetStage = "minimal" | "full";
+export type RulesetStage = "minimal" | "branch" | "full";
 
 type RulesetRule = {
   type: string;
@@ -13,7 +13,7 @@ export type RepositoryRuleset = {
   enforcement: "active";
   bypass_actors: Array<{
     actor_id: number;
-    actor_type: "Integration";
+    actor_type: "Integration" | "RepositoryRole";
     bypass_mode: "always";
   }>;
   conditions: {
@@ -22,7 +22,9 @@ export type RepositoryRuleset = {
   rules: RulesetRule[];
 };
 
-function bypass(appId: number): RepositoryRuleset["bypass_actors"] {
+const REPOSITORY_ADMIN_ROLE_ID = 5;
+
+function releaseAppBypass(appId: number): RepositoryRuleset["bypass_actors"] {
   if (!Number.isSafeInteger(appId) || appId <= 0) {
     throw new Error("Release App ID must be a positive integer");
   }
@@ -35,20 +37,48 @@ function bypass(appId: number): RepositoryRuleset["bypass_actors"] {
   ];
 }
 
-export function buildBranchRuleset(
-  policy: GovernancePolicy,
-  appId: number | undefined,
-  stage: RulesetStage,
-): RepositoryRuleset {
-  if (stage === "full" && appId === undefined) {
-    throw new Error("Full branch protection requires the release App ID");
-  }
-  const rules: RulesetRule[] = [
-    { type: "deletion" },
-    { type: "non_fast_forward" },
+function adminBypass(): RepositoryRuleset["bypass_actors"] {
+  return [
+    {
+      actor_id: REPOSITORY_ADMIN_ROLE_ID,
+      actor_type: "RepositoryRole",
+      bypass_mode: "always",
+    },
   ];
-  if (stage === "full") {
-    rules.push(
+}
+
+export function buildBranchSafetyRuleset(
+  policy: GovernancePolicy,
+): RepositoryRuleset {
+  return {
+    name: policy.rulesets.branch,
+    target: "branch",
+    enforcement: "active",
+    bypass_actors: [],
+    conditions: {
+      ref_name: { include: ["~DEFAULT_BRANCH"], exclude: [] },
+    },
+    rules: [{ type: "deletion" }, { type: "non_fast_forward" }],
+  };
+}
+
+export function buildBranchContributionRuleset(
+  policy: GovernancePolicy,
+  appId?: number,
+): RepositoryRuleset {
+  const bypassActors = policy.rulesets.allowAdminDirectPush
+    ? adminBypass()
+    : [];
+  if (appId !== undefined) bypassActors.push(...releaseAppBypass(appId));
+  return {
+    name: policy.rulesets.contributions,
+    target: "branch",
+    enforcement: "active",
+    bypass_actors: bypassActors,
+    conditions: {
+      ref_name: { include: ["~DEFAULT_BRANCH"], exclude: [] },
+    },
+    rules: [
       {
         type: "pull_request",
         parameters: {
@@ -82,17 +112,7 @@ export function buildBranchRuleset(
           ],
         },
       },
-    );
-  }
-  return {
-    name: policy.rulesets.branch,
-    target: "branch",
-    enforcement: "active",
-    bypass_actors: appId === undefined ? [] : bypass(appId),
-    conditions: {
-      ref_name: { include: ["~DEFAULT_BRANCH"], exclude: [] },
-    },
-    rules,
+    ],
   };
 }
 
@@ -104,7 +124,7 @@ export function buildTagRuleset(
     name: policy.rulesets.tag,
     target: "tag",
     enforcement: "active",
-    bypass_actors: bypass(appId),
+    bypass_actors: releaseAppBypass(appId),
     conditions: {
       ref_name: { include: ["refs/tags/v*"], exclude: [] },
     },

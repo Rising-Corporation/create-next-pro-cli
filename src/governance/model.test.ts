@@ -49,7 +49,12 @@ const policy: GovernancePolicy = {
     forbiddenSecrets: ["OLD_TOKEN"],
     releaseEnabled: true,
   },
-  rulesets: { branch: "protect-master", tag: "protect-tags" },
+  rulesets: {
+    branch: "protect-master",
+    contributions: "govern-master-contributions",
+    tag: "protect-tags",
+    allowAdminDirectPush: true,
+  },
   requiredChecks: ["validate"],
   cleanup: { pullRequests: [], branches: [] },
   projectsPolicy: "disable-if-empty",
@@ -74,6 +79,7 @@ const snapshot: GovernanceSnapshot = {
   },
   rulesets: [
     { name: "protect-master", enforcement: "active" },
+    { name: "govern-master-contributions", enforcement: "active" },
     { name: "protect-tags", enforcement: "active" },
   ],
   projects: { totalCount: 1 },

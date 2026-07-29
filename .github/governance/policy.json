@@ -62,7 +62,9 @@
   },
   "rulesets": {
     "branch": "protect-master",
-    "tag": "protect-release-tags"
+    "contributions": "govern-master-contributions",
+    "tag": "protect-release-tags",
+    "allowAdminDirectPush": true
   },
   "requiredChecks": [
     "validate-cli",

@@ -13,7 +13,8 @@ import {
   type GovernanceResult,
 } from "../src/governance/model";
 import {
-  buildBranchRuleset,
+  buildBranchContributionRuleset,
+  buildBranchSafetyRuleset,
   buildTagRuleset,
   type RepositoryRuleset,
   type RulesetStage,
@@ -244,17 +245,21 @@ function applyRulesets(policy: GovernancePolicy, stage: RulesetStage): void {
     (variable) => variable.name === policy.release.appIdVariable,
   )?.value;
   const appId = rawAppId ? Number(rawAppId) : undefined;
-  if (
-    stage === "full" &&
-    (!appId || !Number.isSafeInteger(appId) || appId <= 0)
-  ) {
+  if (appId !== undefined && (!Number.isSafeInteger(appId) || appId <= 0)) {
     throw new Error(
-      `${policy.release.appIdVariable} must identify the installed release App before rulesets are applied`,
+      `${policy.release.appIdVariable} must identify a valid installed release App`,
     );
   }
-  upsertRuleset(policy, buildBranchRuleset(policy, appId, stage));
+  upsertRuleset(policy, buildBranchSafetyRuleset(policy));
+  if (stage === "branch" || stage === "full") {
+    upsertRuleset(policy, buildBranchContributionRuleset(policy, appId));
+  }
   if (stage === "full") {
-    if (!appId) throw new Error("Full rulesets require the release App ID");
+    if (!appId) {
+      throw new Error(
+        `Full rulesets require ${policy.release.appIdVariable} for release tags`,
+      );
+    }
     upsertRuleset(policy, buildTagRuleset(policy, appId));
   }
 }
@@ -325,10 +330,15 @@ async function main(): Promise<void> {
     applyLabels(policy);
     applyEnvironment(policy);
     const stage = argumentValue("--stage") ?? "settings";
-    if (stage !== "settings" && stage !== "minimal" && stage !== "full") {
-      throw new Error("--stage must be settings, minimal, or full");
+    if (
+      stage !== "settings" &&
+      stage !== "minimal" &&
+      stage !== "branch" &&
+      stage !== "full"
+    ) {
+      throw new Error("--stage must be settings, minimal, branch, or full");
     }
-    if (stage === "minimal" || stage === "full") {
+    if (stage === "minimal" || stage === "branch" || stage === "full") {
       applyRulesets(policy, stage);
     }
     if (hasArgument("--include-cleanup")) applyCleanup(policy);

@@ -48,7 +48,10 @@ describe("public governance contracts", () => {
       "Public visibility does not grant write access.",
     );
     expect(contributing).toContain(
-      "Only repository administrators and explicitly authorized maintainers may perform the squash merge.",
+      "Only repository administrators may push directly to `master`",
+    );
+    expect(contributing).toContain(
+      "Workflows from every external fork require maintainer approval",
     );
     expect(contributing).toContain(
       "Pull request workflows are read-only and cannot publish a package or update `master`.",

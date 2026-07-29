@@ -18,7 +18,12 @@ const policy = {
     forbiddenSecrets: [],
     releaseEnabled: true,
   },
-  rulesets: { branch: "protect-master", tag: "protect-tags" },
+  rulesets: {
+    branch: "protect-master",
+    contributions: "govern-master-contributions",
+    tag: "protect-tags",
+    allowAdminDirectPush: true,
+  },
   requiredChecks: [],
   cleanup: { pullRequests: [], branches: [] },
   projectsPolicy: "disable-if-empty",
