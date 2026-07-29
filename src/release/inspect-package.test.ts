@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   inspectPackage,
-  requiredTemplateFiles,
+  requiredPackageFiles,
 } from "../../scripts/inspect-package";
 
 describe("package allowlist", () => {
@@ -14,7 +14,7 @@ describe("package allowlist", () => {
           files: [
             { path: "package.json" },
             { path: "dist/create-next-pro" },
-            ...requiredTemplateFiles.map((path) => ({ path })),
+            ...requiredPackageFiles.map((path) => ({ path })),
           ],
         },
       ]),
@@ -35,7 +35,7 @@ describe("package allowlist", () => {
         {
           filename: "package.tgz",
           files: [
-            ...requiredTemplateFiles.map((required) => ({ path: required })),
+            ...requiredPackageFiles.map((required) => ({ path: required })),
             { path },
           ],
         },
@@ -43,16 +43,19 @@ describe("package allowlist", () => {
     ).toThrow();
   });
 
-  test("rejects an archive missing a required template file", () => {
-    expect(() =>
-      inspectPackage([
-        {
-          filename: "package.tgz",
-          files: requiredTemplateFiles
-            .filter((path) => !path.endsWith("bun.lock"))
-            .map((path) => ({ path })),
-        },
-      ]),
-    ).toThrow("required package entry is missing");
-  });
+  test.each(["CHANGELOG.md", "templates/Projects/default/bun.lock"])(
+    "rejects an archive missing required file %s",
+    (missing) => {
+      expect(() =>
+        inspectPackage([
+          {
+            filename: "package.tgz",
+            files: requiredPackageFiles
+              .filter((path) => path !== missing)
+              .map((path) => ({ path })),
+          },
+        ]),
+      ).toThrow(`required package entry is missing: ${missing}`);
+    },
+  );
 });

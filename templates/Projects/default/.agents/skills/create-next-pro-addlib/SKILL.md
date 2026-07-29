@@ -27,9 +27,11 @@ create-next-pro addlib <library|library.module> [--json]
 `addlib analytics.trackEvent` additionally creates or preserves:
 
 - `src/lib/analytics/trackEvent.ts`
-- the corresponding import and export in `src/lib/analytics/index.ts`
+- one direct re-export in `src/lib/analytics/index.ts`
 
-Existing module implementations are never overwritten. The index is updated only when the required import or export is missing.
+Existing module implementations are never overwritten. An existing index is parsed with TypeScript and preserved byte for byte. The command appends only the required direct value or type re-export. It returns `unchanged` when that module path is already publicly exported.
+
+The command fails before changing the index when it finds invalid TypeScript, a conflicting public name, an ambiguous module export, an active command lock, or a concurrent edit. Resolve `INCONSISTENT_LIBRARY_INDEX`, `INCONSISTENT_LIBRARY_MODULE`, or `CONCURRENT_MODIFICATION` manually, then rerun the command.
 
 ## Workflow
 
@@ -37,7 +39,7 @@ Existing module implementations are never overwritten. The index is updated only
 2. Run the command with `--json`.
 3. Inspect the directory, module, and index events.
 4. Implement and review the generated module placeholder.
-5. Ensure the index exports the module exactly once.
+5. Confirm that `exportAction` is `added` or `preserved` and inspect the reported index path.
 6. Run the project checks.
 
 ## Examples
@@ -62,4 +64,4 @@ bun run check
 # or: pnpm run check
 ```
 
-On a repeated command, expect the existing module to remain intact. Review the result events before editing the index manually.
+On a repeated command, expect the existing module and index to remain intact. Review the structured result before editing the index manually.

@@ -4,6 +4,7 @@ import {
   copyFile,
   lstat,
   mkdir,
+  open,
   readdir,
   readFile,
   rm,
@@ -66,6 +67,9 @@ export function createNodeContext(
       writeText: async (target, content) => {
         await writeFile(target, content);
       },
+      writeTextExclusive: async (target, content) => {
+        await writeFile(target, content, { flag: "wx" });
+      },
       mkdir: async (target) => {
         await mkdir(target, { recursive: true });
       },
@@ -74,6 +78,25 @@ export function createNodeContext(
       },
       appendText: async (target, content) => {
         await appendFile(target, content);
+      },
+      acquireLock: async (target) => {
+        const handle = await open(target, "wx");
+        try {
+          await handle.writeFile(
+            `${JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() })}\n`,
+          );
+        } catch (error) {
+          await handle.close();
+          await rm(target, { force: true });
+          throw error;
+        }
+        let released = false;
+        return async () => {
+          if (released) return;
+          released = true;
+          await handle.close();
+          await rm(target, { force: true });
+        };
       },
       remove: async (target, options) => {
         await rm(target, options);

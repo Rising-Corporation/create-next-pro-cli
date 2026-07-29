@@ -122,6 +122,8 @@ create-next-pro rmpage
 
 Every page belongs to an explicit route area. Use `--area public` for routes rendered by the public layout and `--area user` for authenticated routes rendered by the user layout. There is no default area. Direct `addpage` and `rmpage` commands require it, as does `addcomponent --page`; interactive `addpage` asks for it and the `rmpage` menu groups pages by area. Route groups do not alter the public URL.
 
+`addlib library.module` preserves an existing library index byte for byte. It appends one direct value or type re-export only after verifying the index and module with TypeScript. If the public export is already present, the command returns `unchanged`; ambiguous modules, conflicting exports, invalid TypeScript, and concurrent edits fail before the index is modified. Projects affected by the historical `0.1.20`–`0.1.34` barrel-reduction defect should follow the recovery note in [CHANGELOG.md](./CHANGELOG.md).
+
 `addlanguage` copies every message file from the configured default locale. The command reports each copied path and emits a required `translate` next step: the copied source-language text must be translated before the locale is ready to ship.
 
 `addpage` creates `layout`, `page`, and `loading` files by default. Available long options are `--layout`, `--page`, `--loading`, `--not-found`, `--error`, `--global-error`, `--route`, `--template`, and `--default`. The historical short forms remain available.
@@ -338,7 +340,7 @@ The versioned document has stable status, event, next-step, and error fields:
 
 Paths inside events and next steps are relative to their named scope. Applicable absolute roots are exposed as `projectRoot`, `configRoot`, and `homeRoot`. Events never contain file contents, environment values, credentials, or secrets.
 
-Command statuses are `success`, `unchanged`, `cancelled`, and `failed`. Successful mutations, idempotent no-op results, and user cancellations exit with code `0`; only `failed` exits with code `1`. Stable error codes include `INVALID_ARGUMENT`, `CONFIG_NOT_FOUND`, `I18N_DISABLED`, `TARGET_EXISTS`, `TARGET_NOT_FOUND`, `TEMPLATE_MISSING`, `UNSAFE_PATH`, `INCONSISTENT_ROUTE`, `INCONSISTENT_LOCALE`, `FILESYSTEM_ERROR`, `INTERACTIVE_INPUT_REQUIRED`, and `ONBOARDING_REQUIRED`.
+Command statuses are `success`, `unchanged`, `cancelled`, and `failed`. Successful mutations, idempotent no-op results, and user cancellations exit with code `0`; only `failed` exits with code `1`. Stable error codes include `INVALID_ARGUMENT`, `CONFIG_NOT_FOUND`, `I18N_DISABLED`, `TARGET_EXISTS`, `TARGET_NOT_FOUND`, `TEMPLATE_MISSING`, `UNSAFE_PATH`, `INCONSISTENT_ROUTE`, `INCONSISTENT_LOCALE`, `INCONSISTENT_LIBRARY_INDEX`, `INCONSISTENT_LIBRARY_MODULE`, `CONCURRENT_MODIFICATION`, `FILESYSTEM_ERROR`, `INTERACTIVE_INPUT_REQUIRED`, and `ONBOARDING_REQUIRED`.
 
 Interactive input is never attempted in JSON mode. Pass every required argument explicitly. On a new machine, run the CLI once without `--json` to complete onboarding; `--reconfigure --json` is intentionally rejected.
 

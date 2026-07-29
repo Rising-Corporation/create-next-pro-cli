@@ -62,7 +62,7 @@ Do not commit an additional lockfile unless the project has intentionally change
 | Create a project | Scaffold the complete Next.js project in a new child directory. | [`$create-next-pro-create-project`](.agents/skills/create-next-pro-create-project/SKILL.md) |
 | `addpage`        | Add an explicitly zoned route, page UI, and localized messages. | [`$create-next-pro-addpage`](.agents/skills/create-next-pro-addpage/SKILL.md)               |
 | `addcomponent`   | Add a global or area-qualified page component and messages.     | [`$create-next-pro-addcomponent`](.agents/skills/create-next-pro-addcomponent/SKILL.md)     |
-| `addlib`         | Add a library directory or a library module and export.         | [`$create-next-pro-addlib`](.agents/skills/create-next-pro-addlib/SKILL.md)                 |
+| `addlib`         | Add a library module with a preserving index re-export.         | [`$create-next-pro-addlib`](.agents/skills/create-next-pro-addlib/SKILL.md)                 |
 | `addapi`         | Add an App Router API route handler.                            | [`$create-next-pro-addapi`](.agents/skills/create-next-pro-addapi/SKILL.md)                 |
 | `addlanguage`    | Copy and register a new locale that must then be translated.    | [`$create-next-pro-addlanguage`](.agents/skills/create-next-pro-addlanguage/SKILL.md)       |
 | `addtext`        | Set one translation path across all configured locales.         | [`$create-next-pro-addtext`](.agents/skills/create-next-pro-addtext/SKILL.md)               |

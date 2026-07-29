@@ -86,9 +86,11 @@ export type CliFileSystem = {
   exists: (path: string) => boolean;
   readText: (path: string) => Promise<string>;
   writeText: (path: string, content: string) => Promise<void>;
+  writeTextExclusive: (path: string, content: string) => Promise<void>;
   mkdir: (path: string) => Promise<void>;
   copyFile: (source: string, target: string) => Promise<void>;
   appendText: (path: string, content: string) => Promise<void>;
+  acquireLock: (path: string) => Promise<() => Promise<void>>;
   remove: (
     path: string,
     options?: { recursive?: boolean; force?: boolean },

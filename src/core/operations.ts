@@ -234,6 +234,14 @@ export class MutationGateway {
     this.record("skipped", target, metadata);
   }
 
+  committed(
+    action: "created" | "updated" | "unchanged",
+    target: string,
+    metadata: MutationMetadata,
+  ): void {
+    this.record(action, target, metadata);
+  }
+
   private record(
     action: OperationEvent["action"],
     target: string,

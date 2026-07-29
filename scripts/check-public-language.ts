@@ -4,6 +4,7 @@ import path from "node:path";
 const ROOT = process.cwd();
 const EXTENSIONS = new Set([".js", ".mjs", ".ts", ".tsx"]);
 const PUBLIC_FILES = [
+  "CHANGELOG.md",
   "README.md",
   "create-next-pro-completion.sh",
   "create-next-pro-completion.zsh",

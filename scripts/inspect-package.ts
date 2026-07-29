@@ -9,6 +9,7 @@ type PackEntry = {
 };
 
 const allowedFiles = new Set([
+  "CHANGELOG.md",
   "LICENSE",
   "README.md",
   "create-next-pro-completion.sh",
@@ -55,6 +56,10 @@ export const requiredTemplateFiles = [
   "templates/Projects/default/tests/consumer/validate-template.ts",
   "templates/Projects/default/vitest.config.ts",
 ] as const;
+export const requiredPackageFiles = [
+  "CHANGELOG.md",
+  ...requiredTemplateFiles,
+] as const;
 
 export function inspectPackage(entries: PackEntry[]): string {
   if (entries.length !== 1)
@@ -81,7 +86,7 @@ export function inspectPackage(entries: PackEntry[]): string {
       throw new Error(`package entry is outside the allowlist: ${path}`);
     }
   }
-  for (const required of requiredTemplateFiles) {
+  for (const required of requiredPackageFiles) {
     if (!packagePaths.has(required)) {
       throw new Error(`required package entry is missing: ${required}`);
     }

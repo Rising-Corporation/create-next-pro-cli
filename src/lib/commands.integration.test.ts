@@ -708,7 +708,7 @@ describe("project evolution commands", () => {
         path.join(root, "src", "lib", "analytics", "index.ts"),
         "utf8",
       ),
-    ).toContain('import { trackEvent } from "./track-event";');
+    ).toContain('export { trackEvent } from "./track-event";');
     expect(
       await readFile(path.join(root, "messages", "en.ts"), "utf8"),
     ).toContain('import accountSettings from "./en/account-settings.json";');
@@ -972,5 +972,357 @@ describe("project evolution commands", () => {
         ),
       ),
     ).toBe(true);
+  });
+});
+
+describe("addlib transactional barrel preservation", () => {
+  async function seedLibrary(
+    root: string,
+    library: string,
+    indexContent: string,
+  ): Promise<string> {
+    const libraryDirectory = path.join(root, "src", "lib", library);
+    await mkdir(libraryDirectory, { recursive: true });
+    const indexPath = path.join(libraryDirectory, "index.ts");
+    await writeFile(indexPath, indexContent);
+    return indexPath;
+  }
+
+  test("preserves every existing byte while adding successive modules", async () => {
+    const root = await projectFixture();
+    const barrels = {
+      contracts: [
+        "// Provider-neutral contracts",
+        'export type { UserId } from "./user-id";',
+        'export * from "./errors";',
+        "",
+      ].join("\n"),
+      application: [
+        'export { execute } from "./execute";',
+        "",
+        "// Keep declarations between export blocks.",
+        "export const applicationVersion = 1;",
+        "",
+      ].join("\n"),
+      domain: [
+        'import type { Entity } from "./entity";',
+        "export type { Entity };",
+        'export * as errors from "./errors";',
+        "",
+      ].join("\n"),
+      infrastructure: [
+        "// Infrastructure adapters\r\n",
+        'export { createAdapter } from "./adapter";\r\n',
+      ].join(""),
+    } as const;
+
+    for (const [library, initial] of Object.entries(barrels)) {
+      const indexPath = await seedLibrary(root, library, initial);
+      const first = await runCommand(
+        addLib,
+        ["addlib", `${library}.firstModule`],
+        root,
+      );
+      const second = await runCommand(
+        addLib,
+        ["addlib", `${library}.secondModule`],
+        root,
+      );
+      const finalContent = await readFile(indexPath, "utf8");
+
+      expect(finalContent.startsWith(initial), library).toBe(true);
+      expect(finalContent).toContain(
+        'export { firstModule } from "./firstModule";',
+      );
+      expect(finalContent).toContain(
+        'export { secondModule } from "./secondModule";',
+      );
+      expect(first.data).toMatchObject({
+        library,
+        module: "firstModule",
+        moduleAction: "created",
+        indexAction: "updated",
+        exportAction: "added",
+        exportKind: "value",
+      });
+      expect(second.data).toMatchObject({
+        library,
+        module: "secondModule",
+        moduleAction: "created",
+        indexAction: "updated",
+        exportAction: "added",
+        exportKind: "value",
+      });
+      expect(
+        second.events.find((event) => event.role === "library-index")?.detail,
+      ).toMatchObject({ exportAction: "added", exportKind: "value" });
+    }
+  });
+
+  test("returns unchanged when the module path is already publicly exported", async () => {
+    const root = await projectFixture();
+    const initial = [
+      "// Preserve this customized barrel.",
+      'export type { Primitive } from "./primitives";',
+      "",
+    ].join("\n");
+    const indexPath = await seedLibrary(root, "contracts", initial);
+    const modulePath = path.join(
+      root,
+      "src",
+      "lib",
+      "contracts",
+      "primitives.ts",
+    );
+    const moduleContent = "export default interface Primitive {}\n";
+    await writeFile(modulePath, moduleContent);
+
+    const result = await runCommand(
+      addLib,
+      ["addlib", "contracts.primitives"],
+      root,
+    );
+
+    expect(result).toMatchObject({ status: "unchanged", exitCode: 0 });
+    expect(result.data).toMatchObject({
+      moduleAction: "unchanged",
+      indexAction: "unchanged",
+      exportAction: "preserved",
+      exportKind: "type",
+      preservedExportStatements: 1,
+    });
+    expect(await readFile(indexPath, "utf8")).toBe(initial);
+    expect(await readFile(modulePath, "utf8")).toBe(moduleContent);
+  });
+
+  test("rejects inconsistent source files before creating a module", async () => {
+    const root = await projectFixture();
+    const invalidIndex = "export {\n";
+    const indexPath = await seedLibrary(root, "contracts", invalidIndex);
+
+    await expect(
+      runCommand(addLib, ["addlib", "contracts.primitives"], root),
+    ).rejects.toMatchObject({ code: "INCONSISTENT_LIBRARY_INDEX" });
+    expect(await readFile(indexPath, "utf8")).toBe(invalidIndex);
+    expect(
+      existsSync(path.join(root, "src", "lib", "contracts", "primitives.ts")),
+    ).toBe(false);
+    expect(
+      existsSync(path.join(root, ".create-next-pro-addlib-contracts.lock")),
+    ).toBe(false);
+
+    const validIndex = 'export { current } from "./current";\n';
+    await writeFile(indexPath, validIndex);
+    const modulePath = path.join(
+      root,
+      "src",
+      "lib",
+      "contracts",
+      "primitives.ts",
+    );
+    const invalidModule = "export function primitives( {\n";
+    await writeFile(modulePath, invalidModule);
+
+    await expect(
+      runCommand(addLib, ["addlib", "contracts.primitives"], root),
+    ).rejects.toMatchObject({ code: "INCONSISTENT_LIBRARY_MODULE" });
+    expect(await readFile(indexPath, "utf8")).toBe(validIndex);
+    expect(await readFile(modulePath, "utf8")).toBe(invalidModule);
+  });
+
+  test("refuses an existing lock without changing the library", async () => {
+    const root = await projectFixture();
+    const initial = 'export { current } from "./current";\n';
+    const indexPath = await seedLibrary(root, "contracts", initial);
+    const lockPath = path.join(root, ".create-next-pro-addlib-contracts.lock");
+    await writeFile(lockPath, "active\n");
+
+    await expect(
+      runCommand(addLib, ["addlib", "contracts.primitives"], root),
+    ).rejects.toMatchObject({ code: "CONCURRENT_MODIFICATION" });
+    expect(await readFile(indexPath, "utf8")).toBe(initial);
+    expect(await readFile(lockPath, "utf8")).toBe("active\n");
+    expect(
+      existsSync(path.join(root, "src", "lib", "contracts", "primitives.ts")),
+    ).toBe(false);
+  });
+
+  test("detects an index changed under lock and rolls back the new module", async () => {
+    const root = await projectFixture();
+    const initial = 'export { current } from "./current";\n';
+    const externallyChanged = `${initial}// Concurrent user edit.\n`;
+    const indexPath = await seedLibrary(root, "contracts", initial);
+    const context = createNodeContext({ cwd: root });
+    const originalRead = context.fs.readText;
+    let indexReads = 0;
+    context.fs = {
+      ...context.fs,
+      readText: async (target) => {
+        if (target === indexPath && ++indexReads === 2) {
+          await writeFile(indexPath, externallyChanged);
+        }
+        return originalRead(target);
+      },
+    };
+
+    await expect(
+      addLib(["addlib", "contracts.primitives"], context),
+    ).rejects.toMatchObject({ code: "CONCURRENT_MODIFICATION" });
+    expect(await readFile(indexPath, "utf8")).toBe(externallyChanged);
+    expect(
+      existsSync(path.join(root, "src", "lib", "contracts", "primitives.ts")),
+    ).toBe(false);
+    expect(context.operations.snapshot()).toHaveLength(0);
+  });
+
+  test("rolls back the module when appending the index fails", async () => {
+    const root = await projectFixture();
+    const initial = 'export { current } from "./current";\n';
+    const indexPath = await seedLibrary(root, "application", initial);
+    const context = createNodeContext({ cwd: root });
+    context.fs = {
+      ...context.fs,
+      appendText: async () => {
+        throw new Error("injected append failure");
+      },
+    };
+
+    await expect(
+      addLib(["addlib", "application.handler"], context),
+    ).rejects.toThrow("injected append failure");
+    expect(await readFile(indexPath, "utf8")).toBe(initial);
+    expect(
+      existsSync(path.join(root, "src", "lib", "application", "handler.ts")),
+    ).toBe(false);
+    expect(
+      existsSync(path.join(root, ".create-next-pro-addlib-application.lock")),
+    ).toBe(false);
+    expect(context.operations.snapshot()).toHaveLength(0);
+  });
+
+  test("reports an index changed by a failed append as a residual mutation", async () => {
+    const root = await projectFixture();
+    const initial = 'export { current } from "./current";\n';
+    const indexPath = await seedLibrary(root, "application", initial);
+    const context = createNodeContext({ cwd: root });
+    const originalAppend = context.fs.appendText;
+    context.fs = {
+      ...context.fs,
+      appendText: async (target, content) => {
+        await originalAppend(target, content);
+        throw new Error("injected post-append failure");
+      },
+    };
+
+    await expect(
+      addLib(["addlib", "application.handler"], context),
+    ).rejects.toMatchObject({ code: "FILESYSTEM_ERROR" });
+    expect(await readFile(indexPath, "utf8")).toBe(
+      `${initial}\nexport { handler } from "./handler";\n`,
+    );
+    expect(
+      existsSync(path.join(root, "src", "lib", "application", "handler.ts")),
+    ).toBe(false);
+    expect(context.operations.snapshot()).toContainEqual(
+      expect.objectContaining({
+        action: "updated",
+        role: "library-index",
+        detail: { rollbackFailed: true },
+      }),
+    );
+  });
+
+  test("maps an exclusive creation race to a concurrent modification", async () => {
+    const root = await projectFixture();
+    const initial = 'export { current } from "./current";\n';
+    const indexPath = await seedLibrary(root, "domain", initial);
+    const context = createNodeContext({ cwd: root });
+    const originalWriteExclusive = context.fs.writeTextExclusive;
+    const modulePath = path.join(root, "src", "lib", "domain", "policy.ts");
+    context.fs = {
+      ...context.fs,
+      writeTextExclusive: async (target, content) => {
+        if (target === modulePath) {
+          await writeFile(modulePath, "export const external = true;\n");
+        }
+        await originalWriteExclusive(target, content);
+      },
+    };
+
+    await expect(
+      addLib(["addlib", "domain.policy"], context),
+    ).rejects.toMatchObject({ code: "CONCURRENT_MODIFICATION" });
+    expect(await readFile(indexPath, "utf8")).toBe(initial);
+    expect(await readFile(modulePath, "utf8")).toBe(
+      "export const external = true;\n",
+    );
+    expect(context.operations.snapshot()).toHaveLength(0);
+  });
+
+  test("removes a new library when exclusive index creation fails", async () => {
+    const root = await projectFixture();
+    const context = createNodeContext({ cwd: root });
+    const originalWriteExclusive = context.fs.writeTextExclusive;
+    context.fs = {
+      ...context.fs,
+      writeTextExclusive: async (target, content) => {
+        if (target.endsWith(`${path.sep}index.ts`)) {
+          throw new Error("injected exclusive index failure");
+        }
+        await originalWriteExclusive(target, content);
+      },
+    };
+
+    await expect(addLib(["addlib", "domain.policy"], context)).rejects.toThrow(
+      "injected exclusive index failure",
+    );
+    expect(existsSync(path.join(root, "src", "lib", "domain"))).toBe(false);
+    expect(
+      existsSync(path.join(root, ".create-next-pro-addlib-domain.lock")),
+    ).toBe(false);
+    expect(context.operations.snapshot()).toHaveLength(0);
+  });
+
+  test("reports residual resources when rollback itself fails", async () => {
+    const root = await projectFixture();
+    await seedLibrary(
+      root,
+      "infrastructure",
+      'export { current } from "./current";\n',
+    );
+    const context = createNodeContext({ cwd: root });
+    const originalRemove = context.fs.remove;
+    const modulePath = path.join(
+      root,
+      "src",
+      "lib",
+      "infrastructure",
+      "privateNetwork.ts",
+    );
+    context.fs = {
+      ...context.fs,
+      appendText: async () => {
+        throw new Error("injected append failure");
+      },
+      remove: async (target, options) => {
+        if (target === modulePath) {
+          throw new Error("injected rollback failure");
+        }
+        await originalRemove(target, options);
+      },
+    };
+
+    await expect(
+      addLib(["addlib", "infrastructure.privateNetwork"], context),
+    ).rejects.toMatchObject({ code: "FILESYSTEM_ERROR" });
+    expect(existsSync(modulePath)).toBe(true);
+    expect(context.operations.snapshot()).toContainEqual(
+      expect.objectContaining({
+        action: "created",
+        role: "library-module",
+        path: "src/lib/infrastructure/privateNetwork.ts",
+        detail: { rollbackFailed: true },
+      }),
+    );
   });
 });

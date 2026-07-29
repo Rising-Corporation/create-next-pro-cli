@@ -29,9 +29,11 @@ function context(argv: string[]): {
           return "{}";
         }),
         writeText: vi.fn(async () => undefined),
+        writeTextExclusive: vi.fn(async () => undefined),
         mkdir: vi.fn(async () => undefined),
         copyFile: vi.fn(async () => undefined),
         appendText: vi.fn(async () => undefined),
+        acquireLock: vi.fn(async () => async () => undefined),
         remove: vi.fn(async () => undefined),
         inspect: vi.fn(async () => null),
         list: vi.fn(async () => []),

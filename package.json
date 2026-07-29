@@ -21,6 +21,7 @@
     "public/cnp-banner.svg",
     "public/logo.svg",
     "LICENSE",
+    "CHANGELOG.md",
     "README.md"
   ],
   "author": "MrRise",
@@ -44,7 +45,7 @@
     "clean": "rm -rf dist",
     "build": "bun run clean && bun run build:node && bun run build:bun && cp scripts/create-next-pro dist/create-next-pro && chmod +x dist/create-next-pro",
     "build:node": "tsup",
-    "build:bun": "bun build bin.bun.ts --outdir dist --target=bun",
+    "build:bun": "bun build bin.bun.ts --outdir dist --target=bun --external typescript",
     "check": "bun run format:check && bun run lint && bun run typecheck && bun run language:check && bun test && bun run build",
     "prepublishOnly": "bun run check",
     "prepare": "node scripts/install-hooks.mjs",
@@ -82,7 +83,8 @@
     "next-intl"
   ],
   "dependencies": {
-    "prompts": "^2.4.2"
+    "prompts": "^2.4.2",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
@@ -96,7 +98,6 @@
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.5",
     "tsup": "^8.5.1",
-    "typescript": "^6.0.3",
     "typescript-eslint": "^8.64.0",
     "vitest": "^4.1.10"
   }
