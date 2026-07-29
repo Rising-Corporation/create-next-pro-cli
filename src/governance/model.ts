@@ -52,6 +52,10 @@ export type GovernancePolicy = {
   };
   rulesets: { branch: string; tag: string };
   requiredChecks: string[];
+  cleanup: {
+    pullRequests: number[];
+    branches: Array<{ name: string; sha: string }>;
+  };
   projectsPolicy: "disable-if-empty";
 };
 

@@ -70,5 +70,30 @@
     "validate-template (pnpm)",
     "governance-check"
   ],
+  "cleanup": {
+    "pullRequests": [9],
+    "branches": [
+      {
+        "name": "dev",
+        "sha": "ddea3ac50b0ea19cc2c6757b3ad8ea7c44bfac07"
+      },
+      {
+        "name": "feature/add-addlib-and-addapi-features",
+        "sha": "c4461f47425b25c585512f27198f336a35b5f87f"
+      },
+      {
+        "name": "feature/add-addlib-and-addapi-features-11hwr5",
+        "sha": "63b542588850e3b6bb2b556b4b7b0d8ba9376e65"
+      },
+      {
+        "name": "feature/add-features-for-translation-management",
+        "sha": "ea2aeaa21c818478df32dd1183e9c7301dd90afc"
+      },
+      {
+        "name": "feature/add-features-for-translation-management-jq7mwi",
+        "sha": "7bbcf6b77a6356438f1cdf8ef511f8408161b24a"
+      }
+    ]
+  },
   "projectsPolicy": "disable-if-empty"
 }

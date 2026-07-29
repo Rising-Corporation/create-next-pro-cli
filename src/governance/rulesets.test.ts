@@ -6,7 +6,8 @@ import { buildBranchRuleset, buildTagRuleset } from "./rulesets";
 const policy = {
   rulesets: { branch: "protect-master", tag: "protect-release-tags" },
   requiredChecks: ["validate-cli", "validate-template (bun)"],
-} as GovernancePolicy;
+  cleanup: { pullRequests: [], branches: [] },
+} as unknown as GovernancePolicy;
 
 describe("governance rulesets", () => {
   test("builds a reversible minimal branch protection", () => {
@@ -30,6 +31,18 @@ describe("governance rulesets", () => {
       { context: "validate-cli", integration_id: 15368 },
       { context: "validate-template (bun)", integration_id: 15368 },
     ]);
+    expect(ruleset.rules).toContainEqual({
+      type: "code_scanning",
+      parameters: {
+        code_scanning_tools: [
+          {
+            tool: "CodeQL",
+            security_alerts_threshold: "high_or_higher",
+            alerts_threshold: "errors",
+          },
+        ],
+      },
+    });
   });
 
   test("reserves v-prefixed tags for the release App", () => {

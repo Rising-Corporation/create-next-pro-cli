@@ -248,6 +248,50 @@ function applyRulesets(policy: GovernancePolicy, stage: RulesetStage): void {
   }
 }
 
+function applyCleanup(policy: GovernancePolicy): void {
+  if (
+    argumentValue("--confirm-cleanup") !==
+    "close-pr-9-and-delete-obsolete-branches"
+  ) {
+    throw new Error(
+      "cleanup requires --confirm-cleanup close-pr-9-and-delete-obsolete-branches",
+    );
+  }
+  for (const branch of policy.cleanup.branches) {
+    const current = request(
+      `repos/${policy.repository}/branches/${encodeURIComponent(branch.name)}`,
+    ) as { commit?: { sha?: string } };
+    if (current.commit?.sha !== branch.sha) {
+      throw new Error(
+        `cleanup refuses ${branch.name}: expected ${branch.sha}, received ${current.commit?.sha ?? "missing"}`,
+      );
+    }
+  }
+  for (const pullRequest of policy.cleanup.pullRequests) {
+    const current = request(
+      `repos/${policy.repository}/pulls/${pullRequest}`,
+    ) as { state?: string };
+    if (current.state === "open") {
+      mutate(
+        "POST",
+        `repos/${policy.repository}/issues/${pullRequest}/comments`,
+        {
+          body: "Closing this historical pull request because its implementation has been superseded by the tested commands and protected trunk-based workflow on master.",
+        },
+      );
+      mutate("PATCH", `repos/${policy.repository}/pulls/${pullRequest}`, {
+        state: "closed",
+      });
+    }
+  }
+  for (const branch of policy.cleanup.branches) {
+    mutate(
+      "DELETE",
+      `repos/${policy.repository}/git/refs/heads/${branch.name}`,
+    );
+  }
+}
+
 async function inspect(policy: GovernancePolicy): Promise<GovernanceResult> {
   const transport: GithubTransport = {
     request: async (endpoint) => request(endpoint),
@@ -276,6 +320,7 @@ async function main(): Promise<void> {
     if (stage === "minimal" || stage === "full") {
       applyRulesets(policy, stage);
     }
+    if (hasArgument("--include-cleanup")) applyCleanup(policy);
   } else if (command !== "check" && command !== "plan") {
     throw new Error(`Unknown governance command: ${command}`);
   }

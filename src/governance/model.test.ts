@@ -50,6 +50,7 @@ const policy: GovernancePolicy = {
   },
   rulesets: { branch: "protect-master", tag: "protect-tags" },
   requiredChecks: ["validate"],
+  cleanup: { pullRequests: [], branches: [] },
   projectsPolicy: "disable-if-empty",
 };
 
