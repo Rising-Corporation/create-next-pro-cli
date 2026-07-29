@@ -231,7 +231,7 @@ function upsertRuleset(
 
 function applyRulesets(policy: GovernancePolicy, stage: RulesetStage): void {
   const variables = request(
-    `repos/${policy.repository}/actions/variables?per_page=100`,
+    `repos/${policy.repository}/environments/${policy.environment.name}/variables?per_page=100`,
   ) as { variables?: Array<{ name: string; value: string }> };
   const rawAppId = variables.variables?.find(
     (variable) => variable.name === policy.release.appIdVariable,

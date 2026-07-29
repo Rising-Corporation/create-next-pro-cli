@@ -44,7 +44,10 @@ describe("GitHub governance adapter", () => {
         if (endpoint.includes("/secrets")) {
           return { secrets: [{ name: "APP_KEY", value: "must-not-be-read" }] };
         }
-        if (endpoint.includes("/variables")) {
+        if (endpoint.includes("/environments/ENV/variables")) {
+          return { variables: [{ name: "APP_ID", value: "123" }] };
+        }
+        if (endpoint.endsWith("/actions/variables?per_page=100")) {
           return { variables: [{ name: "RELEASE_ENABLED", value: "true" }] };
         }
         if (endpoint.includes("/installations")) {
@@ -68,9 +71,14 @@ describe("GitHub governance adapter", () => {
 
     const snapshot = await collectGithubSnapshot(policy, transport);
     expect(snapshot.release.secretNames).toEqual(["APP_KEY"]);
+    expect(snapshot.release.variableNames).toEqual(["APP_ID"]);
+    expect(snapshot.release.releaseEnabled).toBe(true);
     expect(JSON.stringify(snapshot)).not.toContain("must-not-be-read");
     expect(requested).toContain(
       "repos/owner/repository/environments/ENV/secrets?per_page=100",
+    );
+    expect(requested).toContain(
+      "repos/owner/repository/environments/ENV/variables?per_page=100",
     );
   });
 

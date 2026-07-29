@@ -87,8 +87,15 @@ export async function collectGithubSnapshot(
       ),
     ),
   );
-  const variables = record(
+  const environmentVariables = record(
     await optional(unavailable, "release.variableNames", () =>
+      transport.request(
+        `repos/${policy.repository}/environments/${policy.environment.name}/variables?per_page=100`,
+      ),
+    ),
+  );
+  const repositoryVariables = record(
+    await optional(unavailable, "release.releaseEnabled", () =>
       transport.request(
         `repos/${policy.repository}/actions/variables?per_page=100`,
       ),
@@ -152,7 +159,12 @@ export async function collectGithubSnapshot(
     : boolean(deploymentPolicy.protected_branches)
       ? ["protected"]
       : ["*"];
-  const variableEntries = array(variables.variables).map(record);
+  const environmentVariableEntries = array(environmentVariables.variables).map(
+    record,
+  );
+  const repositoryVariableEntries = array(repositoryVariables.variables).map(
+    record,
+  );
   const projectData = record(
     record(record(projects.data).repository).projectsV2,
   );
@@ -215,13 +227,16 @@ export async function collectGithubSnapshot(
       installedAppSlugs: array(installations.installations).map((item) =>
         string(record(item).app_slug),
       ),
-      variableNames: variableEntries.map((item) => string(item.name)),
+      variableNames: environmentVariableEntries.map((item) =>
+        string(item.name),
+      ),
       secretNames: array(environmentSecrets.secrets).map((item) =>
         string(record(item).name),
       ),
       releaseEnabled:
-        variableEntries.find((item) => item.name === "RELEASE_ENABLED")
-          ?.value === "true",
+        repositoryVariableEntries.find(
+          (item) => item.name === "RELEASE_ENABLED",
+        )?.value === "true",
     },
     rulesets: array(rulesets).map((item) => ({
       name: string(record(item).name),
