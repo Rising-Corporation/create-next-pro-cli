@@ -1,0 +1,61 @@
+name: Release App smoke test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-app-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: ENV
+    steps:
+      - name: Mint the dedicated release App token
+        id: release-app
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: Rising-Corporation
+          repositories: create-next-pro-cli
+      - name: Verify release App repository scope
+        env:
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+        shell: bash
+        run: |
+          repositories=$(gh api installation/repositories)
+          test "$(jq -r .total_count <<< "$repositories")" = 1
+          test "$(jq -r '.repositories[0].full_name' <<< "$repositories")" = "$GITHUB_REPOSITORY"
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.release-app.outputs.token }}
+      - name: Push temporary branch and protected tag with the App
+        env:
+          BRANCH_NAME: governance/release-app-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          TAG_NAME: v0.0.0-smoke.${{ github.run_id }}.${{ github.run_attempt }}
+        shell: bash
+        run: |
+          git config user.name "create-next-pro release bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore(ci): verify release app permissions"
+          git tag --annotate "$TAG_NAME" --message "$TAG_NAME"
+          git push origin "HEAD:refs/heads/$BRANCH_NAME"
+          git push origin "refs/tags/$TAG_NAME:refs/tags/$TAG_NAME"
+          test "$(git ls-remote origin "refs/heads/$BRANCH_NAME" | cut -f1)" = "$(git rev-parse HEAD)"
+          test "$(git ls-remote origin "refs/tags/$TAG_NAME^{}" | cut -f1)" = "$(git rev-parse HEAD)"
+      - name: Clean temporary references
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+          BRANCH_NAME: governance/release-app-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          TAG_NAME: v0.0.0-smoke.${{ github.run_id }}.${{ github.run_attempt }}
+        shell: bash
+        run: |
+          gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$BRANCH_NAME" >/dev/null 2>&1 || true
+          gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG_NAME" >/dev/null 2>&1 || true
+          test -z "$(git ls-remote origin "refs/heads/$BRANCH_NAME")"
+          test -z "$(git ls-remote origin "refs/tags/$TAG_NAME")"

@@ -10,6 +10,7 @@ import {
   assertGovernancePolicy,
   compareGovernance,
   type GovernancePolicy,
+  type GovernanceProfile,
   type GovernanceResult,
 } from "../src/governance/model";
 import {
@@ -63,6 +64,14 @@ function argumentValue(name: string): string | undefined {
   return index >= 0 ? args[index + 1] : undefined;
 }
 
+function governanceProfile(): GovernanceProfile {
+  const profile = argumentValue("--profile") ?? "admin";
+  if (profile !== "ci" && profile !== "admin") {
+    throw new Error("--profile must be ci or admin");
+  }
+  return profile;
+}
+
 function print(result: GovernanceResult, json: boolean): void {
   if (json) {
     process.stdout.write(`${JSON.stringify(result)}\n`);
@@ -104,7 +113,30 @@ function assertApplyPreconditions(policy: GovernancePolicy): void {
   }
 }
 
-function applyRepositorySettings(policy: GovernancePolicy): void {
+function planProjectsSetting(policy: GovernancePolicy): boolean {
+  const repository = request(`repos/${policy.repository}`) as {
+    has_projects?: boolean;
+  };
+  if (!repository.has_projects) return false;
+  const [owner, name] = policy.repository.split("/");
+  const response = graphql(`query {
+    repository(owner: "${owner}", name: "${name}") {
+      projectsV2(first: 1) { totalCount }
+    }
+  }`) as {
+    data?: { repository?: { projectsV2?: { totalCount?: number } } };
+  };
+  const totalCount = response.data?.repository?.projectsV2?.totalCount;
+  if (typeof totalCount !== "number") {
+    throw new Error("github:apply could not determine the Projects v2 state");
+  }
+  return policy.projectsPolicy === "disable-if-empty" && totalCount === 0;
+}
+
+function applyRepositorySettings(
+  policy: GovernancePolicy,
+  disableProjects: boolean,
+): void {
   mutate("PATCH", `repos/${policy.repository}`, {
     allow_merge_commit: policy.repositorySettings.allowMergeCommit,
     allow_squash_merge: policy.repositorySettings.allowSquashMerge,
@@ -114,6 +146,7 @@ function applyRepositorySettings(policy: GovernancePolicy): void {
     has_issues: policy.repositorySettings.hasIssues,
     has_discussions: policy.repositorySettings.hasDiscussions,
     has_wiki: policy.repositorySettings.hasWiki,
+    ...(disableProjects ? { has_projects: false } : {}),
     squash_merge_commit_title: "PR_TITLE",
     squash_merge_commit_message: "PR_BODY",
   });
@@ -190,7 +223,9 @@ function applyEnvironment(policy: GovernancePolicy): void {
     "PUT",
     `repos/${policy.repository}/environments/${policy.environment.name}`,
     {
-      can_admins_bypass: true,
+      can_admins_bypass: policy.environment.canAdminsBypass,
+      reviewers: [],
+      wait_timer: 0,
       deployment_branch_policy: {
         protected_branches: false,
         custom_branch_policies: true,
@@ -250,6 +285,22 @@ function applyRulesets(policy: GovernancePolicy, stage: RulesetStage): void {
       `${policy.release.appIdVariable} must identify a valid installed release App`,
     );
   }
+  if (appId !== undefined) {
+    const [owner] = policy.repository.split("/");
+    const installations = request(
+      `orgs/${owner}/installations?per_page=100`,
+    ) as {
+      installations?: Array<{ app_id?: number; app_slug?: string }>;
+    };
+    const installation = installations.installations?.find(
+      (candidate) => candidate.app_slug === policy.release.appSlug,
+    );
+    if (!installation || installation.app_id !== appId) {
+      throw new Error(
+        `${policy.release.appIdVariable} does not match the installed ${policy.release.appSlug} GitHub App`,
+      );
+    }
+  }
   upsertRuleset(policy, buildBranchSafetyRuleset(policy));
   if (stage === "branch" || stage === "full") {
     upsertRuleset(policy, buildBranchContributionRuleset(policy, appId));
@@ -308,24 +359,32 @@ function applyCleanup(policy: GovernancePolicy): void {
   }
 }
 
-async function inspect(policy: GovernancePolicy): Promise<GovernanceResult> {
+async function inspect(
+  policy: GovernancePolicy,
+  profile: GovernanceProfile,
+): Promise<GovernanceResult> {
   const transport: GithubTransport = {
     request: async (endpoint) => request(endpoint),
     graphql: async (query) => graphql(query),
   };
   return compareGovernance(
     policy,
-    await collectGithubSnapshot(policy, transport),
+    await collectGithubSnapshot(policy, transport, profile),
   );
 }
 
 async function main(): Promise<void> {
   const command = process.argv[2] ?? "check";
   const json = hasArgument("--json");
+  const profile = governanceProfile();
   const policy = readPolicy();
   if (command === "apply") {
+    if (profile !== "admin") {
+      throw new Error("github:apply requires --profile admin");
+    }
     assertApplyPreconditions(policy);
-    applyRepositorySettings(policy);
+    const disableProjects = planProjectsSetting(policy);
+    applyRepositorySettings(policy, disableProjects);
     applySecurity(policy);
     applyLabels(policy);
     applyEnvironment(policy);
@@ -346,7 +405,7 @@ async function main(): Promise<void> {
     throw new Error(`Unknown governance command: ${command}`);
   }
 
-  const result = await inspect(policy);
+  const result = await inspect(policy, profile);
   print(result, json);
   if (command === "check") {
     process.exitCode =
