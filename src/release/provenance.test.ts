@@ -15,6 +15,7 @@ const expectation = {
   workflowPath: ".github/workflows/ci.yml",
   ref: "refs/heads/master",
   runId: "12345",
+  releaseSha: "release-sha",
 };
 
 function fixtures(sourceSha = expectation.sourceSha) {
@@ -89,5 +90,30 @@ describe("npm trusted-publishing provenance", () => {
     expect(() =>
       verifyNpmProvenance(metadata, attestations, expectation),
     ).toThrow("source commit mismatch");
+  });
+
+  test("accepts missing npm gitHead metadata", () => {
+    const { metadata, attestations } = fixtures();
+    expect(
+      verifyNpmProvenance(metadata, attestations, expectation),
+    ).not.toHaveProperty("gitHead");
+  });
+
+  test("verifies npm gitHead when the registry provides it", () => {
+    const { metadata, attestations } = fixtures();
+    expect(
+      verifyNpmProvenance(
+        { ...metadata, gitHead: "release-sha" },
+        attestations,
+        expectation,
+      ),
+    ).toHaveProperty("gitHead", "release-sha");
+    expect(() =>
+      verifyNpmProvenance(
+        { ...metadata, gitHead: "different-release" },
+        attestations,
+        expectation,
+      ),
+    ).toThrow("npm gitHead mismatch");
   });
 });

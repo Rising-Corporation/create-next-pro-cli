@@ -2,10 +2,11 @@ import process from "node:process";
 
 import { verifyNpmProvenance } from "../src/release/provenance";
 
-const [packageName, version, sourceSha, runId] = process.argv.slice(2);
+const [packageName, version, sourceSha, runId, releaseSha] =
+  process.argv.slice(2);
 if (!packageName || !version || !sourceSha || !runId) {
   throw new Error(
-    "usage: verify-npm-provenance <package> <version> <source-sha> <run-id>",
+    "usage: verify-npm-provenance <package> <version> <source-sha> <run-id> [release-sha]",
   );
 }
 
@@ -40,6 +41,7 @@ const result = verifyNpmProvenance(
     workflowPath: ".github/workflows/ci.yml",
     ref: "refs/heads/master",
     runId,
+    releaseSha,
   },
 );
 process.stdout.write(`${JSON.stringify(result)}\n`);

@@ -2,13 +2,19 @@ import { describe, expect, test } from "vitest";
 
 import {
   assertGovernancePolicy,
+  CI_EXCLUDED_PATHS,
   compareGovernance,
   type GovernancePolicy,
   type GovernanceSnapshot,
 } from "./model";
+import {
+  buildBranchContributionRuleset,
+  buildBranchSafetyRuleset,
+  buildTagRuleset,
+} from "./rulesets";
 
 const policy: GovernancePolicy = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   repository: "owner/repository",
   repositorySettings: {
     defaultBranch: "master",
@@ -30,7 +36,7 @@ const policy: GovernancePolicy = {
     canApprovePullRequestReviews: false,
     forkPullRequestApprovalPolicy: "all_external_contributors",
   },
-  environment: { name: "ENV", branch: "master" },
+  environment: { name: "ENV", branch: "master", canAdminsBypass: false },
   security: {
     privateVulnerabilityReporting: true,
     automatedSecurityFixes: true,
@@ -56,16 +62,31 @@ const policy: GovernancePolicy = {
     allowAdminDirectPush: true,
   },
   requiredChecks: ["validate"],
+  dependabot: {
+    inaccurateAlerts: [
+      {
+        number: 25,
+        dependency: "next",
+        manifestPath: "template/package.json",
+        vulnerableRange: "<15.5.21",
+        resolvedVersion: "16.2.11",
+      },
+    ],
+    maintenancePullRequests: [10],
+  },
   cleanup: { pullRequests: [], branches: [] },
   projectsPolicy: "disable-if-empty",
 };
 
 const snapshot: GovernanceSnapshot = {
+  profile: "admin",
+  excludedPaths: [],
   repository: "owner/repository",
   repositorySettings: { ...policy.repositorySettings },
   actions: { ...policy.actions },
   environment: {
     exists: true,
+    canAdminsBypass: false,
     allowedBranches: ["master"],
     secretNames: ["APP_KEY"],
   },
@@ -75,14 +96,16 @@ const snapshot: GovernanceSnapshot = {
     installedAppSlugs: ["release-app"],
     variableNames: ["APP_ID"],
     secretNames: ["APP_KEY"],
+    appId: 123,
     releaseEnabled: true,
   },
   rulesets: [
-    { name: "protect-master", enforcement: "active" },
-    { name: "govern-master-contributions", enforcement: "active" },
-    { name: "protect-tags", enforcement: "active" },
+    buildBranchSafetyRuleset(policy),
+    buildBranchContributionRuleset(policy, 123),
+    buildTagRuleset(policy, 123),
   ],
-  projects: { totalCount: 1 },
+  dependabot: { openAlerts: [], openPullRequests: [] },
+  projects: { enabled: true, totalCount: 1 },
   unavailable: [],
 };
 
@@ -127,8 +150,100 @@ describe("governance model", () => {
     );
   });
 
+  test("keeps CI exclusions explicit without treating them as drift", () => {
+    expect(CI_EXCLUDED_PATHS).toEqual([
+      "actions",
+      "dependabot",
+      "environment",
+      "projects",
+      "release",
+      "security",
+      "rulesets.releaseAppIdentity",
+    ]);
+    const result = compareGovernance(policy, {
+      ...snapshot,
+      profile: "ci",
+      excludedPaths: [...CI_EXCLUDED_PATHS],
+      actions: { ...snapshot.actions, defaultWorkflowPermissions: "write" },
+      environment: { exists: false, allowedBranches: [], secretNames: [] },
+      release: {
+        installedAppSlugs: [],
+        variableNames: [],
+        secretNames: [],
+      },
+      security: {
+        ...snapshot.security,
+        privateVulnerabilityReporting: false,
+      },
+      projects: undefined,
+    });
+    expect(result.profile).toBe("ci");
+    expect(result.excludedPaths).toEqual([...CI_EXCLUDED_PATHS].sort());
+    expect(result.status).toBe("compliant");
+  });
+
+  test("detects exact ruleset drift, not only a matching name", () => {
+    const contribution = buildBranchContributionRuleset(policy, 123);
+    contribution.rules = contribution.rules.filter(
+      (rule) => rule.type !== "required_status_checks",
+    );
+    const result = compareGovernance(policy, {
+      ...snapshot,
+      rulesets: [
+        buildBranchSafetyRuleset(policy),
+        contribution,
+        buildTagRuleset(policy, 123),
+      ],
+    });
+    expect(result.findings).toContainEqual(
+      expect.objectContaining({
+        path: "rulesets.govern-master-contributions",
+        status: "drift",
+      }),
+    );
+  });
+
+  test("blocks unclassified Dependabot alerts and tracks reviewed drift", () => {
+    const reviewed = compareGovernance(policy, {
+      ...snapshot,
+      dependabot: {
+        openAlerts: [
+          {
+            number: 25,
+            dependency: "next",
+            manifestPath: "template/package.json",
+            vulnerableRange: "<15.5.21",
+          },
+        ],
+        openPullRequests: [10],
+      },
+    });
+    expect(reviewed.status).toBe("drift");
+    expect(reviewed.findings).toContainEqual(
+      expect.objectContaining({
+        path: "dependabot.alerts.25",
+        status: "drift",
+      }),
+    );
+    const unknown = compareGovernance(policy, {
+      ...snapshot,
+      dependabot: {
+        openAlerts: [
+          {
+            number: 99,
+            dependency: "other",
+            manifestPath: "package.json",
+            vulnerableRange: "<1.0.0",
+          },
+        ],
+        openPullRequests: [],
+      },
+    });
+    expect(unknown.status).toBe("blocked");
+  });
+
   test("rejects invalid policy schemas", () => {
-    expect(() => assertGovernancePolicy({ schemaVersion: 2 })).toThrow(
+    expect(() => assertGovernancePolicy({ schemaVersion: 1 })).toThrow(
       "Unsupported governance policy schema",
     );
   });

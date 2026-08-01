@@ -98,6 +98,63 @@ describe("public governance contracts", () => {
       ) as unknown,
     );
     expect(policy.repository).toBe("Rising-Corporation/create-next-pro-cli");
+    expect(policy.schemaVersion).toBe(2);
+    expect(policy.environment.canAdminsBypass).toBe(false);
     expect(policy.requiredChecks).toContain("governance-check");
+  });
+
+  test("requires the dedicated release App without a token fallback", async () => {
+    const workflow = await readFile(".github/workflows/ci.yml", "utf8");
+    expect(workflow).toContain("Mint the dedicated release App token");
+    expect(workflow).toContain("token: ${{ steps.release-app.outputs.token }}");
+    expect(workflow).not.toContain("|| github.token");
+    expect(workflow).not.toMatch(
+      /Mint the dedicated release App token\n\s+if:/,
+    );
+    expect(workflow).toContain(
+      'git_head=$(npm view "create-next-pro-cli@$expected" gitHead 2>/dev/null || true)',
+    );
+  });
+
+  test("keeps the release App smoke workflow isolated from master and npm", async () => {
+    const workflow = await readFile(
+      ".github/workflows/release-app-smoke.yml",
+      "utf8",
+    );
+    expect(workflow).toContain("workflow_dispatch:");
+    expect(workflow).toContain("governance/release-app-smoke-");
+    expect(workflow).toContain("v0.0.0-smoke.");
+    expect(workflow).not.toContain("npm publish");
+    expect(workflow).not.toContain("HEAD:master");
+    expect(workflow).toContain("if: always()");
+  });
+
+  test("keeps reviewed Dependabot evidence aligned with the template graph", async () => {
+    const policy = assertGovernancePolicy(
+      JSON.parse(
+        await readFile(".github/governance/policy.json", "utf8"),
+      ) as unknown,
+    );
+    const manifest = JSON.parse(
+      await readFile("templates/Projects/default/package.json", "utf8"),
+    ) as { dependencies?: Record<string, string> };
+    const lockfile = await readFile(
+      "templates/Projects/default/bun.lock",
+      "utf8",
+    );
+    const lockedNextVersions = new Set(
+      [...lockfile.matchAll(/\bnext@(\d+\.\d+\.\d+)/g)].map(
+        (match) => match[1],
+      ),
+    );
+    expect(lockedNextVersions).toEqual(new Set(["16.2.11"]));
+    for (const alert of policy.dependabot.inaccurateAlerts) {
+      expect(alert.dependency).toBe("next");
+      expect(alert.manifestPath).toBe(
+        "templates/Projects/default/package.json",
+      );
+      expect(manifest.dependencies?.next).toBe(alert.resolvedVersion);
+      expect(lockedNextVersions).toContain(alert.resolvedVersion);
+    }
   });
 });

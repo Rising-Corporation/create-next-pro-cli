@@ -10,6 +10,7 @@ export type ProvenanceExpectation = {
   workflowPath: string;
   ref: string;
   runId: string;
+  releaseSha?: string;
 };
 
 export type VerifiedProvenance = {
@@ -19,6 +20,7 @@ export type VerifiedProvenance = {
   workflow: string;
   invocationId: string;
   integrity: string;
+  gitHead?: string;
 };
 
 function object(value: unknown, label: string): JsonObject {
@@ -59,6 +61,13 @@ export function verifyNpmProvenance(
     expected.packageName,
     "package name",
   );
+  const gitHead =
+    typeof metadata.gitHead === "string" && metadata.gitHead.length > 0
+      ? metadata.gitHead
+      : undefined;
+  if (gitHead && expected.releaseSha) {
+    equals(gitHead, expected.releaseSha, "npm gitHead");
+  }
   equals(
     string(metadata.version, "package version"),
     expected.version,
@@ -169,5 +178,6 @@ export function verifyNpmProvenance(
     workflow: `${workflow.path}@${workflow.ref}`,
     invocationId,
     integrity,
+    ...(gitHead ? { gitHead } : {}),
   };
 }

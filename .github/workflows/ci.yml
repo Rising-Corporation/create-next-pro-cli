@@ -135,7 +135,7 @@ jobs:
       - name: Inspect governance drift without mutation
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bun run github:plan -- --json
+        run: bun run github:plan -- --profile ci --json
 
   release-preflight:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' && github.actor != 'create-next-pro-release[bot]'
@@ -174,14 +174,13 @@ jobs:
     environment:
       name: ENV
     permissions:
-      contents: write
+      contents: read
       id-token: write
     concurrency:
       group: npm-release-master
       cancel-in-progress: false
     steps:
       - name: Mint the dedicated release App token
-        if: vars.RELEASE_APP_ID != ''
         id: release-app
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
         with:
@@ -189,11 +188,19 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           owner: Rising-Corporation
           repositories: create-next-pro-cli
+      - name: Verify release App repository scope
+        env:
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
+        shell: bash
+        run: |
+          repositories=$(gh api installation/repositories)
+          test "$(jq -r .total_count <<< "$repositories")" = 1
+          test "$(jq -r '.repositories[0].full_name' <<< "$repositories")" = "$GITHUB_REPOSITORY"
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: master
           fetch-depth: 0
-          token: ${{ steps.release-app.outputs.token || github.token }}
+          token: ${{ steps.release-app.outputs.token }}
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: 1.3.14
@@ -209,6 +216,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Resolve release state
         id: release
+        env:
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
         shell: bash
         run: |
           git fetch --force origin master '+refs/tags/*:refs/tags/*'
@@ -267,7 +276,7 @@ jobs:
           version="${{ steps.release.outputs.version }}"
           existing=$(npm view "create-next-pro-cli@$version" version --json 2>/dev/null | jq -r '. // empty') || true
           if [ "$existing" = "$version" ]; then
-            bun scripts/verify-npm-provenance.ts create-next-pro-cli "$version" "$GITHUB_SHA" "$GITHUB_RUN_ID"
+            bun scripts/verify-npm-provenance.ts create-next-pro-cli "$version" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(git rev-parse HEAD)"
             echo "create-next-pro-cli@$version is already published by this trusted workflow"
           else
             npm publish "${{ steps.package.outputs.archive }}" --access public
@@ -287,20 +296,36 @@ jobs:
           test "$(git rev-list -n 1 "v$expected")" = "$(git rev-parse HEAD)"
           test "$(git ls-remote origin refs/heads/master | cut -f1)" = "$(git rev-parse HEAD)"
           test "$(git ls-remote origin "refs/tags/v$expected^{}" | cut -f1)" = "$(git rev-parse HEAD)"
-          test "$(npm view "create-next-pro-cli@$expected" gitHead --json | jq -r .)" = "$(git rev-parse HEAD)"
+          git_head=$(npm view "create-next-pro-cli@$expected" gitHead 2>/dev/null || true)
+          if [ -n "$git_head" ]; then
+            test "$git_head" = "$(git rev-parse HEAD)"
+          fi
           if [ "${{ steps.release.outputs.action }}" = release ]; then
             test "$(git rev-parse HEAD^)" = "$GITHUB_SHA"
           fi
-          bun scripts/verify-npm-provenance.ts create-next-pro-cli "$expected" "$GITHUB_SHA" "$GITHUB_RUN_ID"
+          bun scripts/verify-npm-provenance.ts create-next-pro-cli "$expected" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(git rev-parse HEAD)"
           test "$(npm access get status create-next-pro-cli)" = "create-next-pro-cli: public"
           npm owner ls create-next-pro-cli | grep -Eq '^mrrise[[:space:]]'
+          mkdir -p /tmp/npm-release-verification
+          canonical=$(npm pack "create-next-pro-cli@$expected" --pack-destination /tmp/npm-release-verification --json | jq -r '.[0].filename')
+          canonical="/tmp/npm-release-verification/$canonical"
+          local_digest=$(cut -d ' ' -f1 /tmp/create-next-pro-package.sha256)
+          test "$(sha256sum "$canonical" | cut -d ' ' -f1)" = "$local_digest"
       - name: Download canonical package for GitHub Release recovery
         if: steps.release.outputs.action == 'finalize'
         id: recovery-package
         shell: bash
         run: |
+          version="${{ steps.release.outputs.version }}"
+          test "$(git show "v$version:package.json" | jq -r .version)" = "$version"
+          test "$(git rev-list -n 1 "v$version")" = "$(git rev-parse HEAD)"
+          git_head=$(npm view "create-next-pro-cli@$version" gitHead 2>/dev/null || true)
+          if [ -n "$git_head" ]; then
+            test "$git_head" = "$(git rev-parse HEAD)"
+          fi
+          bun scripts/verify-npm-provenance.ts create-next-pro-cli "$version" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$(git rev-parse HEAD)"
           mkdir -p /tmp/github-release
-          archive=$(npm pack "create-next-pro-cli@${{ steps.release.outputs.version }}" --pack-destination /tmp/github-release --json | jq -r '.[0].filename')
+          archive=$(npm pack "create-next-pro-cli@$version" --pack-destination /tmp/github-release --json | jq -r '.[0].filename')
           archive="/tmp/github-release/$archive"
           test -f "$archive"
           sha256sum "$archive" | tee /tmp/create-next-pro-package.sha256
@@ -308,27 +333,37 @@ jobs:
       - name: Create or reconcile GitHub Release
         if: steps.release.outputs.action == 'release' || steps.release.outputs.action == 'resume' || steps.release.outputs.action == 'finalize'
         env:
-          GH_TOKEN: ${{ steps.release-app.outputs.token || github.token }}
+          GH_TOKEN: ${{ steps.release-app.outputs.token }}
         shell: bash
         run: |
           version="${{ steps.release.outputs.version }}"
           if gh release view "v$version" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "GitHub Release v$version already exists"
-            exit 0
-          fi
-          if [ "${{ steps.release.outputs.action }}" = finalize ]; then
-            archive="${{ steps.recovery-package.outputs.archive }}"
           else
-            archive="${{ steps.package.outputs.archive }}"
+            if [ "${{ steps.release.outputs.action }}" = finalize ]; then
+              archive="${{ steps.recovery-package.outputs.archive }}"
+            else
+              archive="${{ steps.package.outputs.archive }}"
+            fi
+            gh release create "v$version" \
+              --repo "$GITHUB_REPOSITORY" \
+              --verify-tag \
+              --generate-notes \
+              --title "v$version" \
+              "$archive" \
+              "/tmp/create-next-pro-package.sha256"
           fi
-          gh release create "v$version" \
-            --repo "$GITHUB_REPOSITORY" \
-            --verify-tag \
-            --generate-notes \
-            --title "v$version" \
-            "$archive" \
-            "/tmp/create-next-pro-package.sha256"
-          gh release view "v$version" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName,url
+          release=$(gh release view "v$version" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName,url)
+          test "$(jq -r .tagName <<< "$release")" = "v$version"
+          test "$(jq -r .isDraft <<< "$release")" = false
+          test "$(jq -r .isPrerelease <<< "$release")" = false
+          rm -rf /tmp/github-release-verification
+          mkdir -p /tmp/github-release-verification
+          archive_name="create-next-pro-cli-$version.tgz"
+          gh release download "v$version" --repo "$GITHUB_REPOSITORY" --pattern "$archive_name" --dir /tmp/github-release-verification
+          expected_digest=$(cut -d ' ' -f1 /tmp/create-next-pro-package.sha256)
+          test "$(sha256sum "/tmp/github-release-verification/$archive_name" | cut -d ' ' -f1)" = "$expected_digest"
+          printf '%s\n' "$release"
       - name: Release summary
         if: always()
         run: |
