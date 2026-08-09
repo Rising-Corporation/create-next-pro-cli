@@ -47,7 +47,6 @@ case "$*" in
   *"/environments/ENV --method GET"*) printf '%s' '{"name":"ENV"}' ;;
   *"/actions/variables?per_page=100"*) printf '%s' '{"variables":[{"name":"RELEASE_ENABLED","value":"false"}]}' ;;
   *"orgs/Rising-Corporation/installations?per_page=100"*) printf '%s' '{"installations":[{"id":456,"app_id":123,"app_slug":"create-next-pro-release","account":{"login":"Rising-Corporation"},"target_type":"Organization","repository_selection":"selected","permissions":{"metadata":"read","contents":"write"},"events":[]}]}' ;;
-  *"user/installations/456/repositories?per_page=100"*) printf '%s' '{"total_count":1,"repositories":[{"full_name":"Rising-Corporation/create-next-pro-cli"}]}' ;;
   *) printf '%s\n' "Unexpected fake gh call: $*" >&2; exit 64 ;;
 esac
 `;

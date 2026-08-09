@@ -57,6 +57,11 @@ export type ReleaseAppInstallation = {
   repository: string;
 };
 
+export type ReleaseAppInstallationMetadata = Omit<
+  ReleaseAppInstallation,
+  "repository"
+>;
+
 export type ReleaseAppSetupSnapshot = {
   environmentExists: boolean;
   releaseEnabled?: string;
@@ -360,14 +365,12 @@ export function validateAuthenticatedApp(
   };
 }
 
-export function validateReleaseAppInstallation(
+export function validateReleaseAppInstallationMetadata(
   installationValue: unknown,
-  repositoriesValue: unknown,
   policy: GovernancePolicy,
   expectedAppId: number,
-): ReleaseAppInstallation {
+): ReleaseAppInstallationMetadata {
   const installation = record(installationValue);
-  const repositories = record(repositoriesValue);
   const id = requiredPositiveInteger(installation.id, "installation ID");
   const appId = requiredPositiveInteger(
     installation.app_id,
@@ -381,13 +384,6 @@ export function validateReleaseAppInstallation(
     record(installation.account).login,
     "installation owner",
   );
-  const repositoryItems = Array.isArray(repositories.repositories)
-    ? repositories.repositories
-    : [];
-  const repository =
-    repositoryItems.length === 1
-      ? requiredString(record(repositoryItems[0]).full_name, "repository name")
-      : "";
   if (
     appId !== expectedAppId ||
     appSlug !== policy.release.appSlug ||
@@ -395,14 +391,11 @@ export function validateReleaseAppInstallation(
     installation.target_type !== "Organization" ||
     installation.repository_selection !== "selected" ||
     !exactPermissions(installation.permissions) ||
-    !exactEvents(installation.events) ||
-    repositories.total_count !== 1 ||
-    repositoryItems.length !== 1 ||
-    repository !== policy.repository
+    !exactEvents(installation.events)
   ) {
     throw new ReleaseAppError(
       "INSTALLATION_SCOPE_MISMATCH",
-      "The release App installation must target only the governed repository with the exact permissions.",
+      "The release App installation must target the governed organization with selected repositories and the exact permissions.",
       1,
       `Edit the ${policy.release.appSlug} installation and select only ${repositoryName(policy)}.`,
     );
@@ -415,8 +408,41 @@ export function validateReleaseAppInstallation(
     repositorySelection: "selected",
     permissions: { metadata: "read", contents: "write" },
     events: [],
-    repository,
   };
+}
+
+export function validateReleaseAppInstallation(
+  installationValue: unknown,
+  repositoriesValue: unknown,
+  policy: GovernancePolicy,
+  expectedAppId: number,
+): ReleaseAppInstallation {
+  const installation = validateReleaseAppInstallationMetadata(
+    installationValue,
+    policy,
+    expectedAppId,
+  );
+  const repositories = record(repositoriesValue);
+  const repositoryItems = Array.isArray(repositories.repositories)
+    ? repositories.repositories
+    : [];
+  const repository =
+    repositoryItems.length === 1
+      ? requiredString(record(repositoryItems[0]).full_name, "repository name")
+      : "";
+  if (
+    repositories.total_count !== 1 ||
+    repositoryItems.length !== 1 ||
+    repository !== policy.repository
+  ) {
+    throw new ReleaseAppError(
+      "INSTALLATION_SCOPE_MISMATCH",
+      "The release App installation must target only the governed repository with the exact permissions.",
+      1,
+      `Edit the ${policy.release.appSlug} installation and select only ${repositoryName(policy)}.`,
+    );
+  }
+  return { ...installation, repository };
 }
 
 function base64Url(value: string | Buffer): string {

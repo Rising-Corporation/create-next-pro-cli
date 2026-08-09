@@ -15,6 +15,7 @@ import {
   validateAuthenticatedApp,
   validateManifestConversion,
   validateReleaseAppInstallation,
+  validateReleaseAppInstallationMetadata,
 } from "./release-app";
 
 const policy = {
@@ -194,6 +195,20 @@ describe("release App identity", () => {
 });
 
 describe("release App installation", () => {
+  test("validates organization installation metadata without an App user token", () => {
+    expect(
+      validateReleaseAppInstallationMetadata(installation(), policy, 123),
+    ).toEqual({
+      id: 456,
+      appId: 123,
+      appSlug: "release-app",
+      owner: "owner",
+      repositorySelection: "selected",
+      permissions: { metadata: "read", contents: "write" },
+      events: [],
+    });
+  });
+
   test("accepts exactly one selected governed repository", () => {
     expect(
       validateReleaseAppInstallation(

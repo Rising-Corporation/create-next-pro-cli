@@ -24,7 +24,9 @@ import {
   validateAuthenticatedApp,
   validateManifestConversion,
   validateReleaseAppInstallation,
+  validateReleaseAppInstallationMetadata,
   type ReleaseAppInstallation,
+  type ReleaseAppInstallationMetadata,
   type ReleaseAppManifest,
   type ReleaseAppSetupSnapshot,
 } from "../src/governance/release-app";
@@ -662,12 +664,11 @@ function matchingInstallation(
   });
 }
 
-function validateWithOperatorToken(
+function validateWithOperatorSnapshot(
   policy: GovernancePolicy,
   snapshot: RemoteSnapshot,
   appId: number,
-  runner: ProcessRunner,
-): ReleaseAppInstallation {
+): ReleaseAppInstallationMetadata {
   const installation = matchingInstallation(policy, snapshot, appId);
   if (!installation) {
     throw new ReleaseAppError(
@@ -684,16 +685,7 @@ function validateWithOperatorToken(
       2,
     );
   }
-  const repositories = ghApi(
-    runner,
-    `user/installations/${installationId}/repositories?per_page=100`,
-  );
-  return validateReleaseAppInstallation(
-    installation,
-    repositories,
-    policy,
-    appId,
-  );
+  return validateReleaseAppInstallationMetadata(installation, policy, appId);
 }
 
 export function configureReleaseAppEnvironment(
@@ -893,7 +885,7 @@ async function runSmoke(
 function appOutput(
   policy: GovernancePolicy,
   appId: number,
-  installation?: ReleaseAppInstallation,
+  installation?: Pick<ReleaseAppInstallation, "id">,
 ): NonNullable<ReleaseAppCommandResult["app"]> {
   return {
     id: appId,
@@ -965,7 +957,7 @@ async function setup(
   assertSetupPreconditions(policy, snapshot, runner);
   const decision = decideReleaseAppSetup(snapshot, policy);
   let appId: number;
-  let installation: ReleaseAppInstallation;
+  let installation: Pick<ReleaseAppInstallation, "id">;
   let created = false;
   if (decision.action === "create") {
     const createdState = await createAndInstall(policy, snapshot, runner, json);
@@ -983,10 +975,10 @@ async function setup(
       json,
     );
     snapshot = await waitForInstalledApp(policy, appId, runner);
-    installation = validateWithOperatorToken(policy, snapshot, appId, runner);
+    installation = validateWithOperatorSnapshot(policy, snapshot, appId);
   } else {
     appId = decision.appId;
-    installation = validateWithOperatorToken(policy, snapshot, appId, runner);
+    installation = validateWithOperatorSnapshot(policy, snapshot, appId);
   }
   const smoke = await runSmoke(policy, runner);
   return safeReleaseAppResult(policy, "setup", {
@@ -1024,11 +1016,10 @@ function check(
       1,
     );
   }
-  const installation = validateWithOperatorToken(
+  const installation = validateWithOperatorSnapshot(
     policy,
     snapshot,
     decision.appId,
-    runner,
   );
   return safeReleaseAppResult(policy, "check", {
     status: "configured",
