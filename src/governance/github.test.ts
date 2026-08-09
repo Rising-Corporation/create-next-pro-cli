@@ -12,7 +12,13 @@ const policy = {
   security: {},
   community: { requiredLabels: [], requiredDiscussionCategories: [] },
   release: {
+    appName: "release-app",
     appSlug: "release-app",
+    appOwner: "owner",
+    appPublic: false,
+    permissions: { metadata: "read", contents: "write" },
+    events: [],
+    webhookActive: false,
     appIdVariable: "APP_ID",
     privateKeySecret: "APP_KEY",
     forbiddenSecrets: [],

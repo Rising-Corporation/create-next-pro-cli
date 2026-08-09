@@ -49,7 +49,13 @@ const policy: GovernancePolicy = {
     requiredDiscussionCategories: ["Q&A"],
   },
   release: {
+    appName: "release-app",
     appSlug: "release-app",
+    appOwner: "owner",
+    appPublic: false,
+    permissions: { metadata: "read", contents: "write" },
+    events: [],
+    webhookActive: false,
     appIdVariable: "APP_ID",
     privateKeySecret: "APP_KEY",
     forbiddenSecrets: ["OLD_TOKEN"],

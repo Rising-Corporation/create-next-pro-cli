@@ -72,7 +72,13 @@ export type GovernancePolicy = {
     requiredDiscussionCategories: string[];
   };
   release: {
+    appName: string;
     appSlug: string;
+    appOwner: string;
+    appPublic: false;
+    permissions: { metadata: "read"; contents: "write" };
+    events: [];
+    webhookActive: false;
     appIdVariable: string;
     privateKeySecret: string;
     forbiddenSecrets: string[];
@@ -543,7 +549,16 @@ export function assertGovernancePolicy(value: unknown): GovernancePolicy {
   if (
     candidate.schemaVersion !== 2 ||
     typeof candidate.repository !== "string" ||
-    typeof candidate.environment?.canAdminsBypass !== "boolean"
+    typeof candidate.environment?.canAdminsBypass !== "boolean" ||
+    typeof candidate.release?.appName !== "string" ||
+    typeof candidate.release.appSlug !== "string" ||
+    typeof candidate.release.appOwner !== "string" ||
+    candidate.release.appPublic !== false ||
+    candidate.release.webhookActive !== false ||
+    candidate.release.permissions?.metadata !== "read" ||
+    candidate.release.permissions.contents !== "write" ||
+    !Array.isArray(candidate.release.events) ||
+    candidate.release.events.length !== 0
   ) {
     throw new Error("Unsupported governance policy schema");
   }

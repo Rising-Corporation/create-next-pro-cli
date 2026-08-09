@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 import type { PackageManager } from "./package-manager.ts";
 
 export interface AuditFinding {
@@ -17,81 +15,11 @@ export interface NormalizedAuditReport {
   graphPaths: string[];
 }
 
-export interface AuditManifest {
-  name?: string;
-  dependencies?: Record<string, string>;
-  devDependencies?: Record<string, string>;
-}
-
-export interface AuditPolicyContext {
-  now: Date;
-  manifest: AuditManifest;
-  bunWhy?: string;
-}
-
 export interface AuditPolicyDecision {
   accepted: boolean;
   allowedAdvisories: string[];
   errors: string[];
 }
-
-interface TemporaryAuditException {
-  advisoryId: string;
-  packageName: string;
-  justification: string;
-  expiresOn: string;
-  dependencyRoots: string[];
-  npm: {
-    packageCount: number;
-    packageFingerprint: string;
-    pathCount: number;
-    pathFingerprint: string;
-  };
-  pnpm: {
-    pathCount: number;
-    pathFingerprint: string;
-  };
-  bun: {
-    graphFingerprint: string;
-  };
-  rootBun: {
-    projectName: string;
-    dependencyRoots: string[];
-    graphFingerprint: string;
-  };
-}
-
-export const TEMPORARY_AUDIT_EXCEPTION: TemporaryAuditException = {
-  advisoryId: "GHSA-mh99-v99m-4gvg",
-  packageName: "brace-expansion",
-  justification:
-    "The vulnerable version is reachable only from ESLint development tooling, and no compatible upstream ESLint plugin release is available.",
-  expiresOn: "2026-08-08",
-  dependencyRoots: ["eslint", "eslint-config-next"],
-  npm: {
-    packageCount: 9,
-    packageFingerprint:
-      "5c2f95af65c41494d74ca588887b735d7f53598759c1f4a550a534118ef9e21c",
-    pathCount: 9,
-    pathFingerprint:
-      "266ffc5bacefb7aba510ab245573622ec8a47d32ce6408bfd4c3560f698fd589",
-  },
-  pnpm: {
-    pathCount: 82,
-    pathFingerprint:
-      "135eeca335243a379f1c232df59dd641cd9d1684de814d4eac9105ded322e30f",
-  },
-  bun: {
-    graphFingerprint:
-      "bb8a9e09875f4a36186f4b43b8035cd6baa47b35a2614cd1e110b4129692cc62",
-  },
-  rootBun: {
-    projectName: "create-next-pro-cli",
-    dependencyRoots: ["eslint", "typescript-eslint", "tsup"],
-    graphFingerprint:
-      "9526795395c1d3983bb9d8fbcfce098103420ebe6f48169ab3fb4acc8f3aa769",
-  },
-};
 
 function asRecord(value: unknown, label: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -255,122 +183,19 @@ export function normalizeAuditReport(
   return parsePnpmReport(root);
 }
 
-function fingerprint(values: string[]): string {
-  return createHash("sha256")
-    .update([...new Set(values)].sort().join("\n"))
-    .digest("hex");
-}
-
-function isDevelopmentOnly(
-  manifest: AuditManifest,
-  packageName: string,
-): boolean {
-  return (
-    Object.hasOwn(manifest.devDependencies ?? {}, packageName) &&
-    !Object.hasOwn(manifest.dependencies ?? {}, packageName)
-  );
-}
-
-function normalizedBunGraph(output: string): string {
-  return output
-    .replace(/\u001b\[[0-9;]*m/g, "")
-    .replace(/dev [^\s(]+/g, "dev <project>")
-    .replaceAll("\r\n", "\n")
-    .trim();
-}
-
-function validateManagerEvidence(
-  report: NormalizedAuditReport,
-  context: AuditPolicyContext,
-): string[] {
-  const policy = TEMPORARY_AUDIT_EXCEPTION;
-  if (report.manager === "pnpm") {
-    const finding = report.findings[0];
-    if (!finding.devOnly) return ["The pnpm advisory is not development-only."];
-    if (
-      report.graphPaths.length !== policy.pnpm.pathCount ||
-      fingerprint(report.graphPaths) !== policy.pnpm.pathFingerprint
-    ) {
-      return [
-        "The pnpm advisory dependency paths do not match the approved graph.",
-      ];
-    }
-    return [];
-  }
-
-  if (report.manager === "npm") {
-    if (
-      report.graphPackages.length !== policy.npm.packageCount ||
-      fingerprint(report.graphPackages) !== policy.npm.packageFingerprint ||
-      report.graphPaths.length !== policy.npm.pathCount ||
-      fingerprint(report.graphPaths) !== policy.npm.pathFingerprint
-    ) {
-      return [
-        "The npm advisory dependency graph does not match the approved graph.",
-      ];
-    }
-    return [];
-  }
-
-  const projectName = context.manifest.name;
-  if (!projectName || !context.bunWhy) {
-    return ["Bun audit policy requires the project name and dependency graph."];
-  }
-  const graphFingerprint = createHash("sha256")
-    .update(normalizedBunGraph(context.bunWhy))
-    .digest("hex");
-  const expectedFingerprint =
-    projectName === policy.rootBun.projectName
-      ? policy.rootBun.graphFingerprint
-      : policy.bun.graphFingerprint;
-  if (graphFingerprint !== expectedFingerprint) {
-    return [
-      "The Bun advisory dependency graph does not match the approved graph.",
-    ];
-  }
-  return [];
-}
-
 export function evaluateAuditPolicy(
   report: NormalizedAuditReport,
-  context: AuditPolicyContext,
 ): AuditPolicyDecision {
   if (report.findings.length === 0) {
     return { accepted: true, allowedAdvisories: [], errors: [] };
   }
 
-  const policy = TEMPORARY_AUDIT_EXCEPTION;
-  const errors: string[] = [];
-  const currentDate = context.now.toISOString().slice(0, 10);
-  if (currentDate > policy.expiresOn) {
-    errors.push(`The audit exception expired on ${policy.expiresOn}.`);
-  }
-  if (
-    report.findings.length !== 1 ||
-    report.findings[0].advisoryId !== policy.advisoryId ||
-    report.findings[0].packageName !== policy.packageName
-  ) {
-    errors.push(
-      "The audit contains an advisory that is not explicitly allowed.",
-    );
-  }
-  const dependencyRoots =
-    report.manager === "bun" &&
-    context.manifest.name === policy.rootBun.projectName
-      ? policy.rootBun.dependencyRoots
-      : policy.dependencyRoots;
-  for (const dependencyRoot of dependencyRoots) {
-    if (!isDevelopmentOnly(context.manifest, dependencyRoot)) {
-      errors.push(`${dependencyRoot} is not confined to devDependencies.`);
-    }
-  }
-  if (errors.length === 0) {
-    errors.push(...validateManagerEvidence(report, context));
-  }
-
   return {
-    accepted: errors.length === 0,
-    allowedAdvisories: errors.length === 0 ? [policy.advisoryId] : [],
-    errors,
+    accepted: false,
+    allowedAdvisories: [],
+    errors: report.findings.map(
+      (finding) =>
+        `${finding.advisoryId} affects ${finding.packageName} (${finding.severity}).`,
+    ),
   };
 }

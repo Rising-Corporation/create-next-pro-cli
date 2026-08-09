@@ -101,6 +101,17 @@ describe("public governance contracts", () => {
     expect(policy.schemaVersion).toBe(2);
     expect(policy.environment.canAdminsBypass).toBe(false);
     expect(policy.requiredChecks).toContain("governance-check");
+    expect(policy.release).toMatchObject({
+      appName: "create-next-pro-release",
+      appSlug: "create-next-pro-release",
+      appOwner: "Rising-Corporation",
+      appPublic: false,
+      permissions: { metadata: "read", contents: "write" },
+      events: [],
+      webhookActive: false,
+      appIdVariable: "RELEASE_APP_ID",
+      privateKeySecret: "RELEASE_APP_PRIVATE_KEY",
+    });
   });
 
   test("requires the dedicated release App without a token fallback", async () => {
@@ -122,6 +133,10 @@ describe("public governance contracts", () => {
       "utf8",
     );
     expect(workflow).toContain("workflow_dispatch:");
+    expect(workflow).toContain(
+      "run-name: Release App smoke ${{ inputs.correlation_id }}",
+    );
+    expect(workflow).toContain("correlation_id:");
     expect(workflow).toContain("governance/release-app-smoke-");
     expect(workflow).toContain("v0.0.0-smoke.");
     expect(workflow).not.toContain("npm publish");

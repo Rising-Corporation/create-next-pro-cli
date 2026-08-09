@@ -57,6 +57,9 @@
     "github:check": "bun scripts/github-governance.ts check",
     "github:plan": "bun scripts/github-governance.ts plan",
     "github:apply": "bun scripts/github-governance.ts apply",
+    "github:app:setup": "bun scripts/github-release-app.ts setup",
+    "github:app:check": "bun scripts/github-release-app.ts check",
+    "github:app:smoke": "bun scripts/github-release-app.ts smoke",
     "package:pack": "bun scripts/pack.ts",
     "package:inspect": "bun scripts/inspect-package.ts"
   },
@@ -66,11 +69,12 @@
     ]
   },
   "overrides": {
-    "brace-expansion": "2.1.2",
+    "brace-expansion": "5.0.9",
     "esbuild": "0.28.1",
-    "fast-uri": "3.1.4",
+    "fast-uri": "3.1.5",
     "glob": "10.5.0",
     "js-yaml": "5.2.2",
+    "nanoid": "3.3.18",
     "picomatch": "4.0.5",
     "postcss": "8.5.23",
     "rollup": "4.62.2",

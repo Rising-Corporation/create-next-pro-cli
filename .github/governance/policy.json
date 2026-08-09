@@ -55,7 +55,16 @@
     ]
   },
   "release": {
+    "appName": "create-next-pro-release",
     "appSlug": "create-next-pro-release",
+    "appOwner": "Rising-Corporation",
+    "appPublic": false,
+    "permissions": {
+      "metadata": "read",
+      "contents": "write"
+    },
+    "events": [],
+    "webhookActive": false,
     "appIdVariable": "RELEASE_APP_ID",
     "privateKeySecret": "RELEASE_APP_PRIVATE_KEY",
     "forbiddenSecrets": ["NPM_TOKEN"],
