@@ -97,10 +97,12 @@ Run the following commands from the root of a generated project.
 # Simple or nested pages
 create-next-pro addpage profile --area public
 create-next-pro addpage account.security --area user
+create-next-pro addpage operations.audit --area admin
 
 # Global components or components attached to a page
 create-next-pro addcomponent Alert
 create-next-pro addcomponent PasswordForm --page account.security --area user
+create-next-pro addcomponent AuditPanel --page operations.audit --area admin
 
 # Libraries and modules
 create-next-pro addlib analytics
@@ -115,12 +117,13 @@ create-next-pro addtext dashboard.welcome "Welcome"
 
 # Direct removal
 create-next-pro rmpage account.security --area user
+create-next-pro rmpage operations.audit --area admin
 
 # Tree-based autocomplete menu with confirmation
 create-next-pro rmpage
 ```
 
-Every page belongs to an explicit route area. Use `--area public` for routes rendered by the public layout and `--area user` for authenticated routes rendered by the user layout. There is no default area. Direct `addpage` and `rmpage` commands require it, as does `addcomponent --page`; interactive `addpage` asks for it and the `rmpage` menu groups pages by area. Route groups do not alter the public URL.
+Every page belongs to an explicit route area. Use `--area public` for anonymous routes, `--area user` for authenticated routes, and `--area admin` for request-bound routes protected by the server-only administrator allowlist. There is no default area. Direct `addpage` and `rmpage` commands require it, as does `addcomponent --page`; interactive `addpage` asks for it and the `rmpage` menu groups pages by area. Route groups do not alter the public URL, so the same logical page name cannot exist in multiple areas. The official areas are a closed set, not an extensible RBAC system.
 
 `addlib library.module` preserves an existing library index byte for byte. It appends one direct value or type re-export only after verifying the index and module with TypeScript. If the public export is already present, the command returns `unchanged`; ambiguous modules, conflicting exports, invalid TypeScript, and concurrent edits fail before the index is modified. Projects affected by the historical `0.1.20`–`0.1.34` barrel-reduction defect should follow the recovery note in [CHANGELOG.md](./CHANGELOG.md).
 
@@ -130,7 +133,7 @@ Every page belongs to an explicit route area. Use `--area public` for routes ren
 
 Generated page-level layouts accept only `children` because they do not read route parameters. If a customized Next.js 16 layout needs the locale, make the component asynchronous, type `params` as `Promise<{ locale: string }>` and await it before use. Projects generated with `create-next-pro-cli@0.1.32` may contain the obsolete synchronous `params: { locale: string }` signature: remove that property when it is unused, or migrate it to the asynchronous contract.
 
-`rmpage` only lists routes that contain an actual `page.tsx` in the `(public)` or `(user)` route group. Technical directories remain hidden. Removal is confined to the selected area and project, and it preserves shared parent directories and unrelated files.
+`rmpage` only lists routes that contain an actual `page.tsx` in the `(public)`, `(user)`, or `(admin)` route group. Technical directories remain hidden. Removal is confined to the selected area and project, and it preserves shared parent directories and unrelated files.
 
 ## Generated project architecture
 
@@ -176,11 +179,14 @@ my-app/
 │   │   │   │   ├── dashboard/
 │   │   │   │   ├── settings/
 │   │   │   │   └── userInfo/
+│   │   │   ├── (admin)/
+│   │   │   │   └── layout.tsx
 │   │   │   ├── layout.tsx
 │   │   │   └── page.tsx
 │   │   ├── api/auth/[...nextauth]/route.ts
 │   │   └── styles/globals.css
 │   ├── lib/
+│   │   ├── auth/
 │   │   ├── i18n/
 │   │   ├── security/csp.ts
 │   │   └── utils.ts
@@ -352,7 +358,7 @@ Generated projects contain only the canonical `.env.example`, never the template
 cp .env.example .env
 ```
 
-The Google and Auth.js values shipped in `.env.example` are intentionally public, limited development credentials. Replace all of them before production use. Nested Git repositories, caches, installed dependencies, Playwright artifacts, agent context, the local `.env`, and every non-canonical `.env*` file are excluded from generated projects and the npm package. For checks without authentication, use `AUTH_DISABLED=true`.
+The Google and Auth.js values shipped in `.env.example` are intentionally public, limited development credentials. Replace all of them before production use. Configure `AUTH_ADMIN_EMAILS` as a comma-separated server-side allowlist before adding administrator routes; an absent, empty, or invalid allowlist denies every administrator request. Nested Git repositories, caches, installed dependencies, Playwright artifacts, agent context, the local `.env`, and every non-canonical `.env*` file are excluded from generated projects and the npm package. For checks without authentication, use `AUTH_DISABLED=true`.
 
 ## Quality
 

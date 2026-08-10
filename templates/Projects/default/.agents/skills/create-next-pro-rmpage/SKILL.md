@@ -9,17 +9,17 @@ description: Remove a catalogued page and its associated route, UI, and message 
 
 - Work from the generated project root containing `cnp.config.json`.
 - Confirm the target is a page that contains an actual `page.tsx` and appears in the CLI page catalog.
-- Confirm whether the page belongs to the `public` or `user` route area.
+- Confirm whether the page belongs to the `public`, `user`, or `admin` route area.
 - Review uncommitted work and references to the route before deletion.
 - Use a simple logical name or `Parent.Child`, never a filesystem path.
 
 ## Command
 
 ```bash
-create-next-pro rmpage [Page|Parent.Child] [--area <public|user>] [--json]
+create-next-pro rmpage [Page|Parent.Child] [--area <public|user|admin>] [--json]
 ```
 
-With a page name, `--area` is required. Without a name, human mode displays an autocomplete tree grouped as `Public > ...` and `User > ...`, then asks for confirmation. Passing only `--area` filters that menu. JSON mode requires the explicit page name and area and never prompts. Area values are exact lowercase values and `--area=value` is not supported.
+With a page name, `--area` is required. Without a name, human mode displays an autocomplete tree grouped as `Public > ...`, `User > ...`, and `Admin > ...`, then asks for confirmation. Passing only `--area` filters that menu. JSON mode requires the explicit page name and area and never prompts. Area values are the exact lowercase values `public`, `user`, and `admin`; `--area=value` is not supported.
 
 ## Effects
 
@@ -54,6 +54,12 @@ Remove a nested page non-interactively:
 
 ```bash
 create-next-pro rmpage Account.Security --area user --json
+```
+
+Remove an administrator page non-interactively:
+
+```bash
+create-next-pro rmpage Operations.Audit --area admin --json
 ```
 
 ## Validate

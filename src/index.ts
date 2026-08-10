@@ -19,19 +19,19 @@ export const HELP_TEXT = `create-next-pro
 
 Usage:
   create-next-pro <project-name> [--force] [--json]
-  create-next-pro addpage [name] --area <public|user> [options] [--json]
-  create-next-pro addcomponent [name] [--page <page> --area <public|user>] [--json]
+  create-next-pro addpage [name] --area <public|user|admin> [options] [--json]
+  create-next-pro addcomponent [name] [--page <page> --area <public|user|admin>] [--json]
   create-next-pro addlib [name] [--json]
   create-next-pro addapi [name] [--json]
   create-next-pro addlanguage [locale] [--json]
   create-next-pro addtext <path> [text] [--json]
-  create-next-pro rmpage [name] [--area <public|user>] [--json]
+  create-next-pro rmpage [name] [--area <public|user|admin>] [--json]
 
 Options:
   --help          Show this help message
   --version       Show the CLI version
   --json          Emit one deterministic JSON document
-  --area          Select the public or user area for page operations
+  --area          Select the public, user, or admin area for page operations
   --reconfigure   Run the configuration assistant again
 `;
 

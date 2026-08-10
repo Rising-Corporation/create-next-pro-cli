@@ -14,10 +14,10 @@ description: Add a global or page-scoped UI component to a generated create-next
 ## Command
 
 ```bash
-create-next-pro addcomponent <Component> [--page <Page|Parent.Child> --area <public|user>] [--json]
+create-next-pro addcomponent <Component> [--page <Page|Parent.Child> --area <public|user|admin>] [--json]
 ```
 
-`-P` is the short form of `--page`. The option requires a page name and `--area`. A global component must not receive `--area`. Area values are exact lowercase values and `--area=value` is not supported.
+`-P` is the short form of `--page`. The option requires a page name and `--area`. A global component must not receive `--area`. Area values are the exact lowercase values `public`, `user`, and `admin`; `--area=value` is not supported.
 
 ## Effects
 
@@ -54,6 +54,12 @@ Create a component for a nested page:
 
 ```bash
 create-next-pro addcomponent PasswordForm --page Account.Security --area user --json
+```
+
+Create a component for an existing administrator page:
+
+```bash
+create-next-pro addcomponent AuditPanel --page Operations.Audit --area admin --json
 ```
 
 ## Validate

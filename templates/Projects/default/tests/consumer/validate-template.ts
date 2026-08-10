@@ -72,6 +72,17 @@ try {
     env: environment,
   });
   await stat(path.join(target, "next-env.d.ts"));
+  await stat(
+    path.join(target, "src", "app", "[locale]", "(admin)", "layout.tsx"),
+  );
+  await stat(path.join(target, "src", "lib", "auth", "admin-access.ts"));
+  const environmentExample = await readFile(
+    path.join(target, ".env.example"),
+    "utf8",
+  );
+  if (!/^AUTH_ADMIN_EMAILS=$/m.test(environmentExample)) {
+    throw new Error("The administrator allowlist contract is missing.");
+  }
 } finally {
   await rm(target, { recursive: true, force: true });
 }

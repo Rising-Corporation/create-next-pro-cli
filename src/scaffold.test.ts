@@ -89,6 +89,24 @@ async function fixture() {
     path.join(template, "tests", "consumer", "validate-template.ts"),
     "export {};\n",
   );
+  await mkdir(path.join(template, "src", "app", "[locale]", "(admin)"), {
+    recursive: true,
+  });
+  await writeFile(
+    path.join(template, "src", "app", "[locale]", "(admin)", "layout.tsx"),
+    "export default function AdminLayout() { return null; }\n",
+  );
+  await mkdir(path.join(template, "src", "lib", "auth"), {
+    recursive: true,
+  });
+  await writeFile(
+    path.join(template, "src", "lib", "auth", "admin-access.ts"),
+    "export const hasAdminAccess = () => false;\n",
+  );
+  await writeFile(
+    path.join(template, "src", "lib", "auth", "admin-policy.ts"),
+    "export const parseAdminEmailAllowlist = () => null;\n",
+  );
   await mkdir(path.join(template, ".github", "workflows"), {
     recursive: true,
   });
@@ -101,7 +119,7 @@ async function fixture() {
     JSON.stringify({ compilerOptions: { paths: { "@/*": ["./src/*"] } } }),
   );
   await writeFile(path.join(template, "preserved.txt"), "template content");
-  await mkdir(path.join(template, "src"));
+  await mkdir(path.join(template, "src"), { recursive: true });
   await writeFile(
     path.join(template, "src", "example.ts"),
     'import value from "@/value";\nexport default value;\n',
@@ -170,6 +188,12 @@ describe("project scaffolding", () => {
     expect(await readFile(path.join(target, ".env.example"), "utf8")).toBe(
       "PUBLIC=true\n",
     );
+    expect(
+      await readFile(
+        path.join(target, "src", "app", "[locale]", "(admin)", "layout.tsx"),
+        "utf8",
+      ),
+    ).toContain("AdminLayout");
     await expect(readFile(path.join(target, ".env"), "utf8")).rejects.toThrow();
     await expect(
       readFile(path.join(target, ".env copy.example"), "utf8"),

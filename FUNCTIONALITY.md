@@ -4,16 +4,16 @@
 
 ## Public operations
 
-| Operation                               | Purpose                                       | Important contract                                                                       |
-| --------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `create-next-pro <project>`             | Create a project from the maintained template | Rejects an existing destination unless `--force` is explicit; never copies `.env`        |
-| `addpage <name> --area <public\|user>`  | Add a simple or nested page                   | An explicit area is mandatory for direct execution; `Parent.Child` creates a nested page |
-| `addcomponent <name>`                   | Add a global or page component                | `--page` requires the matching `--area`; existing code is preserved                      |
-| `addlib <library[.module]>`             | Add a library or module                       | Existing barrels remain a byte-for-byte prefix and receive only a safe direct re-export  |
-| `addapi <name>`                         | Add an App Router API route                   | Generated example behavior must be reviewed for validation and authentication            |
-| `addlanguage <locale>`                  | Add a locale from the default locale          | Copied source-language JSON must be translated before delivery                           |
-| `addtext <key> <value>`                 | Set a message in every locale                 | Repeating the same value is idempotent; changing it reports an update                    |
-| `rmpage [name] [--area <public\|user>]` | Remove a page                                 | Direct mode is area-qualified; no-argument mode presents a confirmed tree selector       |
+| Operation                                      | Purpose                                       | Important contract                                                                       |
+| ---------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `create-next-pro <project>`                    | Create a project from the maintained template | Rejects an existing destination unless `--force` is explicit; never copies `.env`        |
+| `addpage <name> --area <public\|user\|admin>`  | Add a simple or nested page                   | An explicit area is mandatory for direct execution; `Parent.Child` creates a nested page |
+| `addcomponent <name>`                          | Add a global or page component                | `--page` requires the matching `--area`; existing code is preserved                      |
+| `addlib <library[.module]>`                    | Add a library or module                       | Existing barrels remain a byte-for-byte prefix and receive only a safe direct re-export  |
+| `addapi <name>`                                | Add an App Router API route                   | Generated example behavior must be reviewed for validation and authentication            |
+| `addlanguage <locale>`                         | Add a locale from the default locale          | Copied source-language JSON must be translated before delivery                           |
+| `addtext <key> <value>`                        | Set a message in every locale                 | Repeating the same value is idempotent; changing it reports an update                    |
+| `rmpage [name] [--area <public\|user\|admin>]` | Remove a page                                 | Direct mode is area-qualified; no-argument mode presents a confirmed tree selector       |
 
 ## Shared behavior
 
@@ -31,9 +31,10 @@
 Every page belongs to exactly one route group:
 
 - `--area public` creates a route under `src/app/[locale]/(public)`;
-- `--area user` creates a route under `src/app/[locale]/(user)`.
+- `--area user` creates an authenticated route under `src/app/[locale]/(user)`;
+- `--area admin` creates an authenticated, allowlisted route under `src/app/[locale]/(admin)`.
 
-The route area does not change the public URL. UI resources remain under `src/ui`, and translated messages remain under `messages/<locale>`. The CLI refuses historical flat routes and ambiguous candidates rather than moving or deleting them automatically.
+The route area does not change the public URL. A logical page name can belong to only one official area, and arbitrary areas are not supported. UI resources remain under `src/ui`, and translated messages remain under `messages/<locale>`. The CLI refuses historical flat routes and ambiguous candidates rather than moving or deleting them automatically. Administrator access is server-only and fails closed unless `AUTH_ADMIN_EMAILS` contains the authenticated account address.
 
 ## Agentic output
 

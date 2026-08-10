@@ -67,6 +67,8 @@ describe("CLI entrypoint", () => {
     const fixture = context(["--help"]);
     await expect(main(fixture.context)).resolves.toBe(0);
     expect(fixture.log).toHaveBeenCalledWith(HELP_TEXT);
+    expect(HELP_TEXT).toContain("--area <public|user|admin>");
+    expect(HELP_TEXT).not.toContain("__complete");
   });
 
   test("prints the package version", async () => {

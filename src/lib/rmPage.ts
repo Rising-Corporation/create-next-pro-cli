@@ -8,6 +8,7 @@ import {
   type PageCandidate,
 } from "../core/page-catalog";
 import {
+  PAGE_AREA_DEFINITIONS,
   parseAreaOption,
   requirePageArea,
   type PageArea,
@@ -121,7 +122,7 @@ export const rmPage: CommandHandler = async (args, context) => {
             code: "INCONSISTENT_ROUTE",
             scope: "project",
             path: issue.routeDirectories.join(", "),
-            hint: "Move the route into exactly one of the (public) or (user) areas before retrying.",
+            hint: "Move the route into exactly one of the (public), (user), or (admin) areas before retrying.",
           },
         );
       }
@@ -138,7 +139,7 @@ export const rmPage: CommandHandler = async (args, context) => {
         name: "page",
         message: "Page to remove:",
         choices: candidates.map((candidate) => ({
-          title: `${candidate.area[0].toUpperCase()}${candidate.area.slice(1)} > ${candidate.logicalName.replaceAll(".", " > ")}`,
+          title: `${PAGE_AREA_DEFINITIONS[candidate.area].label} > ${candidate.logicalName.replaceAll(".", " > ")}`,
           value: candidate.id,
         })),
       },

@@ -96,6 +96,7 @@ describe("generated project agent guidance", () => {
       expect(document).toContain("--area");
       expect(document).toContain("public");
       expect(document).toContain("user");
+      expect(document).toContain("admin");
       expect(document).not.toContain("--route-group");
     }
   });

@@ -18,7 +18,11 @@ afterEach(async () => {
 async function fixture() {
   const root = await mkdtemp(path.join(tmpdir(), "cnp-completion-"));
   roots.push(root);
-  for (const relative of ["(public)/Profile", "(user)/Account/Security"]) {
+  for (const relative of [
+    "(public)/Profile",
+    "(user)/Account/Security",
+    "(admin)/Audit/Logs",
+  ]) {
     const directory = path.join(root, "src", "app", "[locale]", relative);
     await mkdir(directory, { recursive: true });
     await writeFile(path.join(directory, "page.tsx"), "export default 1;\n");
@@ -31,7 +35,7 @@ describe("CLI completion", () => {
     const context = await fixture();
     await expect(
       completionCandidates(["addpage", "Profile", "--area"], context),
-    ).resolves.toEqual(["public", "user"]);
+    ).resolves.toEqual(["public", "user", "admin"]);
   });
 
   test("requires an area before completing removable pages", async () => {
@@ -42,6 +46,9 @@ describe("CLI completion", () => {
     await expect(
       completionCandidates(["rmpage", "--area", "user"], context),
     ).resolves.toEqual(["Account.Security"]);
+    await expect(
+      completionCandidates(["rmpage", "--area", "admin"], context),
+    ).resolves.toEqual(["Audit.Logs"]);
   });
 
   test("filters page-scoped component candidates by area", async () => {
@@ -52,5 +59,11 @@ describe("CLI completion", () => {
         context,
       ),
     ).resolves.toEqual(["Profile"]);
+    await expect(
+      completionCandidates(
+        ["addcomponent", "Panel", "--area", "admin", "--page"],
+        context,
+      ),
+    ).resolves.toEqual(["Audit.Logs"]);
   });
 });

@@ -40,6 +40,9 @@ async function projectFixture(): Promise<string> {
   await mkdir(path.join(root, "src", "app", "[locale]", "(user)"), {
     recursive: true,
   });
+  await mkdir(path.join(root, "src", "app", "[locale]", "(admin)"), {
+    recursive: true,
+  });
   await mkdir(path.join(root, "src", "lib", "i18n"), { recursive: true });
   await mkdir(path.join(root, "messages", "en"), { recursive: true });
   await mkdir(path.join(root, "messages", "fr"), { recursive: true });
@@ -169,6 +172,11 @@ describe("project evolution commands", () => {
       ["addpage", "UserPage", "-P", "--area", "user"],
       root,
     );
+    const adminResult = await runCommand(
+      addPage,
+      ["addpage", "AdminPage", "--area", "admin", "-P"],
+      root,
+    );
 
     expect(publicResult.data).toEqual({
       area: "public",
@@ -178,11 +186,18 @@ describe("project evolution commands", () => {
       area: "user",
       logicalName: "UserPage",
     });
+    expect(adminResult.data).toEqual({
+      area: "admin",
+      logicalName: "AdminPage",
+    });
     expect(
       publicResult.events.every((event) => event.detail?.area === "public"),
     ).toBe(true);
     expect(
       userResult.events.every((event) => event.detail?.area === "user"),
+    ).toBe(true);
+    expect(
+      adminResult.events.every((event) => event.detail?.area === "admin"),
     ).toBe(true);
     expect(
       await readFile(
@@ -202,10 +217,17 @@ describe("project evolution commands", () => {
         "utf8",
       ),
     ).toContain('<section className="px-4 pb-8 pt-24');
+    expect(
+      await readFile(
+        path.join(root, "src", "ui", "AdminPage", "page-ui.tsx"),
+        "utf8",
+      ),
+    ).toContain('<section className="px-4 pb-8 pt-24');
 
     for (const [area, logicalName] of [
       ["public", "PublicParent.Child"],
       ["user", "UserParent.Child"],
+      ["admin", "AdminParent.Child"],
     ] as const) {
       const result = await runCommand(
         addPage,
@@ -244,8 +266,48 @@ describe("project evolution commands", () => {
       "area",
     ]);
     expect(questions[1]).not.toHaveProperty("initial");
+    expect(questions[1].choices).toEqual([
+      { title: "Public", value: "public" },
+      { title: "User", value: "user" },
+      { title: "Admin", value: "admin" },
+    ]);
     expect(result.data).toEqual({ area: "user", logicalName: "Interactive" });
   });
+
+  test.each([
+    ["public", "user"],
+    ["public", "admin"],
+    ["user", "admin"],
+  ] as const)(
+    "rejects a logical page collision between %s and %s",
+    async (firstArea, secondArea) => {
+      const root = await projectFixture();
+      await runCommand(
+        addPage,
+        ["addpage", "CrossArea", "--area", firstArea, "-P"],
+        root,
+      );
+      await expect(
+        runCommand(
+          addPage,
+          ["addpage", "CrossArea", "--area", secondArea, "-P"],
+          root,
+        ),
+      ).rejects.toMatchObject({ code: "TARGET_EXISTS" });
+      expect(
+        existsSync(
+          path.join(
+            root,
+            "src",
+            "app",
+            "[locale]",
+            `(${secondArea})`,
+            "CrossArea",
+          ),
+        ),
+      ).toBe(false);
+    },
+  );
 
   test("rejects cross-area, legacy and duplicate logical routes", async () => {
     const root = await projectFixture();
@@ -595,6 +657,69 @@ describe("project evolution commands", () => {
       data: { area: "user", logicalName: "UserOnly" },
     });
     expect(result.events[0].detail).toEqual({ area: "user" });
+  });
+
+  test("creates, scopes and removes an admin page through the shared catalog", async () => {
+    const root = await projectFixture();
+    const created = await runCommand(
+      addPage,
+      ["addpage", "Admin.Audit", "--area", "admin", "-PLl"],
+      root,
+    );
+    await runCommand(
+      addComponent,
+      [
+        "addcomponent",
+        "AuditPanel",
+        "--page",
+        "Admin.Audit",
+        "--area",
+        "admin",
+      ],
+      root,
+    );
+    expect(created.data).toEqual({
+      area: "admin",
+      logicalName: "Admin.Audit",
+    });
+    expect(
+      await readFile(
+        path.join(root, "src", "ui", "Admin", "Audit", "page-ui.tsx"),
+        "utf8",
+      ),
+    ).not.toContain("<main");
+    expect(
+      existsSync(
+        path.join(
+          root,
+          "src",
+          "app",
+          "[locale]",
+          "(admin)",
+          "Admin",
+          "Audit",
+          "page.tsx",
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      existsSync(
+        path.join(root, "src", "ui", "Admin", "Audit", "AuditPanel.tsx"),
+      ),
+    ).toBe(true);
+
+    const removed = await runCommand(
+      rmPage,
+      ["rmpage", "Admin.Audit", "--area", "admin"],
+      root,
+    );
+    expect(removed.data).toEqual({
+      area: "admin",
+      logicalName: "Admin.Audit",
+    });
+    expect(existsSync(path.join(root, "src", "ui", "Admin", "Audit"))).toBe(
+      false,
+    );
   });
 
   test("removes the selected page after interactive confirmation", async () => {

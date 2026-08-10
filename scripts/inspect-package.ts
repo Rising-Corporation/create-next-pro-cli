@@ -53,6 +53,9 @@ export const requiredTemplateFiles = [
   "templates/Projects/default/scripts/audit-policy.ts",
   "templates/Projects/default/scripts/audit.ts",
   "templates/Projects/default/scripts/package-manager.ts",
+  "templates/Projects/default/src/app/[locale]/(admin)/layout.tsx",
+  "templates/Projects/default/src/lib/auth/admin-access.ts",
+  "templates/Projects/default/src/lib/auth/admin-policy.ts",
   "templates/Projects/default/tests/consumer/validate-template.ts",
   "templates/Projects/default/vitest.config.ts",
 ] as const;

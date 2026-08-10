@@ -51,7 +51,8 @@ Do not commit an additional lockfile unless the project has intentionally change
 - Use `.env.example` as the public development contract. Create a local file with `cp .env.example .env`, then replace credentials for production.
 - Use `--force` only after resolving and inspecting the exact destination. It deletes the existing child destination before scaffolding.
 - Pass logical names, not filesystem paths. Names use safe dot-separated segments such as `account.security`; never pass absolute paths, slashes, empty segments, or `..`.
-- Select `--area public` or `--area user` explicitly for page creation, direct page removal, and page-scoped components. A route area controls the layout and authorization boundary without changing the public URL.
+- Select `--area public`, `--area user`, or `--area admin` explicitly for page creation, direct page removal, and page-scoped components. A route area controls the layout and authorization boundary without changing the public URL.
+- Treat `admin` as a closed, server-protected area rather than an extensible role system. Configure `AUTH_ADMIN_EMAILS` locally before testing it, never expose that allowlist in output, and expect missing or invalid configuration to deny every administrator request.
 - Preserve existing source files. The add commands report existing resources as `unchanged` instead of overwriting them.
 - Use `rmpage` only for a page returned by the area-aware CLI page catalog, and inspect deletion events before making follow-up edits.
 
@@ -80,6 +81,7 @@ Do not commit an additional lockfile unless the project has intentionally change
 
 - `--area public`: target the public route group and layout.
 - `--area user`: target the authenticated user route group and layout.
+- `--area admin`: target the authenticated administrator route group protected by `AUTH_ADMIN_EMAILS`.
 - The option is required for direct `addpage`, direct `rmpage`, and `addcomponent --page` commands. It is rejected for global components.
 - Do not infer an area from a page name or persist one as a project-wide default.
 

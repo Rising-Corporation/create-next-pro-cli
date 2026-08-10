@@ -81,6 +81,9 @@ export async function validateScaffoldTemplate(
     path.join("scripts", "audit-policy.ts"),
     path.join("scripts", "audit.ts"),
     path.join("scripts", "package-manager.ts"),
+    path.join("src", "app", "[locale]", "(admin)", "layout.tsx"),
+    path.join("src", "lib", "auth", "admin-access.ts"),
+    path.join("src", "lib", "auth", "admin-policy.ts"),
     path.join("tests", "consumer", "validate-template.ts"),
     path.join(".github", "workflows", "quality.yml"),
   ]) {

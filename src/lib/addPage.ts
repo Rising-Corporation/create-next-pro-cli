@@ -7,7 +7,10 @@ import {
   discoverPageCatalog,
 } from "../core/page-catalog";
 import {
+  PAGE_AREAS,
+  PAGE_AREA_DEFINITIONS,
   areaRouteGroup,
+  pageAreasExcept,
   parseAreaOption,
   requirePageArea,
   type PageArea,
@@ -178,10 +181,10 @@ export const addPage: CommandHandler = async (args, context) => {
               type: "select",
               name: "area" as const,
               message: "Page area:",
-              choices: [
-                { title: "public", value: "public" },
-                { title: "user", value: "user" },
-              ],
+              choices: PAGE_AREAS.map((value) => ({
+                title: PAGE_AREA_DEFINITIONS[value].label,
+                value,
+              })),
             },
           ]
         : []),
@@ -263,21 +266,22 @@ export const addPage: CommandHandler = async (args, context) => {
     (candidate) =>
       candidate.logicalName === logicalName && candidate.area !== area,
   );
-  const otherArea: PageArea = area === "public" ? "user" : "public";
-  const otherAreaDirectory = join(
-    appRoot,
-    areaRouteGroup(otherArea),
-    ...pageSegments,
+  const existingOtherDirectoryArea = pageAreasExcept(area).find(
+    (candidateArea) =>
+      context.fs.exists(
+        join(appRoot, areaRouteGroup(candidateArea), ...pageSegments),
+      ),
   );
-  if (existingOtherArea || context.fs.exists(otherAreaDirectory)) {
+  const conflictingArea = existingOtherArea?.area ?? existingOtherDirectoryArea;
+  if (conflictingArea) {
     throw new CliError(
-      `Page "${logicalName}" already belongs to the ${otherArea} area.`,
+      `Page "${logicalName}" already belongs to the ${conflictingArea} area.`,
       {
         code: "TARGET_EXISTS",
         scope: "project",
         path: join(
           useI18n ? "src/app/[locale]" : "src/app",
-          areaRouteGroup(otherArea),
+          areaRouteGroup(conflictingArea),
           ...pageSegments,
         ),
       },
@@ -289,17 +293,14 @@ export const addPage: CommandHandler = async (args, context) => {
       code: "INCONSISTENT_ROUTE",
       scope: "project",
       path: join(useI18n ? "src/app/[locale]" : "src/app", ...pageSegments),
-      hint: "Move the route into exactly one of the (public) or (user) areas before retrying.",
+      hint: "Move the route into exactly one of the (public), (user), or (admin) areas before retrying.",
     });
   }
   await assertSafeTarget(context.cwd, uiDirectory, context.fs);
   await assertSafeTarget(context.cwd, routeDirectory, context.fs);
 
   const templateRoot = join(context.packageRoot, "templates", "Page");
-  const uiTemplate = join(
-    templateRoot,
-    area === "user" ? "page-ui.user.tsx" : "page-ui.tsx",
-  );
+  const uiTemplate = join(templateRoot, PAGE_AREA_DEFINITIONS[area].uiTemplate);
   const routeTemplates = [...flags].map((flag) => ({
     flag,
     source: join(templateRoot, toFileName(flag)),

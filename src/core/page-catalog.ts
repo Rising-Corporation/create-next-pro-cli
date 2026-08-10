@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import { CliError, type CliFileSystem } from "./contracts";
-import { isPageArea, type PageArea } from "./page-area";
+import { comparePageAreas, isPageArea, type PageArea } from "./page-area";
 
 export type PageCandidate = {
   id: `${PageArea}:${string}`;
@@ -151,7 +151,7 @@ export async function discoverPageCatalog(
     .filter((candidate) => !invalidNames.has(candidate.logicalName))
     .sort(
       (left, right) =>
-        left.area.localeCompare(right.area) ||
+        comparePageAreas(left.area, right.area) ||
         left.logicalName.localeCompare(right.logicalName),
     );
   issues.sort((left, right) =>
@@ -177,7 +177,7 @@ export function assertConsistentLogicalRoute(
     code: "INCONSISTENT_ROUTE",
     scope: "project",
     path: issue.routeDirectories.join(", "),
-    hint: "Move the route into exactly one of the (public) or (user) areas before retrying.",
+    hint: "Move the route into exactly one of the (public), (user), or (admin) areas before retrying.",
   });
 }
 

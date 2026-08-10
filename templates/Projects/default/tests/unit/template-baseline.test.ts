@@ -24,6 +24,9 @@ describe("updated template baseline", () => {
     ["src/ui/_home/GitHubActions.tsx", "GITHUB_REPOSITORY_URL"],
     ["src/ui/_home/page-shell.tsx", "Empowered by Rising Corporation"],
     ["src/ui/_global/UserNav.tsx", "ThemeToggle"],
+    ["src/app/[locale]/(admin)/layout.tsx", "hasAdminAccess"],
+    ["src/lib/auth/admin-access.ts", 'import "server-only"'],
+    ["src/lib/auth/admin-policy.ts", "parseAdminEmailAllowlist"],
     ["next.config.ts", "lh3.googleusercontent.com"],
     ["tests/e2e/template-remediation.playwright.ts", "Read the Doc"],
   ])("preserves %s", async (relativePath, marker) => {
@@ -57,6 +60,8 @@ describe("updated template baseline", () => {
         variables.get("GOOGLE_CLIENT_SECRET"),
     ].filter(Boolean);
     expect(configuredAuthValues).toHaveLength(3);
+    expect(variables.has("AUTH_ADMIN_EMAILS")).toBe(true);
+    expect(variables.get("AUTH_ADMIN_EMAILS")).toBe("");
   });
 
   test("delegates theme initialization to ThemeToggle without inline scripts", async () => {
@@ -76,5 +81,18 @@ describe("updated template baseline", () => {
     expect(themeToggle).toContain("prefers-color-scheme: dark");
     expect(themeToggle).toContain('classList.toggle("dark", isDark)');
     expect(themeToggle).toContain('classList.toggle("light", !isDark)');
+  });
+
+  test("keeps administrator authorization request-bound and server-only", async () => {
+    const [layout, access] = await Promise.all([
+      source("src/app/[locale]/(admin)/layout.tsx"),
+      source("src/lib/auth/admin-access.ts"),
+    ]);
+
+    expect(layout).toContain('export const dynamic = "force-dynamic"');
+    expect(layout).toContain("notFound()");
+    expect(layout).toContain("hasAdminAccess(user.email)");
+    expect(access).toContain('import "server-only"');
+    expect(access).not.toContain("NEXT_PUBLIC_");
   });
 });

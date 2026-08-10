@@ -32,10 +32,11 @@ async function fixture(): Promise<{
 }
 
 describe("page catalog", () => {
-  test("keeps the public or user area in stable candidate identifiers", async () => {
+  test("keeps every official area in stable candidate identifiers", async () => {
     const project = await fixture();
     await project.page("(public)/Profile");
     await project.page("(user)/Account/Security");
+    await project.page("(admin)/Audit");
     const catalog = await discoverPageCatalog(
       project.root,
       createNodeContext({ cwd: project.root }).fs,
@@ -45,10 +46,12 @@ describe("page catalog", () => {
     expect(catalog.candidates.map(({ id }) => id)).toEqual([
       "public:Profile",
       "user:Account.Security",
+      "admin:Audit",
     ]);
     expect(resolvePageCandidate(catalog, "Account.Security", "user").area).toBe(
       "user",
     );
+    expect(resolvePageCandidate(catalog, "Audit", "admin").area).toBe("admin");
   });
 
   test("isolates ungrouped and duplicate logical routes", async () => {
@@ -78,7 +81,7 @@ describe("page catalog", () => {
 
   test("reports unsupported route groups without exposing them as candidates", async () => {
     const project = await fixture();
-    await project.page("(admin)/Audit");
+    await project.page("(staff)/Audit");
     const catalog = await discoverPageCatalog(
       project.root,
       createNodeContext({ cwd: project.root }).fs,
