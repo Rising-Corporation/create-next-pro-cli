@@ -13,6 +13,7 @@ import {
 import {
   buildReleaseAppInstallationUrl,
   buildReleaseAppManifest,
+  assertReleaseDisabled,
   createReleaseAppJwt,
   decideReleaseAppSetup,
   parseInstallationCallback,
@@ -21,6 +22,7 @@ import {
   type ReleaseAppCommandResult,
   ReleaseAppError,
   safeReleaseAppResult,
+  releaseEnabledState,
   validateAuthenticatedApp,
   validateManifestConversion,
   validateReleaseAppInstallation,
@@ -955,6 +957,7 @@ async function setup(
 ): Promise<ReleaseAppCommandResult> {
   let snapshot = collectRemoteSnapshot(policy, runner);
   assertSetupPreconditions(policy, snapshot, runner);
+  assertReleaseDisabled(snapshot);
   const decision = decideReleaseAppSetup(snapshot, policy);
   let appId: number;
   let installation: Pick<ReleaseAppInstallation, "id">;
@@ -1001,6 +1004,7 @@ function check(
 ): ReleaseAppCommandResult {
   const snapshot = collectRemoteSnapshot(policy, runner);
   assertRepositoryAccess(policy, snapshot);
+  const releaseEnabled = releaseEnabledState(snapshot);
   const decision = decideReleaseAppSetup(snapshot, policy);
   if (decision.action === "create") {
     throw new ReleaseAppError(
@@ -1029,7 +1033,7 @@ function check(
       name: policy.environment.name,
       appIdVariable: policy.release.appIdVariable,
       privateKeySecret: policy.release.privateKeySecret,
-      releaseEnabled: false,
+      releaseEnabled,
     },
   });
 }
@@ -1039,6 +1043,13 @@ async function smoke(
   runner: ProcessRunner,
 ): Promise<ReleaseAppCommandResult> {
   const checked = check(policy, runner);
+  if (checked.environment.releaseEnabled !== false) {
+    throw new ReleaseAppError(
+      "PRECONDITION_FAILED",
+      "RELEASE_ENABLED must remain false while smoke-testing the release App.",
+      2,
+    );
+  }
   return safeReleaseAppResult(policy, "smoke", {
     status: "configured",
     exitCode: 0,

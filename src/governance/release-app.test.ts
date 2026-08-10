@@ -4,12 +4,14 @@ import { describe, expect, test } from "vitest";
 
 import type { GovernancePolicy } from "./model";
 import {
+  assertReleaseDisabled,
   buildReleaseAppInstallationUrl,
   buildReleaseAppManifest,
   createReleaseAppJwt,
   decideReleaseAppSetup,
   parseInstallationCallback,
   parseRegistrationCallback,
+  releaseEnabledState,
   ReleaseAppError,
   safeReleaseAppResult,
   validateAuthenticatedApp,
@@ -294,7 +296,7 @@ describe("release App setup decisions", () => {
     ).toEqual({ action: "verify", appId: 123 });
   });
 
-  test("rejects partial credentials and enabled releases", () => {
+  test("rejects partial credentials independently from release activation", () => {
     expect(() =>
       decideReleaseAppSetup({ ...empty, appIdValue: "123" }, policy),
     ).toThrowError(
@@ -302,13 +304,26 @@ describe("release App setup decisions", () => {
         code: "PARTIAL_CONFIGURATION",
       }),
     );
-    expect(() =>
+    expect(
       decideReleaseAppSetup({ ...empty, releaseEnabled: "true" }, policy),
+    ).toEqual({ action: "create" });
+  });
+
+  test("keeps provisioning gated while allowing steady-state checks", () => {
+    expect(releaseEnabledState(empty)).toBe(false);
+    expect(releaseEnabledState({ ...empty, releaseEnabled: "true" })).toBe(
+      true,
+    );
+    expect(() =>
+      assertReleaseDisabled({ ...empty, releaseEnabled: "true" }),
     ).toThrowError(
       expect.objectContaining<Partial<ReleaseAppError>>({
         code: "PRECONDITION_FAILED",
       }),
     );
+    expect(() =>
+      releaseEnabledState({ ...empty, releaseEnabled: undefined }),
+    ).toThrowError(ReleaseAppError);
   });
 
   test("constructs safe machine output without secret values", () => {

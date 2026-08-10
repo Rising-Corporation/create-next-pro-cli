@@ -7,6 +7,13 @@ import {
   type GithubTransport,
 } from "../src/governance/github";
 import {
+  assertGovernanceApplyPreconditions,
+  parseGovernanceApplyStage,
+  type GovernanceApplyInstallation,
+  type GovernanceApplyPreconditions,
+  type GovernanceApplyStage,
+} from "../src/governance/apply";
+import {
   assertGovernancePolicy,
   compareGovernance,
   type GovernancePolicy,
@@ -89,28 +96,103 @@ function print(result: GovernanceResult, json: boolean): void {
   }
 }
 
-function assertApplyPreconditions(policy: GovernancePolicy): void {
-  if (process.env.CI) throw new Error("github:apply is disabled in CI");
-  if (argumentValue("--confirm") !== policy.repository) {
-    throw new Error(`github:apply requires --confirm ${policy.repository}`);
-  }
-  if (run("git", ["status", "--porcelain"])) {
-    throw new Error("github:apply requires a clean worktree");
-  }
+function string(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function installation(value: unknown): GovernanceApplyInstallation {
+  const candidate = record(value);
+  return {
+    appId: typeof candidate.app_id === "number" ? candidate.app_id : undefined,
+    appSlug: string(candidate.app_slug),
+    owner: string(record(candidate.account).login),
+    targetType: string(candidate.target_type),
+    repositorySelection: string(candidate.repository_selection),
+    permissions: record(candidate.permissions),
+    events: Array.isArray(candidate.events) ? candidate.events : undefined,
+  };
+}
+
+function namedValue(value: unknown, name: string): string | undefined {
+  const variables = Array.isArray(record(value).variables)
+    ? (record(value).variables as unknown[])
+    : [];
+  const match = variables.map(record).find((item) => item.name === name);
+  const result = string(match?.value);
+  return result || undefined;
+}
+
+function secretNames(value: unknown): string[] {
+  const secrets = Array.isArray(record(value).secrets)
+    ? (record(value).secrets as unknown[])
+    : [];
+  return secrets
+    .map(record)
+    .map((item) => string(item.name))
+    .filter(Boolean);
+}
+
+function assertApplyPreconditions(
+  policy: GovernancePolicy,
+  stage: GovernanceApplyStage,
+): GovernanceApplyPreconditions {
   const current = JSON.parse(
     run("gh", ["repo", "view", "--json", "nameWithOwner,isFork"]),
   ) as { nameWithOwner: string; isFork: boolean };
-  if (current.nameWithOwner !== policy.repository || current.isFork) {
-    throw new Error("github:apply refuses a different repository or a fork");
-  }
   const repository = request(`repos/${policy.repository}`) as {
     permissions?: { admin?: boolean };
   };
-  if (!repository.permissions?.admin) {
-    throw new Error(
-      "github:apply requires repository administration permission",
+  const repositoryVariables = request(
+    `repos/${policy.repository}/actions/variables?per_page=100`,
+  );
+  let appIdValue: string | undefined;
+  let environmentSecretNames: string[] = [];
+  let releaseInstallation: GovernanceApplyInstallation | undefined;
+  if (stage === "full") {
+    const variables = request(
+      `repos/${policy.repository}/environments/${policy.environment.name}/variables?per_page=100`,
     );
+    const secrets = request(
+      `repos/${policy.repository}/environments/${policy.environment.name}/secrets?per_page=100`,
+    );
+    appIdValue = namedValue(variables, policy.release.appIdVariable);
+    environmentSecretNames = secretNames(secrets);
+    const organizationInstallations = request(
+      `orgs/${policy.release.appOwner}/installations?per_page=100`,
+    );
+    const values = Array.isArray(
+      record(organizationInstallations).installations,
+    )
+      ? (record(organizationInstallations).installations as unknown[])
+      : [];
+    releaseInstallation = values
+      .map(installation)
+      .find((candidate) => String(candidate.appId) === appIdValue);
   }
+  return assertGovernanceApplyPreconditions(policy, stage, {
+    ci: Boolean(process.env.CI),
+    confirmation: argumentValue("--confirm"),
+    worktreeClean: !run("git", ["status", "--porcelain"]),
+    branch: run("git", ["branch", "--show-current"]),
+    head: run("git", ["rev-parse", "HEAD"]),
+    remoteHead: run("git", [
+      "rev-parse",
+      `origin/${policy.repositorySettings.defaultBranch}`,
+    ]),
+    repository: current.nameWithOwner,
+    fork: current.isFork,
+    administrator: repository.permissions?.admin === true,
+    releaseEnabled: namedValue(repositoryVariables, "RELEASE_ENABLED"),
+    appIdValue,
+    environmentSecretNames,
+    installation: releaseInstallation,
+  });
 }
 
 function planProjectsSetting(policy: GovernancePolicy): boolean {
@@ -272,35 +354,11 @@ function upsertRuleset(
   );
 }
 
-function applyRulesets(policy: GovernancePolicy, stage: RulesetStage): void {
-  const variables = request(
-    `repos/${policy.repository}/environments/${policy.environment.name}/variables?per_page=100`,
-  ) as { variables?: Array<{ name: string; value: string }> };
-  const rawAppId = variables.variables?.find(
-    (variable) => variable.name === policy.release.appIdVariable,
-  )?.value;
-  const appId = rawAppId ? Number(rawAppId) : undefined;
-  if (appId !== undefined && (!Number.isSafeInteger(appId) || appId <= 0)) {
-    throw new Error(
-      `${policy.release.appIdVariable} must identify a valid installed release App`,
-    );
-  }
-  if (appId !== undefined) {
-    const [owner] = policy.repository.split("/");
-    const installations = request(
-      `orgs/${owner}/installations?per_page=100`,
-    ) as {
-      installations?: Array<{ app_id?: number; app_slug?: string }>;
-    };
-    const installation = installations.installations?.find(
-      (candidate) => candidate.app_slug === policy.release.appSlug,
-    );
-    if (!installation || installation.app_id !== appId) {
-      throw new Error(
-        `${policy.release.appIdVariable} does not match the installed ${policy.release.appSlug} GitHub App`,
-      );
-    }
-  }
+function applyRulesets(
+  policy: GovernancePolicy,
+  stage: RulesetStage,
+  appId?: number,
+): void {
   upsertRuleset(policy, buildBranchSafetyRuleset(policy));
   if (stage === "branch" || stage === "full") {
     upsertRuleset(policy, buildBranchContributionRuleset(policy, appId));
@@ -382,23 +440,15 @@ async function main(): Promise<void> {
     if (profile !== "admin") {
       throw new Error("github:apply requires --profile admin");
     }
-    assertApplyPreconditions(policy);
+    const stage = parseGovernanceApplyStage(argumentValue("--stage"));
+    const preconditions = assertApplyPreconditions(policy, stage);
     const disableProjects = planProjectsSetting(policy);
     applyRepositorySettings(policy, disableProjects);
     applySecurity(policy);
     applyLabels(policy);
     applyEnvironment(policy);
-    const stage = argumentValue("--stage") ?? "settings";
-    if (
-      stage !== "settings" &&
-      stage !== "minimal" &&
-      stage !== "branch" &&
-      stage !== "full"
-    ) {
-      throw new Error("--stage must be settings, minimal, branch, or full");
-    }
     if (stage === "minimal" || stage === "branch" || stage === "full") {
-      applyRulesets(policy, stage);
+      applyRulesets(policy, stage, preconditions.appId);
     }
     if (hasArgument("--include-cleanup")) applyCleanup(policy);
   } else if (command !== "check" && command !== "plan") {

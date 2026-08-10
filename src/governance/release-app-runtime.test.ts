@@ -45,7 +45,7 @@ case "$*" in
   *"/environments/ENV/variables?per_page=100"*) printf '%s' '{"variables":[{"name":"RELEASE_APP_ID","value":"123"}]}' ;;
   *"/environments/ENV/secrets?per_page=100"*) printf '%s' '{"secrets":[{"name":"RELEASE_APP_PRIVATE_KEY"}]}' ;;
   *"/environments/ENV --method GET"*) printf '%s' '{"name":"ENV"}' ;;
-  *"/actions/variables?per_page=100"*) printf '%s' '{"variables":[{"name":"RELEASE_ENABLED","value":"false"}]}' ;;
+  *"/actions/variables?per_page=100"*) printf '{"variables":[{"name":"RELEASE_ENABLED","value":"%s"}]}' "\${FAKE_RELEASE_ENABLED:-false}" ;;
   *"orgs/Rising-Corporation/installations?per_page=100"*) printf '%s' '{"installations":[{"id":456,"app_id":123,"app_slug":"create-next-pro-release","account":{"login":"Rising-Corporation"},"target_type":"Organization","repository_selection":"selected","permissions":{"metadata":"read","contents":"write"},"events":[]}]}' ;;
   *) printf '%s\n' "Unexpected fake gh call: $*" >&2; exit 64 ;;
 esac
@@ -80,6 +80,26 @@ esac
         error: null,
       });
       expect(output).not.toContain("PRIVATE KEY");
+
+      const enabledOutput = execFileSync(
+        process.execPath,
+        ["scripts/github-release-app.ts", "check", "--json"],
+        {
+          cwd: process.cwd(),
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            FAKE_RELEASE_ENABLED: "true",
+            PATH: `${directory}:${process.env.PATH ?? ""}`,
+          },
+        },
+      );
+      expect(JSON.parse(enabledOutput)).toMatchObject({
+        status: "configured",
+        exitCode: 0,
+        environment: { releaseEnabled: true },
+        error: null,
+      });
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

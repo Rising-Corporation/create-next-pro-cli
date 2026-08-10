@@ -75,6 +75,32 @@ export type ReleaseAppSetupDecision =
   | { action: "resume-installation"; appId: number }
   | { action: "verify"; appId: number; installationId?: number };
 
+export function releaseEnabledState(
+  snapshot: ReleaseAppSetupSnapshot,
+): boolean {
+  if (
+    snapshot.releaseEnabled !== "false" &&
+    snapshot.releaseEnabled !== "true"
+  ) {
+    throw new ReleaseAppError(
+      "PRECONDITION_FAILED",
+      "RELEASE_ENABLED must be explicitly configured as true or false.",
+      2,
+    );
+  }
+  return snapshot.releaseEnabled === "true";
+}
+
+export function assertReleaseDisabled(snapshot: ReleaseAppSetupSnapshot): void {
+  if (releaseEnabledState(snapshot)) {
+    throw new ReleaseAppError(
+      "PRECONDITION_FAILED",
+      "RELEASE_ENABLED must remain false while provisioning or smoke-testing the release App.",
+      2,
+    );
+  }
+}
+
 export type ReleaseAppCommandResult = {
   schemaVersion: 1;
   command: "setup" | "check" | "smoke";
@@ -513,13 +539,6 @@ export function decideReleaseAppSetup(
     throw new ReleaseAppError(
       "PRECONDITION_FAILED",
       `The ${policy.environment.name} environment does not exist.`,
-      2,
-    );
-  }
-  if (snapshot.releaseEnabled !== "false") {
-    throw new ReleaseAppError(
-      "PRECONDITION_FAILED",
-      "RELEASE_ENABLED must remain false while provisioning the release App.",
       2,
     );
   }
