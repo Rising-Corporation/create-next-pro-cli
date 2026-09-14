@@ -1,8 +1,9 @@
 import { join } from "node:path";
 
 import { CliError, type CommandHandler } from "../core/contracts";
+import { parseTranslationPath } from "../core/home-page";
 import { commandResult, MutationGateway } from "../core/operations";
-import { assertSafeTarget, parseLogicalName } from "../core/project-paths";
+import { assertSafeTarget } from "../core/project-paths";
 import { loadConfig } from "./utils";
 
 function defaultText(key: string): string {
@@ -26,7 +27,7 @@ export const addText: CommandHandler = async (args, context) => {
       hint: "Use addtext domain.key followed by an optional value.",
     });
   }
-  const segments = parseLogicalName(pathArg, "translation path");
+  const segments = parseTranslationPath(pathArg);
   if (segments.length < 2) {
     throw new CliError("Translation path must contain a file and a key.", {
       code: "INVALID_ARGUMENT",

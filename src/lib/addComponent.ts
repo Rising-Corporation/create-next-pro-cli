@@ -1,6 +1,7 @@
 import { join } from "node:path";
 
 import { CliError, type CommandHandler } from "../core/contracts";
+import { assertHomeComponentScope, HOME_PAGE_NAME } from "../core/home-page";
 import { commandResult, MutationGateway } from "../core/operations";
 import {
   discoverPageCatalog,
@@ -126,7 +127,9 @@ export const addComponent: CommandHandler = async (args, context) => {
     });
   }
   const pageSegments = pageScope
-    ? parseLogicalName(pageScope, "page name")
+    ? pageScope === HOME_PAGE_NAME
+      ? [HOME_PAGE_NAME]
+      : parseLogicalName(pageScope, "page name")
     : [];
   const config = await loadConfig(context);
   if (!config) {
@@ -135,7 +138,9 @@ export const addComponent: CommandHandler = async (args, context) => {
       hint: "Run this command from the generated project root.",
     });
   }
-  if (pageScope) {
+  if (pageScope === HOME_PAGE_NAME) {
+    await assertHomeComponentScope(context, area!);
+  } else if (pageScope) {
     const catalog = await discoverPageCatalog(context.cwd, context.fs);
     resolvePageCandidate(catalog, pageScope, area!);
   }

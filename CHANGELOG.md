@@ -14,6 +14,7 @@
 
 ### Fixed
 
+- Allowed the exact built-in `_home` scope in `addtext _home.<key>` and `addcomponent <Name> --page _home --area public`. Other underscore-prefixed names remain rejected, `home` is not an alias, and page creation/removal keep their existing restrictions. Home components require the existing index, private home page, and UI directory before any write.
 - Excluded `.bun/` and `.cache/`, including nested caches, from linting, template copying, and npm archives. Regression checks still detect React errors in normal source files and reject forbidden package entries.
 - Restricted locale parameters with `dynamicParams = false`, so missing resources such as `/missing.png` and `/missing.ico` return HTTP 404. Made the `user` layout explicitly dynamic, like the administrator layout, so newly generated user pages also evaluate authorization at request time when authentication is disabled during the build.
 - Added portable production HTTP regression tests for missing paths, public assets, disabled authentication, anonymous redirects, PNG optimization and caching, and valid AVIF decoding. CI runs these checks with Bun, npm, and pnpm.
