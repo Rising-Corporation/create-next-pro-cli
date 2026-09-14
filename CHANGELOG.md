@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.38
 
 ### Security
 
@@ -27,7 +27,11 @@ Updating the CLI does not migrate applications it previously generated. Review a
 
 Add the recursive cache exclusions to the application's ESLint and ignore files. In `src/app/[locale]/layout.tsx`, retain locale validation and `generateStaticParams` and add `export const dynamicParams = false`. Set `export const dynamic = "force-dynamic"` in the `(user)/layout.tsx` beneath that directory, preserving its server authorization checks. Extend the generated locale list when adding a language. Bring across the HTTP tests and their small AVIF fixture, or implement equivalent checks for customized assets and authentication. Run formatting, lint, types, unit tests, production build, rendering checks, HTTP checks and the blocking security audit with the application's selected manager.
 
-Next.js `16.3.5` includes the [upstream AVIF re-enablement with sharp `0.35.4`](https://github.com/vercel/next.js/pull/97949). A residual `NoFallbackError` can appear in server logs for unsupported locale-like paths despite a correct HTTP 404. Protected-route redirects or denials after streaming begins must be checked separately from missing-resource status codes. These changes do not configure or restart production services, and this unreleased section does not announce a patched npm publication.
+For projects retaining the built-in homepage, use the updated CLI with `addtext _home.title "Your title" --json` to edit the existing `_home.json` messages directly. Review each locale because `addtext` propagates the same text to all locales. Use `addcomponent Hero --page _home --area public --json` to generate a homepage component, then compose it into the page and review its translations. The existing homepage files and message imports can be retained. The exception is limited to `_home`; `_global_ui` and other leading-underscore names remain unsupported as explicit command arguments.
+
+### Known limitations
+
+Next.js `16.3.5` includes the [upstream AVIF re-enablement with sharp `0.35.4`](https://github.com/vercel/next.js/pull/97949). A residual `NoFallbackError` can appear in server logs for unsupported locale-like paths despite a correct HTTP 404. Protected-route redirects or denials after streaming begins must be checked separately from missing-resource status codes.
 
 ## 0.1.37
 
