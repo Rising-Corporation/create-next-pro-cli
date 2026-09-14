@@ -162,7 +162,8 @@ describe("public governance contracts", () => {
         (match) => match[1],
       ),
     );
-    expect(lockedNextVersions).toEqual(new Set(["16.2.11"]));
+    expect(manifest.dependencies?.next).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(lockedNextVersions).toEqual(new Set([manifest.dependencies?.next]));
     for (const alert of policy.dependabot.inaccurateAlerts) {
       expect(alert.dependency).toBe("next");
       expect(alert.manifestPath).toBe(

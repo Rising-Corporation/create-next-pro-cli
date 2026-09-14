@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "A Bun-first Next.js template for create-next-pro-cli.",
 };
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }

@@ -9,7 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-/.bun/
+**/.bun/
 
 # testing
 /coverage/
@@ -24,7 +24,7 @@
 # production and tool caches
 /build/
 /dist/
-/.cache/
+**/.cache/
 /.turbo/
 .eslintcache
 .stylelintcache

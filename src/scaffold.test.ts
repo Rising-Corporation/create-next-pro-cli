@@ -214,6 +214,26 @@ describe("project scaffolding", () => {
     ).rejects.toBeInstanceOf(CliError);
   });
 
+  test("excludes root and nested caches while preserving application sources", async () => {
+    const { root, template, target } = await fixture();
+    const caches = [".bun", ".cache", "src/nested/.bun", "src/nested/.cache"];
+    for (const cache of caches) {
+      await mkdir(path.join(template, cache), { recursive: true });
+      await writeFile(path.join(template, cache, "broken.tsx"), "invalid {{{");
+    }
+
+    await scaffoldProject(options, runtime(root, template));
+
+    for (const cache of caches) {
+      await expect(
+        readFile(path.join(target, cache, "broken.tsx"), "utf8"),
+      ).rejects.toThrow();
+    }
+    expect(
+      await readFile(path.join(target, "src/example.ts"), "utf8"),
+    ).toContain('import value from "@/value"');
+  });
+
   test("replaces an existing child destination with force", async () => {
     const { root, template, target } = await fixture();
     await mkdir(target);

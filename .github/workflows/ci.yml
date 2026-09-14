@@ -118,6 +118,12 @@ jobs:
       - name: Run visual integration tests
         if: matrix.manager == 'npm'
         run: npm run test:e2e
+        env:
+          CNP_USE_EXISTING_BUILD: "1"
+      - name: Verify production HTTP behavior
+        run: ${{ matrix.manager }} run test:http
+        env:
+          CNP_USE_EXISTING_BUILD: "1"
       - name: Run blocking security audit
         run: ${{ matrix.manager }} run audit
 

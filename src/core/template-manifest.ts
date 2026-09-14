@@ -6,6 +6,8 @@ import type { CliContext, CliFileSystem } from "./contracts";
 import { MutationGateway } from "./operations";
 
 export const TEMPLATE_DENY_NAMES = new Set([
+  ".bun",
+  ".cache",
   ".env",
   ".git",
   ".gitignore",

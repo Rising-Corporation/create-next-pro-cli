@@ -27,6 +27,8 @@ const allowedPrefixes = [
   "templates/Projects/default/",
 ];
 const forbiddenSegments = new Set([
+  ".bun",
+  ".cache",
   ".agent",
   ".cursor",
   ".git",
@@ -57,6 +59,9 @@ export const requiredTemplateFiles = [
   "templates/Projects/default/src/lib/auth/admin-access.ts",
   "templates/Projects/default/src/lib/auth/admin-policy.ts",
   "templates/Projects/default/tests/consumer/validate-template.ts",
+  "templates/Projects/default/tests/e2e/template-security-http.playwright.ts",
+  "templates/Projects/default/tests/unit/eslint-cache.test.ts",
+  "templates/Projects/default/public/test-fixtures/pixel.avif",
   "templates/Projects/default/vitest.config.ts",
 ] as const;
 export const requiredPackageFiles = [

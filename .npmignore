@@ -25,3 +25,6 @@ lint-staged.config.js
 !templates/
 !LICENSE
 
+# Exclude package-manager caches at every template depth.
+**/.bun/**
+**/.cache/**

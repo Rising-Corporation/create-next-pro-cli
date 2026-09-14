@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 import path from "node:path";
 
 const captureByProject: Record<string, string> = {
-  desktop: "artifacts/captures/phase-2-11-template-reconciliation-desktop.png",
-  mobile: "artifacts/captures/phase-2-11-template-reconciliation-mobile.png",
+  desktop: "artifacts/captures/phase-2-20-home-desktop.png",
+  mobile: "artifacts/captures/phase-2-20-home-mobile.png",
 };
 
 const themeCaptureDirectory =
@@ -12,6 +12,13 @@ const themeCaptureDirectory =
 test("public template routes render in both locales", async ({
   page,
 }, testInfo) => {
+  const browserIssues: string[] = [];
+  page.on("pageerror", (error) => browserIssues.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "warning" || message.type() === "error") {
+      browserIssues.push(message.text());
+    }
+  });
   await page.goto("/");
   await expect(page).toHaveURL(/\/(en|fr)$/);
   await expect(page.getByRole("banner")).toBeVisible();
@@ -83,9 +90,14 @@ test("public template routes render in both locales", async ({
   const capturePath = captureByProject[testInfo.project.name];
   if (capturePath) {
     await page.goto("/fr");
+    await expect(page.getByRole("main")).toHaveCount(1);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(testInfo.project.use.viewport!.width);
     await page.mouse.move(0, 0);
     await page.screenshot({ path: capturePath, fullPage: true });
   }
+  expect(browserIssues).toEqual([]);
 });
 
 test("anonymous users are redirected away from private pages", async ({
@@ -93,6 +105,23 @@ test("anonymous users are redirected away from private pages", async ({
 }) => {
   await page.goto("/en/dashboard");
   await expect(page).toHaveURL(/\/en\/login/);
+});
+
+test("missing resources render an intact not-found page", async ({
+  page,
+}, testInfo) => {
+  const response = await page.goto("/missing.png");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByText("404", { exact: true })).toBeVisible();
+  if (testInfo.project.name === "desktop") {
+    await page.screenshot({
+      path: "artifacts/captures/phase-2-20-not-found-desktop.png",
+      fullPage: true,
+    });
+  }
+  const localizedResponse = await page.goto("/en/missing.png");
+  expect(localizedResponse?.status()).toBe(404);
+  await expect(page.getByText("404", { exact: true })).toBeVisible();
 });
 
 test("security headers and disabled auth are explicit", async ({ request }) => {

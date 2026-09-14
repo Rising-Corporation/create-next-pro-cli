@@ -1,5 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const port = process.env.CNP_TEST_PORT ?? "3100";
+const baseURL = `http://127.0.0.1:${port}`;
+const start = `next start --hostname 127.0.0.1 --port ${port}`;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   testMatch: "**/*.playwright.ts",
@@ -11,23 +15,26 @@ export default defineConfig({
     timeout: 10_000,
   },
   use: {
-    baseURL: "http://127.0.0.1:3100",
+    baseURL,
     trace: "retain-on-failure",
     contextOptions: { reducedMotion: "reduce" },
   },
   webServer: {
-    command: "next build && next start --hostname 127.0.0.1 --port 3100",
-    url: "http://127.0.0.1:3100/en",
+    command:
+      process.env.CNP_USE_EXISTING_BUILD === "1"
+        ? start
+        : `next build && ${start}`,
+    url: `${baseURL}/en`,
     env: {
-      NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3100",
-      AUTH_URL: "http://127.0.0.1:3100",
-      NEXTAUTH_URL: "http://127.0.0.1:3100",
+      NEXT_PUBLIC_APP_URL: baseURL,
+      AUTH_URL: baseURL,
+      NEXTAUTH_URL: baseURL,
       AUTH_SECRET: "",
       AUTH_GOOGLE_ID: "",
       AUTH_GOOGLE_SECRET: "",
       AUTH_DISABLED: "true",
     },
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
   projects: [

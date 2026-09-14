@@ -4,6 +4,8 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   {
     ignores: [
+      "**/.bun/**",
+      "**/.cache/**",
       ".agent/**",
       ".cursor/**",
       "dist/**",

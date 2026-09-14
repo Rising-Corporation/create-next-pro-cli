@@ -4,6 +4,8 @@ import { redirect } from "@/lib/i18n/navigation";
 import GlobalHeader from "@/ui/_global/GlobalHeader";
 import GlobalMain from "@/ui/_global/GlobalMain";
 
+export const dynamic = "force-dynamic";
+
 export default async function UserLayout({
   children,
   params,

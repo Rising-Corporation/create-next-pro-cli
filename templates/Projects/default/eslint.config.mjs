@@ -17,6 +17,8 @@ const eslintConfig = [
   },
   {
     ignores: [
+      "**/.bun/**",
+      "**/.cache/**",
       "node_modules/**",
       ".next/**",
       "out/**",
