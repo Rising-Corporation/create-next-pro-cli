@@ -22,11 +22,20 @@ node --version
 npm --version # or: pnpm --version
 ```
 
-Bun must satisfy `>=1.3.14` when selected and does not require a separate
+Bun must satisfy `>=1.4.4` when selected and does not require a separate
 Node.js installation. The Node.js path requires Node.js `>=24.0.0`; pnpm 11 or
 later is supported.
 
-The npm `allowScripts` policy and pnpm `allowBuilds` policy approve only the
+Bun is the primary runtime. Use `bun --bun run dev` and `bun --bun run check`
+to run the toolchain with Bun. Node.js compatibility is retained for this
+release and will no longer be maintained in future releases.
+
+TypeScript 7 is installed through the `@typescript/native` alias and supplies
+`tsc`. The `typescript` alias points to the official TypeScript 6 compatibility
+package because Next.js and ESLint still require its compiler API. ESLint 9
+remains the supported version for the current React lint plugin peer contract.
+
+The Bun `trustedDependencies`, npm `allowScripts` and pnpm `allowBuilds` policies approve only the
 native build steps required by Next.js and the file-watcher toolchain. Security
 overrides are declared for both npm-compatible and pnpm dependency graphs.
 

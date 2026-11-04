@@ -6,7 +6,7 @@ Public visibility does not grant write access. External contributors propose cha
 
 ## Requirements
 
-- Bun 1.3.14 for the locked repository installation and root checks.
+- Bun 1.4.4 for the locked repository installation and root checks.
 - Node.js 24 for the Node.js bundle and npm consumers.
 - pnpm 11 when changing multi-package-manager behavior.
 - Git and a GitHub account.

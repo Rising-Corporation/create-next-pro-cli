@@ -38,8 +38,13 @@ The CLI is built around a runtime-independent core, injectable terminal and file
 
 ## Requirements
 
-- Node.js 24 or later, or Bun 1.3 or later, to run the CLI.
-- Bun 1.3+, the npm version bundled with Node.js 24+, or pnpm 11+ for generated projects.
+- Bun 1.4.4 or later is the primary CLI and generated-project runtime.
+- Node.js 24+, its bundled npm, and pnpm 11+ remain compatible with this release. Node.js support will no longer be maintained in future releases.
+
+Use `bun --bun run check` to validate generated projects with Bun as the runtime.
+TypeScript 7 supplies the `tsc` compiler through the `@typescript/native` alias;
+the official TypeScript 6 compatibility package remains aliased as `typescript`
+for Next.js, ESLint and the CLI's preserving library-index analysis.
 
 ## Installation
 

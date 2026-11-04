@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Updated the CLI and template dependencies and regenerated both Bun lockfiles. The template now uses Next.js/eslint-config-next `16.4.5`, React/React DOM `19.3.1`, Tailwind CSS `4.3.4`, sharp `0.35.5`, Playwright `1.64.1` and Vitest `5.1.0`; the CLI build uses tsup `9.0.0`.
+- Updated the primary Bun runtime and CI reference to `1.4.4`. Node.js/npm/pnpm compatibility is retained for this release; Node.js support will no longer be maintained in future releases.
+- Adopted the TypeScript `7.0.2` compiler through the `@typescript/native` alias while preserving the compiler API required by Next.js, ESLint and `addlib` through the official `@typescript/typescript6` compatibility package. Kept template ESLint at the latest compatible version 9 and Auth.js at its existing latest v5 beta.
+
+### Security
+
+- Refreshed transitive dependencies and scoped overrides for minimatch and brace-expansion, preserving the legacy minimatch API where required. Updated the PostCSS, nanoid and CLI fast-uri overrides without relaxing the blocking audit policy.
+
+### Migration
+
+Existing generated applications need their own dependency and lockfile updates.
+Copy the TypeScript aliases and security overrides together, keep Next.js and
+eslint-config-next aligned, and validate formatting, lint, types, unit tests,
+production rendering, HTTP and browser behavior before deploying. Updating the
+CLI does not migrate existing applications.
+
 ## 0.1.38
 
 ### Security
